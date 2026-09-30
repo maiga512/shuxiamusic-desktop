@@ -203,12 +203,13 @@ jobs:
           if-no-files-found: error
 
   publish:
+    # 只硬依赖 arm64：Intel(macos-13) 运行器经常排队很久，Windows 代码还在修，
+    # 不能让它们拖住 Apple Silicon 的发布。x64/windows 编出来时其产物会被下方
+    # download-artifact 一并收进来；没编出来 make-latest-json 会自动跳过。
     needs:
       - prepare
       - build-macos-arm64
-      - build-macos-x64
-      - build-windows-x64
-    if: ${{ always() && (needs.build-macos-arm64.result == 'success' || needs.build-macos-x64.result == 'success' || needs.build-windows-x64.result == 'success') }}
+    if: ${{ always() && needs.build-macos-arm64.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
