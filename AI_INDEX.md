@@ -52,7 +52,7 @@ graph:
   html: graphify-out/graph.html
   labels: graphify-out/.graphify_labels.json
   top_graph: TOP_GRAPH.md
-last_indexed: 2026-09-23
+last_indexed: 2026-09-30
 graph_stats_source: graphify-out/GRAPH_REPORT.md
 ---
 
@@ -274,6 +274,7 @@ treating raw edge counts as exact.
 | 2026-09-25 | 同步修复与启动流程：list.vue 订阅 playlist-updated/ceru-favorites-updated 原地刷新；启动麦克风权限后按原进度自动续播（ceru-audio-session-ready）；服务端 remove 去掉 content_hash 级联、设备 revision 夹紧、事件清理保护慢设备；Android 云端插件脚本落盘 lx_plugins、导入登记 pending、RESTORE 空云端保护。 | 多轮增量；详见 CONTEXT_HANDOFF。 |
 
 | 2026-09-29 | MPV 退出生命周期：真正退出时先摘出 Rust `Child`、释放运行时锁，再直接 `kill + wait`，不再等待可能卡住的 MPV IPC `quit`；关闭到托盘继续保持播放。 | 对照 Electron `src/main/index.ts` / `src/main/services/windowLifecycle.ts`；Tauri 仅适配 Rust 子进程回收。Graphify 更新待本轮文档写入后执行。 |
+| 2026-09-30 | 启动恢复时序与失败播放链：欢迎动画和 `/home` 路由完成后才调用 `initPlayback()`；启动恢复统一复用 `playSong()` 的缓存校验、刷新 URL、候选换源与失败自动下一首；MPV 早到错误暂存到当前请求，避免首首失败停在暂停。 | 对照 Electron 欢迎页与播放入口；Tauri 适配仅处理 MPV 事件时序。`npm run build`、sidecar 语法检查、`git diff --check` 通过；Graphify 更新待执行。 |
 | --- | --- | --- |
 | 2026-09-17 | Initial AI search index and Top Graph created. | Full AST extraction, semantic document extraction, community labeling, `graph.html` export, root rules added. |
 | 2026-09-17 | Aligned playback startup with Electron: mapped `service-plugin-initialize-system`, preloaded eligible sidecar plugin workers, deduplicated initialization, and added direct plugin-code reads. | Updated playback aliases and Top Graph flow; Graphify refreshed in the same session. |

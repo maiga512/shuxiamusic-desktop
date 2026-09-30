@@ -92,6 +92,8 @@ safe.
 
 ### 2. Playback And Media
 
+Startup keeps plugin initialization inside the welcome screen, but playback restoration runs only after the minimum splash duration and `/home` route replacement complete. `initPlayback()` restores the last song through the same `playSong()` pipeline as manual playback, preserving URL-cache validation, current-source refresh, candidate-source fallback, and bounded failure auto-next. MPV errors arriving before a per-song error handler is installed are held against the current playback request and replayed once the handler is ready.
+
 ```text
 src/utils/audio/globaPlayList.ts
   -> url-cache / isPlayableUrl (cache hit, zero network)

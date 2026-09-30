@@ -609,7 +609,6 @@ export const nativePlay = async (): Promise<boolean> => {
     return true
   } catch (error) {
     store.Audio.isPlay = false
-    publishOnce('error')
     throw error
   }
 }

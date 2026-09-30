@@ -213,20 +213,25 @@ let entered = false
 async function bootThenEnter() {
   if (entered) return
   const startAt = Date.now()
-  // 预热插件系统 + 恢复播放列表（与旧启动页一致，仅去掉进度条 UI）
+  // 插件系统仍在欢迎页预热，但播放恢复必须等正式界面挂载后再开始。
   try {
     await window.electron?.ipcRenderer?.invoke?.('service-plugin-initialize-system')
   } catch (e) {
     console.warn('[welcome] plugin init failed', e)
   }
-  void initPlayback().catch((e) => console.error('[welcome] initPlayback failed', e))
 
   const wait = Math.max(0, STARTUP_MIN_MS - (Date.now() - startAt))
-  window.setTimeout(() => {
-    if (entered) return
-    entered = true
-    void router.replace('/home')
-  }, wait)
+  await new Promise<void>((resolve) => window.setTimeout(resolve, wait))
+  if (entered) return
+  entered = true
+  await router.replace('/home')
+  // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
+  // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
+  try {
+    await initPlayback()
+  } catch (e) {
+    console.error('[welcome] initPlayback failed', e)
+  }
 }
 
 onUnmounted(() => {

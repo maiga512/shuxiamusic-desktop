@@ -55,6 +55,7 @@ let pendingRestorePosition = 0
 let pendingRestoreSongId: number | string | null = null
 let currentPlaybackErrorHandler: ((e: Event) => void) | null = null
 let currentPlaybackPlayingHandler: ((e: Event) => void) | null = null
+let pendingPlaybackErrorRequestId = 0
 let currentPlayRequestId: number = 0
 
 const AUTO_NEXT_DELAY_MS = 0
@@ -714,8 +715,9 @@ const playSong = async (
   }
   markPlaybackTiming('after-debounce')
 
+  const failedUrls = new Set<string>()
+  let urlToPlay = ''
   try {
-    isLoadingSong.value = true
     // 清理之前的监听器
     if (Audio.value.audio) {
       if (currentPlaybackErrorHandler) {
@@ -760,8 +762,6 @@ const playSong = async (
     setCurrentTime(0)
     // 注意：SMTC 的 updateMetadata 会在音频准备好后再调用，避免切换时空隙
 
-    let urlToPlay = ''
-    const failedUrls = new Set<string>()
     // 检查预加载缓存（内存，来自 prefetchNextTrack）
     const _cacheKey = `${song.source}:${song.songmid}`
     const _cachedUrl = _prefetchedUrlCache.get(_cacheKey)
@@ -1115,8 +1115,35 @@ const playSong = async (
     if (Audio.value.audio && !isNativePlaybackActive()) {
       Audio.value.audio.addEventListener('error', currentPlaybackErrorHandler, { once: true })
     }
+    if (pendingPlaybackErrorRequestId === requestId && currentPlaybackErrorHandler) {
+      pendingPlaybackErrorRequestId = 0
+      void currentPlaybackErrorHandler(new Event('error'))
+    }
   } catch (error: any) {
     if (currentPlayRequestId !== requestId) return
+    // mpv load/play 失败也必须进入同一条换源链；此前启动首首失败会直接落到暂停，
+    // 因为 URL 加载异常发生在 start() 之前，绕过了后面的 play().catch。
+    if (urlToPlay) failedUrls.add(urlToPlay)
+    try {
+      const fallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
+      if (currentPlayRequestId !== requestId) return
+      if (fallback && fallback.url !== urlToPlay) {
+        if (fallback.song.source !== song.source) {
+          replaceCurrentSongInList(song, fallback.song)
+          applyCurrentSongInfo(fallback.song)
+          song = fallback.song
+        }
+        await applyPlayableUrl(fallback.url)
+        if (currentPlayRequestId !== requestId) return
+        const fallbackStart = start()
+        if (fallbackStart && typeof (fallbackStart as any).then === 'function') {
+          await fallbackStart
+        }
+        userInfo.value.wasPlaying = true
+        mediaSessionController.updatePlaybackState('playing')
+        return
+      }
+    } catch {}
     flushPlaybackTiming('failed')
     tryAutoNext('播放歌曲失败')
     isLoadingSong.value = false
@@ -1664,6 +1691,9 @@ const initPlayback = async () => {
     if (!isNativePlaybackActive()) return
     if (typeof currentPlaybackErrorHandler === 'function') {
       void currentPlaybackErrorHandler(new Event('error'))
+    } else if (currentPlayRequestId > 0) {
+      // MPV 可以在 play() 完成前发出异步错误；暂存到当前请求，待其恢复处理器注册后补处理。
+      pendingPlaybackErrorRequestId = currentPlayRequestId
     }
   })
   controlAudio.subscribe('play', () => {
@@ -1718,71 +1748,13 @@ const initPlayback = async () => {
         Audio.value.currentTime = restoreTime
       }
 
-      // === 零等待启动：只依赖 SQLite 持久化 URL 缓存 ===
-      // 计算缓存 key 并查询，命中即零网络播放
-      const quality = _getQuality(lastPlayedSong)
-      const cachedUrlForStartup =
-        (typeof userInfo.value.cachedAudioUrl === 'string' &&
-        isPlayableUrl(userInfo.value.cachedAudioUrl) &&
-        !userInfo.value.cachedAudioUrl.includes('error')
-          ? userInfo.value.cachedAudioUrl
-          : null) || (await _getCachedUrl(lastPlayedSong, quality))
+      // 启动恢复复用正常点播链：缓存命中、当前源刷新、候选音源回退和失败后的自动下一首。
+      const shouldAutoStart = usePlaySetting().autoPlayOnLaunch || wasPlayingAtExit
+      await playSong(toRaw(lastPlayedSong), {
+        immediate: true,
+        shouldAutoStart: () => shouldAutoStart
+      })
 
-      const maybeAutoPlayOnLaunch = async () => {
-        // 对齐用户预期的"按上次关闭时的状态继续播放"：
-        // 上次退出时在播放 → 重启自动续播；上次是暂停 → 恢复进度但不开播。
-        // 设置项 autoPlayOnLaunch 作为"强制自动播放"（上次暂停也开播）。
-        if (!usePlaySetting().autoPlayOnLaunch && !wasPlayingAtExit) return
-        try {
-          const startResult = start()
-          if (startResult && typeof (startResult as any).then === 'function') {
-            await startResult
-          }
-          userInfo.value.wasPlaying = true
-          mediaSessionController.updatePlaybackState('playing')
-        } catch {}
-      }
-      const restoreStartupTime = () => {
-        if (restoreTime <= 0) return
-        setCurrentTime(restoreTime)
-        if (isNativePlaybackActive()) {
-          void nativeSeek(restoreTime).catch(() => {})
-        } else if (Audio.value.audio) {
-          try {
-            Audio.value.audio.currentTime = restoreTime
-          } catch {}
-        }
-      }
-      const refreshStartupUrl = async () => {
-        try {
-          const url = await getSongRealUrl(toRaw(lastPlayedSong))
-          if (url && typeof url === 'string' && !url.includes('error')) {
-            _setCachedUrl(lastPlayedSong, quality, url)
-            await applyPlayableUrl(url)
-            restoreStartupTime()
-            Audio.value.isPlay = false
-            mediaSessionController.updatePlaybackState('paused')
-            void maybeAutoPlayOnLaunch()
-          }
-        } catch {}
-      }
-      if (
-        cachedUrlForStartup &&
-        typeof cachedUrlForStartup === 'string' &&
-        !cachedUrlForStartup.includes('error')
-      ) {
-        // 启动恢复不要先 mpv_probe。探活会再拉起一份 mpv，第一首就会卡住；
-        // 直接 load，失败再换新链。点下一首快，就是因为走了这条。
-        try {
-          await applyPlayableUrl(cachedUrlForStartup)
-          restoreStartupTime()
-          void maybeAutoPlayOnLaunch()
-        } catch {
-          void refreshStartupUrl()
-        }
-      } else {
-        void refreshStartupUrl()
-      }
 
       // SMTC 元数据更新
       mediaSessionController.updateMetadata({

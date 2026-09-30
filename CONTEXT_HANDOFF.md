@@ -1,4 +1,11 @@
-## 2026-09-29 MPV 退出生命周期修复
+## 2026-09-30 启动自动播放与失败换源链修复
+
+- Electron 对照：`src/renderer/src/views/welcome/index.vue` 的 `onMounted` 顺序是先完成插件初始化和欢迎页等待，再 `initPlayback()`，最后切换 `/home`；Tauri `src/views/welcome/index.vue` 现先完成最短欢迎动画并 `router.replace('/home')`，再恢复播放，避免动画期间 MPV 出声后被路由打断。
+- Electron 播放入口：`src/renderer/src/components/Play/PlayMusic.vue` 与 `src/renderer/src/utils/audio/` 的点播流程；Tauri `initPlayback()` 现统一调用 `playSong()`，因此启动和手动点播共享 URL 缓存校验、当前源刷新、候选源回退及失败自动下一首。
+- Tauri 适配：`src/utils/audio/nativePlayback.ts` 不再在 `nativePlay()` 同步失败时提前发布一次错误，交由 `playSong()` 的 Promise 回退处理；`globaPlayList.ts` 对 MPV 早到错误做当前请求暂存，避免首首失败停在暂停。
+- 验证：`npm run build`、`node --check sidecar/index.mjs`、`node --check sidecar/services/musicSdk/index.mjs`、`git diff --check`；Graphify 更新仍需执行，若当前环境继续返回 `Operation not permitted` 则保留旧生成图并记录待刷新。
+
+
 
 用户确认：软件退出或替换后，MPV 进程仍可能继续播放。本轮定位并修复了正常退出路径。
 
