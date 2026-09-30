@@ -1,18 +1,20 @@
 name: Desktop Release
 
+# 三端共用一个发布仓库 maiga512/shuxiamusic-release：
+# - 安卓读“最新 Release”(releases/latest) 下载 app-release.apk
+# - 桌面读固定标签 desktop-latest 的 latest.json
+# 因此本工作流发布时必须 make_latest=false，绝不能抢走“最新 Release”指针，
+# 否则安卓的 AppUpdateManager 会拉到桌面 Release 而更新失败。
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, for example 2.6.0'
-        required: true
-        type: string
-      release_tag:
-        description: 'GitHub Release tag, for example desktop-v2.6.0'
-        required: true
+        description: '发布版本号，例如 1.0.0；留空则用 src-tauri/tauri.conf.json 里的版本'
+        required: false
         type: string
       release_notes:
-        description: 'Release notes'
+        description: '更新说明'
         required: false
         type: string
         default: '树夏Music 桌面版更新'
@@ -26,45 +28,46 @@ permissions:
 env:
   NODE_VERSION: '22'
   RELEASE_REPOSITORY: maiga512/shuxiamusic-release
+  # 更新器端点固定读这个标签，保持与 tauri.conf.json 一致
+  RELEASE_TAG: desktop-latest
 
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
-      notes: ${{ steps.version.outputs.notes }}
+      version: ${{ steps.meta.outputs.version }}
+      notes: ${{ steps.meta.outputs.notes }}
     steps:
-      - id: version
+      - uses: actions/checkout@v4
+      - id: meta
         shell: bash
         env:
           INPUT_VERSION: ${{ inputs.version }}
-          INPUT_TAG: ${{ inputs.release_tag }}
           INPUT_NOTES: ${{ inputs.release_notes }}
           GIT_TAG: ${{ github.ref_name }}
         run: |
           version="$INPUT_VERSION"
-          tag="$INPUT_TAG"
-          notes="$INPUT_NOTES"
           if [[ -z "$version" && "$GIT_TAG" == desktop-v* ]]; then
             version="${GIT_TAG#desktop-v}"
           fi
-          if [[ -z "$tag" && "$GIT_TAG" == desktop-v* ]]; then
-            tag="$GIT_TAG"
+          if [[ -z "$version" ]]; then
+            version=$(python3 -c "import json;print(json.load(open('src-tauri/tauri.conf.json'))['version'])")
           fi
-          if [[ -z "$version" || -z "$tag" ]]; then
-            echo '请提供 version 和 release_tag，或推送 desktop-v* 标签。' >&2
+          if [[ -z "$version" ]]; then
+            echo '无法确定版本号。' >&2
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "notes=${notes:-树夏Music 桌面版更新}" >> "$GITHUB_OUTPUT"
+          echo "notes=${INPUT_NOTES:-树夏Music 桌面版更新}" >> "$GITHUB_OUTPUT"
+          echo "解析到版本: $version"
 
   build-macos-arm64:
     needs: prepare
     runs-on: macos-14
     env:
-      TAURI_ENV_TARGET_TRIPLE: aarch64-apple-darwin
+      LABEL: aarch64
+      TRIPLE: aarch64-apple-darwin
+      VERSION: ${{ needs.prepare.outputs.version }}
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
@@ -77,40 +80,36 @@ jobs:
         with:
           targets: aarch64-apple-darwin
       - run: npm ci
-      - name: Set version
-        shell: bash
+      - name: 写入版本号
         run: |
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          version = '${{ needs.prepare.outputs.version }}'
-          path = Path('src-tauri/tauri.conf.json')
-          data = json.loads(path.read_text())
-          data['version'] = version
-          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          p = Path('src-tauri/tauri.conf.json')
+          d = json.loads(p.read_text())
+          d['version'] = os.environ['VERSION']
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
           PY
-      - name: Build Apple Silicon package
+      - name: 编译 Apple Silicon 包
         run: |
           npm run sidecar:prepare-runtime -- --platform darwin --arch arm64 --force
           npm run mpv:prepare-runtime -- --platform darwin --arch arm64
-          npm run tauri -- build --target aarch64-apple-darwin --bundles app,dmg
-      - name: Collect artifacts
-        shell: bash
-        run: |
-          mkdir -p release-assets
-          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/* release-assets/
-          cp src-tauri/target/aarch64-apple-darwin/release/bundle/macos/* release-assets/
-          find src-tauri/target/aarch64-apple-darwin/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+          npm run tauri -- build --target ${{ env.TRIPLE }} --bundles app,dmg
+      - name: 收集并重命名产物
+        run: bash scripts/ci/collect-macos.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-macos-arm64
           path: release-assets/*
+          if-no-files-found: error
 
   build-macos-x64:
     needs: prepare
     runs-on: macos-13
     env:
-      TAURI_ENV_TARGET_TRIPLE: x86_64-apple-darwin
+      LABEL: x64
+      TRIPLE: x86_64-apple-darwin
+      VERSION: ${{ needs.prepare.outputs.version }}
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
     steps:
@@ -123,42 +122,40 @@ jobs:
         with:
           targets: x86_64-apple-darwin
       - run: npm ci
-      - name: Set version
-        shell: bash
+      - name: 写入版本号
         run: |
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          version = '${{ needs.prepare.outputs.version }}'
-          path = Path('src-tauri/tauri.conf.json')
-          data = json.loads(path.read_text())
-          data['version'] = version
-          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          p = Path('src-tauri/tauri.conf.json')
+          d = json.loads(p.read_text())
+          d['version'] = os.environ['VERSION']
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
           PY
-      - name: Build Intel package
+      - name: 编译 Intel 包
         run: |
           npm run sidecar:prepare-runtime -- --platform darwin --arch x64 --force
           npm run mpv:prepare-runtime -- --platform darwin --arch x64
-          npm run tauri -- build --target x86_64-apple-darwin --bundles app,dmg
-      - name: Collect artifacts
-        shell: bash
-        run: |
-          mkdir -p release-assets
-          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/* release-assets/
-          cp src-tauri/target/x86_64-apple-darwin/release/bundle/macos/* release-assets/
-          find src-tauri/target/x86_64-apple-darwin/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+          npm run tauri -- build --target ${{ env.TRIPLE }} --bundles app,dmg
+      - name: 收集并重命名产物
+        run: bash scripts/ci/collect-macos.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-macos-x64
           path: release-assets/*
+          if-no-files-found: error
 
   build-windows-x64:
     needs: prepare
     runs-on: windows-latest
+    continue-on-error: true
     env:
-      TAURI_ENV_TARGET_TRIPLE: x86_64-pc-windows-msvc
+      LABEL: windows-x64
+      TRIPLE: x86_64-pc-windows-msvc
+      VERSION: ${{ needs.prepare.outputs.version }}
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      CERU_MPV_WINDOWS_URL: ${{ secrets.CERU_MPV_WINDOWS_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -169,36 +166,31 @@ jobs:
         with:
           targets: x86_64-pc-windows-msvc
       - run: npm ci
-      - name: Set version
+      - name: 写入版本号
         shell: bash
         run: |
           python - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
-          version = '${{ needs.prepare.outputs.version }}'
-          path = Path('src-tauri/tauri.conf.json')
-          data = json.loads(path.read_text())
-          data['version'] = version
-          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          p = Path('src-tauri/tauri.conf.json')
+          d = json.loads(p.read_text())
+          d['version'] = os.environ['VERSION']
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
           PY
-      - name: Build Windows installer
+      - name: 编译 Windows 安装包
         shell: bash
-        env:
-          CERU_MPV_PATH: ${{ secrets.CERU_MPV_PATH }}
         run: |
           npm run sidecar:prepare-runtime -- --platform win32 --arch x64 --force
-          npm run mpv:prepare-runtime
-          npm run tauri -- build --target x86_64-pc-windows-msvc --bundles nsis
-      - name: Collect artifacts
+          npm run mpv:prepare-runtime -- --platform win32 --arch x64
+          npm run tauri -- build --target ${{ env.TRIPLE }} --bundles nsis
+      - name: 收集并重命名产物
         shell: bash
-        run: |
-          mkdir -p release-assets
-          cp src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/* release-assets/
-          find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+        run: bash scripts/ci/collect-windows.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-windows-x64
           path: release-assets/*
+          if-no-files-found: error
 
   publish:
     needs:
@@ -206,23 +198,36 @@ jobs:
       - build-macos-arm64
       - build-macos-x64
       - build-windows-x64
+    if: ${{ always() && (needs.build-macos-arm64.result == 'success' || needs.build-macos-x64.result == 'success' || needs.build-windows-x64.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: desktop-*
-          path: release-assets
+          path: incoming
           merge-multiple: true
-      - name: List artifacts
-        run: find release-assets -maxdepth 2 -type f -print
-      - name: Create or update desktop release
+      - name: 汇总产物并生成 latest.json
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          NOTES: ${{ needs.prepare.outputs.notes }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          RELEASE_REPOSITORY: ${{ env.RELEASE_REPOSITORY }}
+        run: |
+          mkdir -p release-assets
+          find incoming -type f -exec cp {} release-assets/ \;
+          echo "已汇总产物:"; ls -la release-assets
+          python3 scripts/ci/make-latest-json.py
+          echo "生成的 latest.json:"; cat release-assets/latest.json
+      - name: 发布到 desktop-latest（make_latest=false，安卓不受影响）
         uses: softprops/action-gh-release@v2
         with:
           repository: ${{ env.RELEASE_REPOSITORY }}
-          tag_name: ${{ needs.prepare.outputs.tag }}
+          tag_name: ${{ env.RELEASE_TAG }}
           name: 树夏Music 桌面版 v${{ needs.prepare.outputs.version }}
           body: ${{ needs.prepare.outputs.notes }}
+          make_latest: false
           files: release-assets/**/*
           fail_on_unmatched_files: true
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}

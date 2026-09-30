@@ -174,7 +174,7 @@ const rewriteInstallNames = (file, bundledNames) => {
   adhocSign(file)
 }
 
-const main = async () => {
+const macMain = async () => {
   const source = await resolveMpvBinary()
   await removeTree(outRoot)
   await fs.mkdir(outBin, { recursive: true })
@@ -226,7 +226,99 @@ const main = async () => {
   console.log(`[prepare-mpv-runtime] ${version}`)
 }
 
-main().catch((error) => {
+// Windows：从 CERU_MPV_WINDOWS_URL 指向的压缩包(.zip/.7z)下载便携 mpv，
+// 把 mpv.exe 及其同目录 DLL 平铺进 packaging/mpv/bin。
+// Rust 侧 resolve_mpv_binary 会在资源目录里找 mpv/bin/mpv(.exe)。
+const windowsMain = async () => {
+  const url = String(process.env.CERU_MPV_WINDOWS_URL || '').trim()
+  const localPath = String(process.env.CERU_MPV_PATH || '').trim()
+
+  await removeTree(outRoot)
+  await fs.mkdir(outBin, { recursive: true })
+
+  // 允许直接给一个已解压的 mpv.exe 路径
+  if (localPath && (await exists(localPath))) {
+    const srcDir = path.dirname(localPath)
+    const entries = await fs.readdir(srcDir)
+    for (const name of entries) {
+      if (name.toLowerCase() === 'mpv.exe' || name.toLowerCase().endsWith('.dll')) {
+        await fs.copyFile(path.join(srcDir, name), path.join(outBin, name))
+      }
+    }
+  } else if (url) {
+    const tmpDir = path.join(outRoot, '.download')
+    await fs.mkdir(tmpDir, { recursive: true })
+    const isSevenZip = url.toLowerCase().endsWith('.7z')
+    const archive = path.join(tmpDir, isSevenZip ? 'mpv.7z' : 'mpv.zip')
+    console.log(`[prepare-mpv-runtime] 下载 Windows mpv: ${url}`)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`下载 mpv 失败: HTTP ${res.status}`)
+    const buf = Buffer.from(await res.arrayBuffer())
+    await fs.writeFile(archive, buf)
+    const extractDir = path.join(tmpDir, 'extract')
+    await fs.mkdir(extractDir, { recursive: true })
+    if (isSevenZip) {
+      execFileSync('7z', ['x', '-y', `-o${extractDir}`, archive], { stdio: 'inherit' })
+    } else {
+      // Windows runner 自带 bsdtar，可解 zip
+      execFileSync('tar', ['-xf', archive, '-C', extractDir], { stdio: 'inherit' })
+    }
+    // 递归找 mpv.exe，取它所在目录的所有 exe/dll
+    const findMpvDir = async (dir) => {
+      const entries = await fs.readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        const full = path.join(dir, entry.name)
+        if (entry.isDirectory()) {
+          const found = await findMpvDir(full)
+          if (found) return found
+        } else if (entry.name.toLowerCase() === 'mpv.exe') {
+          return dir
+        }
+      }
+      return ''
+    }
+    const mpvDir = await findMpvDir(extractDir)
+    if (!mpvDir) throw new Error('压缩包里没找到 mpv.exe')
+    const files = await fs.readdir(mpvDir)
+    for (const name of files) {
+      const lower = name.toLowerCase()
+      if (lower === 'mpv.exe' || lower.endsWith('.dll')) {
+        await fs.copyFile(path.join(mpvDir, name), path.join(outBin, name))
+      }
+    }
+    await removeTree(tmpDir)
+  } else {
+    throw new Error(
+      'Windows 需要通过 GitHub Secret CERU_MPV_WINDOWS_URL 提供便携 mpv 压缩包(.zip/.7z)，或本地设 CERU_MPV_PATH 指向 mpv.exe。'
+    )
+  }
+
+  const destBinary = path.join(outBin, 'mpv.exe')
+  if (!(await exists(destBinary))) {
+    throw new Error('复制后仍未找到 mpv.exe。')
+  }
+  const dllCount = (await fs.readdir(outBin)).filter((n) => n.toLowerCase().endsWith('.dll')).length
+  await fs.writeFile(
+    path.join(outRoot, 'manifest.json'),
+    JSON.stringify(
+      {
+        source: url || localPath,
+        platform: 'win32',
+        binary: 'bin/mpv.exe',
+        dllCount,
+        bundledAt: new Date().toISOString()
+      },
+      null,
+      2
+    )
+  )
+  console.log(`[prepare-mpv-runtime] ${destBinary}`)
+  console.log(`[prepare-mpv-runtime] ${dllCount} 个 DLL -> ${outBin}`)
+}
+
+const run = platform === 'win32' ? windowsMain : macMain
+
+run().catch((error) => {
   console.error('[prepare-mpv-runtime]', error instanceof Error ? error.message : error)
   process.exit(1)
 })

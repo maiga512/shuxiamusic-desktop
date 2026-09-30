@@ -79,6 +79,17 @@ graph_stats_source: graphify-out/GRAPH_REPORT.md
 - 修复启动桥接的非必要封面代理预热：`createTauriBridge()` 不再在挂载前立即发起 `cover_proxy_base` IPC，而是放到首帧后的定时任务；同时 `main.ts` 对桥接初始化增加异常隔离，避免单个 Tauri 初始化异常阻断后续 Vue 启动代码。
 - `npm run build` 已通过；Graphify 更新仍因当前环境 `Operation not permitted` 未完成，生成图文件未伪造修改。
 
+## 2026-09-30 桌面三端更新流水线重写
+
+- 重写 `.github/workflows/desktop-release.yml`：产物统一发布到固定标签 `desktop-latest`，与 `tauri.conf.json` 更新器端点 `releases/download/desktop-latest/latest.json` 对齐。
+- 关键约束：发布 Release 时 `make_latest: false`。安卓 `AppUpdateManager.kt` 读取 `api.github.com/repos/maiga512/shuxiamusic-release/releases/latest` 下载 `app-release.apk`，桌面 Release 一旦成为“Latest”会导致安卓拉到错误包；固定标签 + 非最新指针让三端共用一个发布仓库且互不干扰。
+- 新增 `scripts/ci/collect-macos.sh`、`scripts/ci/collect-windows.sh`、`scripts/ci/make-latest-json.py`：把各平台更新器产物改成 ASCII 唯一名（避免 arm64/x64 的 `.app.tar.gz` 同名冲突），并按实际产出的平台动态生成 `latest.json`（键：`darwin-aarch64` / `darwin-x86_64` / `windows-x86_64`）。
+- Windows 作业设 `continue-on-error: true`，`publish` 用 `if: always()` 且只要有一个平台成功即发布，Mac 更新不会被 Windows 阻塞。
+- `scripts/prepare-mpv-runtime.mjs` 增加 Windows 分支：从 `CERU_MPV_WINDOWS_URL`（.zip/.7z）下载便携 mpv，或用本地 `CERU_MPV_PATH`，把 `mpv.exe` 及同目录 DLL 平铺进 `packaging/mpv/bin`。
+- 需要的仓库 Secrets：`TAURI_SIGNING_PRIVATE_KEY`（对应 `ceru-updater.key`，公钥已与 `tauri.conf.json` pubkey 核对一致）、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`、`RELEASE_REPO_TOKEN`、Windows 另需 `CERU_MPV_WINDOWS_URL`。
+- 安全：`src-tauri/ceru-updater.key` 私钥已加入 `.gitignore` 且不在 git 历史中；仅公钥 `ceru-updater.key.pub` 入库。
+- 版本号统一为 `1.0.0`（`package.json` + `tauri.conf.json`）。
+
 ## 2026-09-29 GitHub desktop release workflow
 
 - Added `.github/workflows/desktop-release.yml` to build Apple Silicon, Intel Mac, and Windows x64 packages on GitHub-hosted runners, without requiring a local Windows computer.
