@@ -265,6 +265,7 @@ treating raw edge counts as exact.
 
 ## Maintenance Log
 
+| 2026-09-30 | 桌面自动更新签名密钥轮换：原 `ceru-updater.key` 密码遗失无法签名，重新生成新 minisign 密钥对（无历史兼容包袱），更新 `tauri.conf.json` 的 `pubkey` 与 `ceru-updater.key.pub`，并写入发布仓 secrets（`TAURI_SIGNING_PRIVATE_KEY` / `_PASSWORD`）。同步配置 `CERU_MPV_WINDOWS_URL`。旧钥匙备份为 `*.old`（gitignore）。 | 仅动发布/签名边界，不涉架构；Graphify 无需刷新。已装 0.1.0 因换钥无法自动升级，需手动装一次 1.0.0，之后自动更新恢复。 |
 | 2026-09-22 | Dock/Now Playing 封面链路统一：媒体元数据支持 `coverImgUrl`/`cover`/专辑封面字段，异步复用 `resolveSongCover` 补全并回写当前歌曲，切歌和跨淡入口传入完整歌曲对象；不改变播放时序。 | Graphify 增量刷新；已重新编译并替换 `/Applications/澜音.app`。 |
 | 2026-09-22 | 最小化内存：热层封面钉住、冷层只丢解码图、隐藏时 KeepAlive 只留当前页、列表小封面解码 96。不卸整页、不改播放。 | Graphify 增量刷新。 |
 | 2026-09-22 | 底栏进度改 compositor 匀速：不提高 Pinia/mpv 时钟；时间文字仍按秒；交叉淡化远端时不再每秒空写标记。 | Graphify AST 增量：7124 nodes / 15982 edges / 332 communities。 |

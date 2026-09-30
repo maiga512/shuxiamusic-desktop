@@ -19,6 +19,9 @@ sidecar/node_modules/
 # 签名私钥 / 密钥，绝不入库
 src-tauri/ceru-updater.key
 *.key
+*.key.old
+*.key.pub.old
+*.key.password
 *.pem
 podcast-auth.json
 
