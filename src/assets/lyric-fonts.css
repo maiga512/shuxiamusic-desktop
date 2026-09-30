@@ -1,0 +1,11 @@
+@font-face {
+  font-family: 'lyricfont';
+  src: url('./lyricfont.ttf');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PingFangSC-Semibold';
+  src: url('./PingFangSC-Semibold.woff2') format('woff2');
+  font-display: swap;
+}

@@ -1,0 +1,50 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+      - 'sidecar/**'
+      - 'packaging/**'
+      - 'scripts/prepare-sidecar-runtime.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/windows-build.yml'
+
+jobs:
+  windows-nsis:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Prepare portable sidecar runtime
+        run: npm run sidecar:prepare-runtime -- --platform win32 --arch x64 --force
+
+      - name: Build Windows NSIS
+        run: npm run tauri -- build --target x86_64-pc-windows-msvc --bundles nsis
+
+      - name: Upload NSIS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ceru-music-windows-nsis
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*
+          if-no-files-found: error

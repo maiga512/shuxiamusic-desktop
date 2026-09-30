@@ -1,0 +1,13 @@
+pub mod cover_proxy;
+pub mod dlna;
+pub mod download_engine;
+pub mod local_music;
+pub mod lyric_window;
+pub mod media_stream_proxy;
+pub mod misc;
+pub mod mpv_player;
+pub mod music_search;
+pub mod native_audio;
+pub mod node_sidecar;
+pub mod plugin;
+pub mod songlist;

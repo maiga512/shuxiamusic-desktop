@@ -1,0 +1,228 @@
+name: Desktop Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example 2.6.0'
+        required: true
+        type: string
+      release_tag:
+        description: 'GitHub Release tag, for example desktop-v2.6.0'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release notes'
+        required: false
+        type: string
+        default: '树夏Music 桌面版更新'
+  push:
+    tags:
+      - 'desktop-v*'
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '22'
+  RELEASE_REPOSITORY: maiga512/shuxiamusic-release
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      notes: ${{ steps.version.outputs.notes }}
+    steps:
+      - id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          INPUT_NOTES: ${{ inputs.release_notes }}
+          GIT_TAG: ${{ github.ref_name }}
+        run: |
+          version="$INPUT_VERSION"
+          tag="$INPUT_TAG"
+          notes="$INPUT_NOTES"
+          if [[ -z "$version" && "$GIT_TAG" == desktop-v* ]]; then
+            version="${GIT_TAG#desktop-v}"
+          fi
+          if [[ -z "$tag" && "$GIT_TAG" == desktop-v* ]]; then
+            tag="$GIT_TAG"
+          fi
+          if [[ -z "$version" || -z "$tag" ]]; then
+            echo '请提供 version 和 release_tag，或推送 desktop-v* 标签。' >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "notes=${notes:-树夏Music 桌面版更新}" >> "$GITHUB_OUTPUT"
+
+  build-macos-arm64:
+    needs: prepare
+    runs-on: macos-14
+    env:
+      TAURI_ENV_TARGET_TRIPLE: aarch64-apple-darwin
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - run: npm ci
+      - name: Set version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          version = '${{ needs.prepare.outputs.version }}'
+          path = Path('src-tauri/tauri.conf.json')
+          data = json.loads(path.read_text())
+          data['version'] = version
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - name: Build Apple Silicon package
+        run: |
+          npm run sidecar:prepare-runtime -- --platform darwin --arch arm64 --force
+          npm run mpv:prepare-runtime -- --platform darwin --arch arm64
+          npm run tauri -- build --target aarch64-apple-darwin --bundles app,dmg
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/* release-assets/
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/macos/* release-assets/
+          find src-tauri/target/aarch64-apple-darwin/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-arm64
+          path: release-assets/*
+
+  build-macos-x64:
+    needs: prepare
+    runs-on: macos-13
+    env:
+      TAURI_ENV_TARGET_TRIPLE: x86_64-apple-darwin
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+      - run: npm ci
+      - name: Set version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          version = '${{ needs.prepare.outputs.version }}'
+          path = Path('src-tauri/tauri.conf.json')
+          data = json.loads(path.read_text())
+          data['version'] = version
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - name: Build Intel package
+        run: |
+          npm run sidecar:prepare-runtime -- --platform darwin --arch x64 --force
+          npm run mpv:prepare-runtime -- --platform darwin --arch x64
+          npm run tauri -- build --target x86_64-apple-darwin --bundles app,dmg
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/* release-assets/
+          cp src-tauri/target/x86_64-apple-darwin/release/bundle/macos/* release-assets/
+          find src-tauri/target/x86_64-apple-darwin/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-macos-x64
+          path: release-assets/*
+
+  build-windows-x64:
+    needs: prepare
+    runs-on: windows-latest
+    env:
+      TAURI_ENV_TARGET_TRIPLE: x86_64-pc-windows-msvc
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - run: npm ci
+      - name: Set version
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          version = '${{ needs.prepare.outputs.version }}'
+          path = Path('src-tauri/tauri.conf.json')
+          data = json.loads(path.read_text())
+          data['version'] = version
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+          PY
+      - name: Build Windows installer
+        shell: bash
+        env:
+          CERU_MPV_PATH: ${{ secrets.CERU_MPV_PATH }}
+        run: |
+          npm run sidecar:prepare-runtime -- --platform win32 --arch x64 --force
+          npm run mpv:prepare-runtime
+          npm run tauri -- build --target x86_64-pc-windows-msvc --bundles nsis
+      - name: Collect artifacts
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/* release-assets/
+          find src-tauri/target/x86_64-pc-windows-msvc/release/bundle -name '*.sig' -exec cp {} release-assets/ \; || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-x64
+          path: release-assets/*
+
+  publish:
+    needs:
+      - prepare
+      - build-macos-arm64
+      - build-macos-x64
+      - build-windows-x64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-*
+          path: release-assets
+          merge-multiple: true
+      - name: List artifacts
+        run: find release-assets -maxdepth 2 -type f -print
+      - name: Create or update desktop release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.RELEASE_REPOSITORY }}
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: 树夏Music 桌面版 v${{ needs.prepare.outputs.version }}
+          body: ${{ needs.prepare.outputs.notes }}
+          files: release-assets/**/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN || github.token }}
