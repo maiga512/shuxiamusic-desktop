@@ -260,8 +260,17 @@ const windowsMain = async () => {
     if (isSevenZip) {
       execFileSync('7z', ['x', '-y', `-o${extractDir}`, archive], { stdio: 'inherit' })
     } else {
-      // Windows runner 自带 bsdtar，可解 zip
-      execFileSync('tar', ['-xf', archive, '-C', extractDir], { stdio: 'inherit' })
+      // Windows: 用 PowerShell 解 zip；Git bash 的 GNU tar 会把 `C:` 当远程主机而失败。
+      execFileSync(
+        'powershell',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `Expand-Archive -Path '${archive}' -DestinationPath '${extractDir}' -Force`
+        ],
+        { stdio: 'inherit' }
+      )
     }
     // 递归找 mpv.exe，取它所在目录的所有 exe/dll
     const findMpvDir = async (dir) => {

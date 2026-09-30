@@ -150,8 +150,15 @@ const extractArchive = async ({ archivePath, platform, extractRoot }) => {
   await fs.rm(extractRoot, { recursive: true, force: true })
   await ensureDir(extractRoot)
   if (platform === 'win32') {
-    // Prefer bsdtar/tar which exist on modern macOS/Windows/Linux.
-    run('tar', ['-xf', archivePath, '-C', extractRoot])
+    // Windows: 用 PowerShell Expand-Archive 解 .zip。
+    // 不能直接 `tar -xf C:\...`：Git bash 里的 GNU tar 会把 `C:` 当成远程主机
+    // （报 "Cannot connect to C: resolve failed"）。PowerShell 对 Windows 路径最稳。
+    run('powershell', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-Command',
+      `Expand-Archive -Path '${archivePath}' -DestinationPath '${extractRoot}' -Force`
+    ])
     return
   }
   run('tar', ['-xzf', archivePath, '-C', extractRoot])
