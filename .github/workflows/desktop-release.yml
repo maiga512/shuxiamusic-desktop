@@ -86,10 +86,15 @@ jobs:
           import json, os
           from pathlib import Path
           p = Path('src-tauri/tauri.conf.json')
-          d = json.loads(p.read_text())
+          d = json.loads(p.read_text(encoding='utf-8'))
           d['version'] = os.environ['VERSION']
-          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
+      - name: 安装 mpv（打包内置运行时用）
+        run: |
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          export HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew install mpv
       - name: 编译 Apple Silicon 包
         run: |
           npm run sidecar:prepare-runtime -- --platform darwin --arch arm64 --force
@@ -128,10 +133,15 @@ jobs:
           import json, os
           from pathlib import Path
           p = Path('src-tauri/tauri.conf.json')
-          d = json.loads(p.read_text())
+          d = json.loads(p.read_text(encoding='utf-8'))
           d['version'] = os.environ['VERSION']
-          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
+      - name: 安装 mpv（打包内置运行时用）
+        run: |
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          export HOMEBREW_NO_INSTALL_CLEANUP=1
+          brew install mpv
       - name: 编译 Intel 包
         run: |
           npm run sidecar:prepare-runtime -- --platform darwin --arch x64 --force
@@ -173,9 +183,9 @@ jobs:
           import json, os
           from pathlib import Path
           p = Path('src-tauri/tauri.conf.json')
-          d = json.loads(p.read_text())
+          d = json.loads(p.read_text(encoding='utf-8'))
           d['version'] = os.environ['VERSION']
-          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
       - name: 编译 Windows 安装包
         shell: bash
