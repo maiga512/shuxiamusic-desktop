@@ -374,11 +374,6 @@ mod macos {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
-fn create_mpmedia_artwork(_url_str: &str) -> Option<*mut AnyObject> {
-    None
-}
-
 #[cfg(target_os = "macos")]
 pub fn init_now_playing(app: &AppHandle) {
     macos::init(app);

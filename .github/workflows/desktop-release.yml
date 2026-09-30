@@ -110,7 +110,8 @@ jobs:
 
   build-macos-x64:
     needs: prepare
-    runs-on: macos-13
+    # macos-13 镜像已退役，任务会永远卡在 queued；Intel 用 -large 标签的运行器。
+    runs-on: macos-latest-large
     env:
       LABEL: x64
       TRIPLE: x86_64-apple-darwin
@@ -230,6 +231,26 @@ jobs:
           echo "已汇总产物:"; ls -la release-assets
           python3 scripts/ci/make-latest-json.py
           echo "生成的 latest.json:"; cat release-assets/latest.json
+      - name: 校验发布令牌对目标仓库的权限（只打印身份和权限等级，不打印令牌）
+        shell: bash
+        env:
+          REL_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+        run: |
+          if [ -z "${REL_TOKEN:-}" ]; then
+            echo "::error::RELEASE_REPO_TOKEN 未配置"
+            exit 1
+          fi
+          login=$(curl -sS -H "Authorization: Bearer $REL_TOKEN" https://api.github.com/user \
+            | python3 -c 'import json,sys;print(json.load(sys.stdin).get("login","unknown"))')
+          perm=$(curl -sS -H "Authorization: Bearer $REL_TOKEN" \
+            "https://api.github.com/repos/${RELEASE_REPOSITORY}/collaborators/${login}/permission" \
+            | python3 -c 'import json,sys;print(json.load(sys.stdin).get("permission","none"))')
+          echo "令牌身份: $login"
+          echo "对 $RELEASE_REPOSITORY 的权限: $perm"
+          if [ "$perm" != "admin" ] && [ "$perm" != "write" ]; then
+            echo "::error::RELEASE_REPO_TOKEN 对 $RELEASE_REPOSITORY 没有写权限（当前: $perm）。请换成对该仓库有 contents:write 的传统 PAT。"
+            exit 1
+          fi
       - name: 发布到 desktop-latest（make_latest=false，安卓不受影响）
         uses: softprops/action-gh-release@v2
         with:
