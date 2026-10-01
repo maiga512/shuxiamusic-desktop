@@ -224,6 +224,15 @@ async function bootThenEnter() {
   await new Promise<void>((resolve) => window.setTimeout(resolve, wait))
   if (entered) return
   entered = true
+  
+  // 启动淡出动画
+  const root = document.querySelector('.splash-root')
+  if (root) {
+    root.classList.add('fade-out')
+    // 等待淡出动画完成（600ms）
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 600))
+  }
+  
   await router.replace('/home')
   // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
   // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
@@ -255,6 +264,13 @@ onUnmounted(() => {
   background: #000000;
   overflow: hidden;
   z-index: 10;
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+}
+
+.splash-root.fade-out {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .splash-canvas {

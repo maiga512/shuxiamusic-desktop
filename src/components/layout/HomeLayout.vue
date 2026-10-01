@@ -355,10 +355,6 @@ function checkGuide() {
     <t-aside class="sidebar" width="15rem" @mousedown="startWindowDrag">
       <div class="sidebar-content">
         <div class="logo-section" data-tauri-drag-region @mousedown="startWindowDrag">
-          <div class="logo-icon">
-            <i class="iconfont icon-music"></i>
-            <!-- <img src="../../assets/logo.png" width="100%"></img> -->
-          </div>
           <p class="app-title">
             <span style="font-weight: 800">树夏Music</span>
           </p>
@@ -567,23 +563,7 @@ function checkGuide() {
       -webkit-app-region: drag;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
       margin-bottom: 0.9rem;
-
-      .logo-icon {
-        width: 2rem;
-        height: 2rem;
-        background-color: var(--td-brand-color-4);
-        border-radius: 0.625rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        .iconfont {
-          font-size: 1.25rem;
-          color: #fff;
-        }
-      }
 
       .app-title {
         font-weight: 500;

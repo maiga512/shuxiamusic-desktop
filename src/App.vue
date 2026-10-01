@@ -10,8 +10,9 @@
 
     <router-view v-slot="{ Component }">
       <Transition
-        :enter-active-class="`animate__animated animate__fadeIn  pagesApp`"
+        :enter-active-class="`animate__animated animate__fadeIn animate__slow pagesApp`"
         :leave-active-class="`animate__animated animate__fadeOut pagesApp`"
+        mode="out-in"
       >
         <component :is="Component" />
       </Transition>
