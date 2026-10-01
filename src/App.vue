@@ -75,15 +75,18 @@ import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useSettingsStore } from '@renderer/store/Settings'
+import { useControlAudioStore } from '@renderer/store/ControlAudio'
 import shareAPI from '@renderer/api/share'
 import { startNasSyncPoller, stopNasSyncPoller } from '@renderer/services/nasSyncPoller'
 import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'
 import { initAppWindowState, destroyAppWindowState, isAppWindowVisible } from './utils/appWindowState'
 import { startWindowDrag } from './utils/windowDrag'
+import { startMemoryMonitoring, stopMemoryMonitoring, updatePlaybackState } from './utils/memoryManager'
 
 const route = useRoute()
 const router = useRouter()
 const settingsStore = useSettingsStore()
+const controlAudioStore = useControlAudioStore()
 const setDesktopLyricRootState = (enabled: boolean) => {
   document.documentElement.classList.toggle('desktop-lyric-window', enabled)
 }
@@ -293,6 +296,19 @@ onMounted(async () => {
   // Start sync before awaiting optional startup services. Some share/plugin IPC calls can
   // wait for the sidecar; delaying the poller behind them loses realtime events at launch.
   startNasSyncPoller()
+  
+  // 启动内存监控（状态感知）
+  startMemoryMonitoring()
+  
+  // 监听播放状态变化并更新内存管理器
+  watch(
+    () => controlAudioStore.Audio.isPlay,
+    (isPlaying) => {
+      updatePlaybackState(isPlaying ? 'playing' : 'paused')
+    },
+    { immediate: true }
+  )
+  
   // 启动时把窗口标题置为软件名(若 PlayMusic 后续挂载且有歌,会立刻覆盖为"歌名 - 歌手")
   try {
     ;(window as any).api?.app?.setTitle?.('树夏Music')
@@ -351,6 +367,9 @@ onBeforeUnmount(() => {
   unsubCloseRequest?.()
   unsubCloseRequest = null
 
+  // 停止内存监控
+  stopMemoryMonitoring()
+  
   // 销毁闲置休眠监听
   stopNasSyncPoller()
   destroyIdleSleep()

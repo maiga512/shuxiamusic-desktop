@@ -108,53 +108,56 @@ jobs:
           path: release-assets/*
           if-no-files-found: error
 
-  build-macos-x64:
-    needs: prepare
-    # macos-13 镜像已退役，任务会永远卡在 queued；Intel 用 -large 标签的运行器。
-    runs-on: macos-latest-large
-    env:
-      LABEL: x64
-      TRIPLE: x86_64-apple-darwin
-      VERSION: ${{ needs.prepare.outputs.version }}
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-apple-darwin
-      - run: npm ci
-      - name: 写入版本号
-        run: |
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          p = Path('src-tauri/tauri.conf.json')
-          d = json.loads(p.read_text(encoding='utf-8'))
-          d['version'] = os.environ['VERSION']
-          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
-      - name: 安装 mpv（打包内置运行时用）
-        run: |
-          export HOMEBREW_NO_AUTO_UPDATE=1
-          export HOMEBREW_NO_INSTALL_CLEANUP=1
-          brew install mpv
-      - name: 编译 Intel 包
-        run: |
-          npm run sidecar:prepare-runtime -- --platform darwin --arch x64 --force
-          npm run mpv:prepare-runtime -- --platform darwin --arch x64
-          npm run tauri -- build --target ${{ env.TRIPLE }} --bundles app,dmg
-      - name: 收集并重命名产物
-        run: bash scripts/ci/collect-macos.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: desktop-macos-x64
-          path: release-assets/*
-          if-no-files-found: error
+  # Mac x64 暂时禁用：macos-latest-large 需要付费配额，当前账户配额不足
+  # 等配额问题解决后可以重新启用
+  # build-macos-x64:
+  #   needs: prepare
+  #   # macos-13 镜像已退役，任务会永远卡在 queued；Intel 用 -large 标签的运行器。
+  #   runs-on: macos-latest-large
+  #   env:
+  #     LABEL: x64
+  #     TRIPLE: x86_64-apple-darwin
+  #     VERSION: ${{ needs.prepare.outputs.version }}
+  #     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  #     TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: npm
+  #     - uses: dtolnay/rust-toolchain@stable
+  #       with:
+  #         targets: x86_64-apple-darwin
+  #     - run: npm ci
+  #     - name: 写入版本号
+  #       run: |
+  #         python3 - <<'PY'
+  #         import json, os
+  #         from pathlib import Path
+  #         p = Path('src-tauri/tauri.conf.json')
+  #         d = json.loads(p.read_text(encoding='utf-8'))
+  #         d['version'] = os.environ['VERSION']
+  #         p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+  #         PY
+  #     - name: 安装 mpv（打包内置运行时用）
+  #       run: |
+  #         export HOMEBREW_NO_AUTO_UPDATE=1
+  #         export HOMEBREW_NO_INSTALL_CLEANUP=1
+  #         brew install mpv
+  #     - name: 编译 Intel 包
+  #       run: |
+  #         npm run sidecar:prepare-runtime -- --platform darwin --arch x64 --force
+  #         npm run mpv:prepare-runtime -- --platform darwin --arch x64
+  #         npm run tauri -- build --target ${{ env.TRIPLE }} --bundles app,dmg
+  #     - name: 收集并重命名产物
+  #       run: bash scripts/ci/collect-macos.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: desktop-macos-x64
+  #         path: release-assets/*
+  #         if-no-files-found: error
+
 
   build-windows-x64:
     needs: prepare

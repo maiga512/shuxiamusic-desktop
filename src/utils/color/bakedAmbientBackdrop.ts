@@ -14,8 +14,9 @@ export type AmbientBackdropColors = {
   base?: AmbientRgb | null
 }
 
-const CACHE_MAX_SIDE = 480
+const CACHE_MAX_SIDE = 320  // 从 480 降低到 320，减少图片尺寸
 const bakeCache = new Map<string, string>()
+const BAKE_CACHE_MAX = 3  // 只保留最近 3 个背景缓存
 
 const clampByte = (value: number) => Math.max(0, Math.min(255, Math.round(value)))
 
@@ -290,9 +291,10 @@ export function bakeAmbientBackdropDataUrl(
   ])
   ctx.restore()
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85)  // 降低质量从 0.92 到 0.85
   bakeCache.set(key, dataUrl)
-  if (bakeCache.size > 4) {
+  // 严格限制缓存大小
+  while (bakeCache.size > BAKE_CACHE_MAX) {
     const oldest = bakeCache.keys().next().value
     if (oldest) bakeCache.delete(oldest)
   }

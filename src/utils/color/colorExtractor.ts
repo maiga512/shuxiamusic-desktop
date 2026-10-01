@@ -16,7 +16,16 @@ export interface ImageAnalysisResult {
 }
 
 const analysisCache = new Map<string, ImageAnalysisResult>()
-const MAX_ANALYSIS_CACHE = 48
+const MAX_ANALYSIS_CACHE = 20  // 从 48 降低到 20，减少内存占用
+
+// 监听激进内存清理事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory:aggressive-cleanup', () => {
+    const count = analysisCache.size
+    analysisCache.clear()
+    console.log(`[colorExtractor] 激进清理: 清空 ${count} 个图片分析缓存`)
+  })
+}
 
 function cacheAnalysis(imageSrc: string, result: ImageAnalysisResult) {
   if (!imageSrc) return result

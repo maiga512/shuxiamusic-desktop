@@ -78,7 +78,7 @@ let _unsubscribeDisabled: (() => void) | null = null
 const _prefetchedUrlCache = new Map<string, string>()
 // 预取 URL 缓存正常靠"消费即删"回收，但极端情况下（大量跳歌、预取从未被消费）
 // 可能只增不减；加一个上限做 FIFO 淘汰，防止长会话里 blob/URL 键值常驻。
-const _PREFETCH_URL_CACHE_MAX = 30
+const _PREFETCH_URL_CACHE_MAX = 15
 
 type PlaybackTimingSample = {
   songId: string
@@ -148,7 +148,19 @@ function _isSourceHardBlocked(source: string): boolean {
 // ==================== 候选搜索去重缓存 ====================
 // key: `${source}_${keyword}`，避免同一首歌反复请求 SDK search
 const _otherSourceCache = new Map<string, SongList[]>()
-const _OTHER_CACHE_MAX = 20
+const _OTHER_CACHE_MAX = 10  // 从 20 降低到 10
+
+// 监听激进内存清理事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory:aggressive-cleanup', () => {
+    const prefetchCount = _prefetchedUrlCache.size
+    const otherCount = _otherSourceCache.size
+    _prefetchedUrlCache.clear()
+    _otherSourceCache.clear()
+    console.log(`[globaPlayList] 激进清理: 清空 ${prefetchCount} 个预取URL, ${otherCount} 个其他来源缓存`)
+  })
+}
+
 function _getOtherSourceCacheKey(song: SongList): string {
   return `strict-v2_${song.source}_${song.name}_${song.singer}`
 }

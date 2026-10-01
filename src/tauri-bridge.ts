@@ -130,6 +130,14 @@ const appWindow = getCurrentWindow()
 let ceruIpcStatsFlusherStarted = false
 function ensureCeruIpcStatsFlusher() {
   if (ceruIpcStatsFlusherStarted) return
+  
+  // 【CPU 优化】只在开发模式或明确启用时运行
+  const enableStats = import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('enable-ipc-stats') === 'true')
+  if (!enableStats) {
+    console.log('[tauri-bridge] IPC 统计已禁用（生产模式），减少 CPU 占用')
+    return
+  }
+  
   ceruIpcStatsFlusherStarted = true
   window.setInterval(() => {
     try {
@@ -403,7 +411,18 @@ const FEINIU_AUTO_IMPORT_VERSION = 2
 const FEINIU_API_PATH = '/music/api/v1/'
 const coverProxyUrlCache = new Map<string, string>()
 const coverProxyUrlPending = new Map<string, Promise<string>>()
-const COVER_PROXY_URL_CACHE_MAX = 128
+const COVER_PROXY_URL_CACHE_MAX = 50  // 从 128 降低到 50
+
+// 监听激进内存清理事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory:aggressive-cleanup', () => {
+    const coverCount = coverProxyUrlCache.size
+    const pendingCount = coverProxyUrlPending.size
+    coverProxyUrlCache.clear()
+    coverProxyUrlPending.clear()
+    console.log(`[tauri-bridge] 激进清理: 清空 ${coverCount} 个封面代理缓存, ${pendingCount} 个待处理`)
+  })
+}
 
 const rememberCoverProxyUrl = (key: string, value: string) => {
   if (coverProxyUrlCache.has(key)) coverProxyUrlCache.delete(key)
@@ -3647,11 +3666,20 @@ function normalizeMusicCacheInfo(input: any) {
 }
 
 const downloadTaskCache = new Map<string, any>()
-const DOWNLOAD_TASK_CACHE_MAX = 200
+const DOWNLOAD_TASK_CACHE_MAX = 80  // 从 200 降低到 80
+
+// 监听激进内存清理事件（下载任务缓存）
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory:aggressive-cleanup', () => {
+    const count = downloadTaskCache.size
+    downloadTaskCache.clear()
+    console.log(`[tauri-bridge] 激进清理: 清空 ${count} 个下载任务缓存`)
+  })
+}
 
 const rememberDownloadTask = (id: string, task: any) => {
   if (downloadTaskCache.has(id)) downloadTaskCache.delete(id)
-  rememberDownloadTask(id, task)
+  downloadTaskCache.set(id, task)
   while (downloadTaskCache.size > DOWNLOAD_TASK_CACHE_MAX) {
     const oldest = downloadTaskCache.keys().next().value
     if (oldest === undefined) break

@@ -21,8 +21,14 @@ const videoRef = ref<HTMLVideoElement | null>(null)
 const syncVideoPlayback = () => {
   const video = videoRef.value
   if (!video) return
+  
+  // 窗口不可见、背景未启用、或非视频类型时，暂停并清空缓冲区
   if (!isEnabled.value || bgType.value !== 'video' || !isAppWindowVisible()) {
     video.pause()
+    // 清空已解码的帧缓冲区，释放内存
+    if (video.readyState > 0) {
+      video.currentTime = 0
+    }
     return
   }
   video.play().catch((e) => console.error('Video auto-play failed:', e))

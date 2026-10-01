@@ -5,10 +5,19 @@ import DefaultCover from '@renderer/assets/images/Default.jpg'
 import CoverImage from '@renderer/assets/images/cover.png'
 import { isPageIdle } from '@renderer/utils/idleSleep'
 import { isAppWindowActive, isAppWindowVisible } from '@renderer/utils/appWindowState'
+import { ControlAudioStore } from '@renderer/store/ControlAudio'
+import { usePlaySettingStore } from '@renderer/store/playSetting'
+import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
   coverImage: string
+  show?: boolean
 }>()
+
+const controlAudio = ControlAudioStore()
+const { Audio } = storeToRefs(controlAudio)
+const playSettingStore = usePlaySettingStore()
+const { bgPlaying } = storeToRefs(playSettingStore)
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
@@ -324,6 +333,13 @@ let _lastRenderTime = 0
 function render(now: number) {
   if (!gl || !program) return
 
+  // 【CPU 优化】只在全屏打开 + 播放中 + 用户开启背景动画时才渲染
+  if (!props.show || !Audio.value.isPlay || !bgPlaying.value) {
+    animationFrameId = null
+    console.log('[ShaderBackground] 已停止渲染（全屏未开启、未播放或用户关闭背景动画）')
+    return
+  }
+
   if (!isAppWindowVisible() || isPageIdle()) {
     animationFrameId = null
     return
@@ -361,11 +377,21 @@ function render(now: number) {
 
 // 页面可见性变化或闲置结束时重启渲染
 const onShaderVisibilityChange = () => {
-  if (isAppWindowVisible() && !isPageIdle() && animationFrameId === null) {
+  // 只在全屏打开 + 播放中 + 用户开启背景动画 + 窗口可见时才重启
+  if (props.show && Audio.value.isPlay && bgPlaying.value && isAppWindowVisible() && !isPageIdle() && animationFrameId === null) {
     _lastRenderTime = 0
     startRenderLoop()
   }
 }
+
+// 监听播放状态、全屏状态、背景动画开关变化
+watch(() => [Audio.value.isPlay, props.show, bgPlaying.value], ([isPlaying, isShow, isBgEnabled]) => {
+  if (isPlaying && isShow && isBgEnabled && isAppWindowVisible() && !isPageIdle()) {
+    startRenderLoop()
+  } else {
+    stopRenderLoop()
+  }
+})
 
 // 开始渲染循环
 function startRenderLoop() {

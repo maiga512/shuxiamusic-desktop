@@ -668,9 +668,24 @@ onBeforeUnmount(async () => {
   window.removeEventListener('resize', debouncedCheckOverflow)
   document.removeEventListener('click', handleClickOutside)
 
+  // 清理所有定时器
   if (idleTimer) clearTimeout(idleTimer)
   if (animatingTimer) clearTimeout(animatingTimer)
   if (blockerTimer !== null) clearTimeout(blockerTimer)
+  if (bakeBackdropTimer !== null) {
+    clearTimeout(bakeBackdropTimer)
+    bakeBackdropTimer = null
+  }
+  if (clearInactiveBackdropTimer !== null) {
+    clearTimeout(clearInactiveBackdropTimer)
+    clearInactiveBackdropTimer = null
+  }
+
+  // 清理背景缓存
+  bgLayerA.value = ''
+  bgLayerB.value = ''
+  bakedBackdropKey.value = ''
+  clearAmbientBackdropCache()
 
   // 组件卸载时确保恢复系统息屏
   if (blockerActive.value) {
@@ -747,7 +762,7 @@ const scheduleClearInactiveBackdrop = () => {
 }
 
 const handleBackdropResize = () => {
-  if (!keepHeavyContent.value) return
+  if (!keepHeavyContent.value || !isAppWindowVisible()) return
   scheduleBakeCurrentBackdrop(80)
 }
 
@@ -812,6 +827,15 @@ const bakeCurrentBackdrop = () => {
 }
 
 const scheduleBakeCurrentBackdrop = (delay = 0) => {
+  // 窗口不可见时不烘焙背景，节省 CPU
+  if (!isAppWindowVisible()) {
+    if (bakeBackdropTimer !== null) {
+      clearTimeout(bakeBackdropTimer)
+      bakeBackdropTimer = null
+    }
+    return
+  }
+  
   if (bakeBackdropTimer !== null) {
     clearTimeout(bakeBackdropTimer)
     bakeBackdropTimer = null
@@ -836,10 +860,36 @@ const backdropInputKey = computed(() => {
 watch(
   backdropInputKey,
   () => {
-    if (!keepHeavyContent.value) return
+    if (!keepHeavyContent.value || !isAppWindowVisible()) return
     scheduleBakeCurrentBackdrop(0)
   },
   { immediate: true }
+)
+
+// 监听窗口可见性，隐藏时清理背景缓存释放内存
+watch(
+  () => isAppWindowVisible(),
+  (visible) => {
+    if (!visible && !props.show) {
+      // 窗口隐藏且全屏播放关闭时，清理背景缓存
+      if (bakeBackdropTimer !== null) {
+        clearTimeout(bakeBackdropTimer)
+        bakeBackdropTimer = null
+      }
+      if (clearInactiveBackdropTimer !== null) {
+        clearTimeout(clearInactiveBackdropTimer)
+        clearInactiveBackdropTimer = null
+      }
+      // 延迟清理，给窗口恢复留一些时间
+      setTimeout(() => {
+        if (!isAppWindowVisible()) {
+          bgLayerA.value = ''
+          bgLayerB.value = ''
+          clearAmbientBackdropCache()
+        }
+      }, 5000)
+    }
+  }
 )
 
 // 计算歌词颜色
@@ -1081,6 +1131,11 @@ const onFullPlayWindowState = () => {
     }
     return
   }
+  // 窗口隐藏时立即取消延迟定时器并释放资源
+  if (hideHeavyTimer !== null) {
+    clearTimeout(hideHeavyTimer)
+    hideHeavyTimer = null
+  }
   releaseFullPlayHeavyResources({ unmountRoot: true })
 }
 
@@ -1104,6 +1159,13 @@ watch(
     }
     const node = fullPlayRootRef.value
     if (node) blockFullPlayPointerEvents(node)
+    
+    // 如果窗口不可见，立即释放而不等延迟
+    if (!isAppWindowVisible()) {
+      releaseFullPlayHeavyResources({ unmountRoot: true })
+      return
+    }
+    
     scheduleHideHeavyContent()
   },
   { immediate: true }
@@ -1137,6 +1199,12 @@ watch(
       :class="{ active: activeLayer === 'B' }"
       :style="{ backgroundImage: bgLayerB || undefined }"
     ></div>
+    <!-- 着色器背景：受"播放背景动画"开关控制 -->
+    <ShaderBackground
+      v-if="keepHeavyContent && playSetting.getBgPlaying"
+      :cover-image="actualCoverImage"
+      :show="props.show && isSlideOpen && slideSettled"
+    />
     <!-- 背景仅使用上方封面取色打光层，不再挂 PIXI 流光 -->
     <div v-if="keepHeavyContent && showFestivalEffects" ref="festivalOverlay" class="festival-overlay"></div>
     <!-- 全屏按钮 -->

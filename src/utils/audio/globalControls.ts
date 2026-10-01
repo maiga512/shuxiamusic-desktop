@@ -33,26 +33,14 @@ export function installGlobalMusicControls() {
   }
   // 尝试立即初始化一次
   tryInitSmtc()
-  // 若 URL 变化或 audio 初始化稍后完成，由组件/Store 负责赋值；这里轮询几次兜底初始化
-  let smtcTries = 0
-  if (smtcTimer) clearInterval(smtcTimer)
-  smtcTimer = setInterval(() => {
-    if (smtcTries > 20) {
-      if (smtcTimer) {
-        clearInterval(smtcTimer)
-        smtcTimer = null
-      }
-      return
-    }
-    smtcTries++
+  // 【CPU 优化】改为事件驱动，不再 150ms 轮询
+  // 若 audio 元素稍后可用，监听 play 事件触发一次初始化
+  const smtcInitHandler = () => {
     if (controlAudio.Audio.audio) {
       tryInitSmtc()
-      if (smtcTimer) {
-        clearInterval(smtcTimer)
-        smtcTimer = null
-      }
     }
-  }, 150)
+  }
+  window.addEventListener('global-music-control', smtcInitHandler, { once: true })
 
   let keyThrottle = false
   const throttle = (cb: () => void, delay: number) => {

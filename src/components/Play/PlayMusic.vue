@@ -107,6 +107,10 @@ watch(
     if (device) {
       if (!dlnaSyncInterval) {
         dlnaSyncInterval = setInterval(async () => {
+          // 窗口隐藏或页面闲置时跳过同步，节省 CPU 和网络
+          if (!isAppWindowVisible() || isPageIdle()) {
+            return
+          }
           if (Audio.value.isPlay) {
             const position = await dlnaStore.getPosition()
             if (position && typeof position === 'number') {

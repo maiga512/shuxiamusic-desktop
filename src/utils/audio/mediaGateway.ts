@@ -63,7 +63,16 @@ const DEFAULT_SOURCE_TIMEOUT_MS = 3500
 const DEFAULT_CANDIDATE_SEARCH_TIMEOUT_MS = 3500
 const DEFAULT_MAX_CANDIDATE_ATTEMPTS = 3
 const validationCache = new Map<string, ValidationCacheEntry>()
-const VALIDATION_CACHE_MAX = 80
+const VALIDATION_CACHE_MAX = 30  // 从 80 降低到 30
+
+// 监听激进内存清理事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('memory:aggressive-cleanup', () => {
+    const count = validationCache.size
+    validationCache.clear()
+    console.log(`[mediaGateway] 激进清理: 清空 ${count} 个验证缓存`)
+  })
+}
 
 const rememberValidation = (key: string, entry: ValidationCacheEntry) => {
   if (validationCache.has(key)) validationCache.delete(key)
