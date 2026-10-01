@@ -777,7 +777,7 @@ export const createSyncServer = ({database}: ServerConfig) => {
           const page = await database.waitForSyncEvents(
             auth.user.id,
             cursor,
-            25_000,
+            15_000,
             abortController.signal,
           );
           if (page.events.length > 0) {
