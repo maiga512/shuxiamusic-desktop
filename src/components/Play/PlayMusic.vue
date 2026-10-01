@@ -73,7 +73,7 @@ import { isNativePlaybackActive, nativeCurrentTime, nativeSeek, nativeSetMuted, 
 import { calculateBestQuality, normalizeQualityType } from '@common/utils/quality'
 import { getDeclaredQualityFormats, getPreferredPlaybackQuality } from '@renderer/utils/audio/qualityAvailability'
 import { isAppWindowVisible } from '@renderer/utils/appWindowState'
-import { suppressIdleSleep, releaseIdleSleep } from '@renderer/utils/idleSleep'
+import { suppressIdleSleep, releaseIdleSleep, isPageIdle } from '@renderer/utils/idleSleep'
 
 const dlnaStore = useDlnaStore()
 const controlAudio = ControlAudioStore()

@@ -6,7 +6,7 @@ import CoverImage from '@renderer/assets/images/cover.png'
 import { isPageIdle } from '@renderer/utils/idleSleep'
 import { isAppWindowActive, isAppWindowVisible } from '@renderer/utils/appWindowState'
 import { ControlAudioStore } from '@renderer/store/ControlAudio'
-import { usePlaySettingStore } from '@renderer/store/playSetting'
+import { playSetting } from '@renderer/store/playSetting'
 import { storeToRefs } from 'pinia'
 
 const props = defineProps<{
@@ -16,7 +16,7 @@ const props = defineProps<{
 
 const controlAudio = ControlAudioStore()
 const { Audio } = storeToRefs(controlAudio)
-const playSettingStore = usePlaySettingStore()
+const playSettingStore = playSetting()
 const { bgPlaying } = storeToRefs(playSettingStore)
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
