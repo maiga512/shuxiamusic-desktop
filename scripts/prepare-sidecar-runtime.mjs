@@ -226,7 +226,9 @@ const copyResolvedPackage = async (packageName, resolvedDir, seen) => {
   const targetDir = path.join(outRoot, 'node_modules', packageName)
   await ensureDir(path.dirname(targetDir))
   await fs.rm(targetDir, { recursive: true, force: true })
-  await fs.cp(resolvedDir, targetDir, { recursive: true, force: true })
+  // pnpm 的 node_modules/<pkg> 是指向 .pnpm store 的软链；Tauri 打包资源时
+  // 不会跟随软链，必须 dereference 复制成真实目录，否则 bundle 里缺 axios 等包。
+  await fs.cp(resolvedDir, targetDir, { recursive: true, force: true, dereference: true })
 
   const pkg = await readJson(path.join(resolvedDir, 'package.json'), {})
   const deps = {

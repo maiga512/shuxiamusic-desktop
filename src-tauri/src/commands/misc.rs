@@ -5371,10 +5371,14 @@ pub async fn ai_recommend_songs(
 
 // ==================== Share Stubs ====================
 
-/// Return the application version from Cargo.toml.
+/// 返回应用版本号。
+///
+/// 唯一来源是根目录 `package.json` 的 `version` 字段：`tauri.conf.json` 的
+/// `version` 指向 `../package.json`，Tauri 在编译期把它解析进 `package_info`。
+/// 因此只需在 `package.json` 改一处，关于页、安装包版本会一起更新。
 #[tauri::command]
-pub fn get_app_version() -> Result<String, String> {
-    Ok(env!("CARGO_PKG_VERSION").to_string())
+pub fn get_app_version(app: tauri::AppHandle) -> Result<String, String> {
+    Ok(app.package_info().version.to_string())
 }
 
 /// Return a list of available system fonts.

@@ -247,15 +247,21 @@ const resolveNasSyncPluginId = async () => {
 }
 
 const appendNasSyncLogs = async (events: unknown[]) => {
+  if (!Array.isArray(events) || events.length === 0) return
   const pluginId = await resolveNasSyncPluginId()
   if (!pluginId) return
-  for (const rawEvent of events) {
-    const event = rawEvent as NasSyncEvent
-    const message = summarizeNasSyncEvent(event)
-    await window.api.plugins
-      .appendPluginLog(pluginId, 'info', NAS_SYNC_SERVICE_NAME, message)
-      .catch(() => {})
+  // 一次入站可能带回上千条事件（积压追赶）。逐条写日志会把每个事件
+  // 变成一次跨进程 IPC，把主进程和 Node sidecar 一起打满。这里合并成
+  // 一条日志：完整保留头部样本，其余折叠成计数。
+  const MAX_DETAIL_LINES = 6
+  const shown = events.slice(0, MAX_DETAIL_LINES)
+  const lines = shown.map((rawEvent) => summarizeNasSyncEvent(rawEvent as NasSyncEvent))
+  if (events.length > MAX_DETAIL_LINES) {
+    lines.push(`… 本轮其余 ${events.length - MAX_DETAIL_LINES} 条事件已合并省略`)
   }
+  await window.api.plugins
+    .appendPluginLog(pluginId, 'info', NAS_SYNC_SERVICE_NAME, lines.join('\n'))
+    .catch(() => {})
 }
 
 const appendNasSyncLog = async (message: string, level: 'info' | 'warn' | 'error' = 'info') => {

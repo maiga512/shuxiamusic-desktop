@@ -83,45 +83,6 @@ import type { SongList } from '@renderer/types/audio'
  *  - getter 用 computed 自然衔接 Vue 响应式
  */
 export const useListenTogetherStore = defineStore('listenTogether', () => {
-  // 【性能优化】监听窗口可见性，后台时暂停定时器
-  let visibilityChangeHandler: (() => void) | null = null
-  
-  const setupVisibilityListener = () => {
-    if (visibilityChangeHandler) return
-    
-    visibilityChangeHandler = () => {
-      const hidden = typeof document !== 'undefined' && document.hidden
-      
-      if (hidden) {
-        // 窗口隐藏时停止定时器，节省 CPU
-        console.log('[ListenTogether] 窗口不可见，暂停 ping 和漂移校准')
-        stopPingLoop()
-        stopDriftLoop()
-      } else if (isInRoom.value) {
-        // 窗口恢复可见且在房间内时，重新启动定时器
-        console.log('[ListenTogether] 窗口恢复可见，重启 ping 和漂移校准')
-        startPingLoop()
-        startDriftLoop()
-      }
-    }
-    
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', visibilityChangeHandler)
-      window.addEventListener('ceru-window-state-change', visibilityChangeHandler)
-    }
-  }
-  
-  const cleanupVisibilityListener = () => {
-    if (visibilityChangeHandler) {
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', visibilityChangeHandler)
-        window.removeEventListener('ceru-window-state-change', visibilityChangeHandler)
-      }
-      visibilityChangeHandler = null
-    }
-  }
-  
-
   /* ============================================================
    *  响应式状态
    * ============================================================ */
@@ -748,9 +709,6 @@ export const useListenTogetherStore = defineStore('listenTogether', () => {
    * 通过 code 加入房间（已经知道 code 时直接调用）
    */
   async function joinByCode(code: string): Promise<RoomMeta> {
-    // 【性能优化】加入房间时启动窗口可见性监听
-    setupVisibilityListener()
-    
     if (!socket) throw new Error('socket 未连接')
     const localUserStore = LocalUserDetailStore()
     playlistBeforeRoom = [...localUserStore.list]
@@ -813,8 +771,6 @@ export const useListenTogetherStore = defineStore('listenTogether', () => {
   function resetRoomState(options: { restorePlaylist?: boolean } = {}): void {
     /* 清掉还在节流缓冲里的通知 —— 否则换房后旧房间的待推消息会顶着新房名弹 */
     resetNotifierBuffers()
-    // 【性能优化】离开房间时清理窗口可见性监听
-    cleanupVisibilityListener()
     if (options.restorePlaylist && playlistBeforeRoom) {
       const localUserStore = LocalUserDetailStore()
       localUserStore.replaceSongList(playlistBeforeRoom)
@@ -1427,19 +1383,7 @@ export const useListenTogetherStore = defineStore('listenTogether', () => {
   /** 启动周期性 ping —— 维持 clockOffset 准确 */
   function startPingLoop(): void {
     stopPingLoop()
-    
-    // 【性能优化】窗口不可见时不启动 ping 循环
-    if (typeof document !== 'undefined' && document.hidden) {
-      console.log('[ListenTogether] 窗口不可见，跳过 ping 循环启动')
-      return
-    }
-    
     pingTimer = setInterval(() => {
-      // 【性能优化】窗口不可见时暂停 ping
-      if (typeof document !== 'undefined' && document.hidden) {
-        return
-      }
-      
       void pingOnce().then((sample) => {
         // 单次 ping 用 EMA 平滑（α=0.3 偏向保留历史，避免抖动）
         if (sample !== null) {
@@ -1471,21 +1415,8 @@ export const useListenTogetherStore = defineStore('listenTogether', () => {
    */
   function startDriftLoop(): void {
     stopDriftLoop()
-    
-    // 【性能优化】窗口不可见时不启动漂移校准
-    if (typeof document !== 'undefined' && document.hidden) {
-      console.log('[ListenTogether] 窗口不可见，跳过漂移校准启动')
-      return
-    }
-    
     driftTimer = setInterval(() => {
       if (!isInRoom.value || !current.song || !current.isPlaying) return
-      
-      // 【性能优化】窗口不可见时跳过本次校准
-      if (typeof document !== 'undefined' && document.hidden) {
-        return
-      }
-      
       const ca = ControlAudioStore()
       const audioEl = ca.Audio.audio
       if (isNativePlaybackActive()) {

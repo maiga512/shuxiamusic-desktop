@@ -156,6 +156,7 @@ let scrollAnimationId: number | null = null
 const userScrolling = ref(false)
 let userScrollTimeoutId: ReturnType<typeof setTimeout> | null = null
 const USER_SCROLL_TIMEOUT = 3000
+let visibilityHandler: (() => void) | null = null
 
 const handleUserScroll = () => {
   userScrolling.value = true
@@ -369,9 +370,22 @@ watch(
 
 onMounted(() => {
   nextTick().then(() => lyricsScroll(scrollTargetIndex.value))
+
+  // 窗口隐藏时停止歌词滚动动画，节省CPU
+  visibilityHandler = () => {
+    if (document.hidden && scrollAnimationId !== null) {
+      cancelAnimationFrame(scrollAnimationId)
+      scrollAnimationId = null
+    }
+  }
+  document.addEventListener('visibilitychange', visibilityHandler)
 })
 
 onBeforeUnmount(() => {
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
+  }
   if (scrollAnimationId !== null) {
     cancelAnimationFrame(scrollAnimationId)
     scrollAnimationId = null

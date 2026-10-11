@@ -90,18 +90,8 @@ const releaseAudioAnalyser = () => {
 // 绘制可视化
 const draw = (ts?: number) => {
   if (!canvasRef.value || !dataArray.value) return
-
-  // 【CPU 优化】只在全屏打开 + 播放中 + 用户开启开关时才渲染
   if (!props.show || !Audio.value.isPlay) {
-    if (animationId.value) {
-      cancelAnimationFrame(animationId.value)
-      animationId.value = undefined
-    }
-    // 释放分析器
-    if (analyser.value) {
-      releaseAudioAnalyser()
-    }
-    console.log('[AudioVisualizer] 已停止渲染（全屏未开启或未播放）')
+    stopVisualization(true)
     return
   }
 
@@ -110,8 +100,6 @@ const draw = (ts?: number) => {
     stopVisualization(true)
     return
   }
-
-  // 如果分析器已被释放，不要继续
   if (!analyser.value) return
 
   // 帧率节流 ~30fps
@@ -207,6 +195,7 @@ const onVisibilityChange = () => {
 // 开始可视化
 const startVisualization = () => {
   if (!props.show || !Audio.value.isPlay) return
+  if (!isAppWindowVisible() || isPageIdle()) return
 
   if (!analyser.value) {
     initAudioAnalyser()
@@ -307,7 +296,9 @@ const resizeCanvas = () => {
 onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('focus', onVisibilityChange)
+  window.addEventListener('ceru-window-state-change', onVisibilityChange)
   window.addEventListener('ceru-wake', onVisibilityChange)
+  window.addEventListener('ceru-sleep', onVisibilityChange)
   if (canvasRef.value) {
     resizeCanvas()
 
@@ -371,7 +362,9 @@ onBeforeUnmount(() => {
 
   document.removeEventListener('visibilitychange', onVisibilityChange)
   window.removeEventListener('focus', onVisibilityChange)
+  window.removeEventListener('ceru-window-state-change', onVisibilityChange)
   window.removeEventListener('ceru-wake', onVisibilityChange)
+  window.removeEventListener('ceru-sleep', onVisibilityChange)
 
   console.log('AudioVisualizer 组件卸载完成')
 })

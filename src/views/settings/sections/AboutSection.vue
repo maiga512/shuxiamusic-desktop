@@ -15,7 +15,7 @@ const updateAutoUpdate = () => {
   })
 }
 
-const appVersion = ref('1.0.0')
+const appVersion = ref('')
 const isCheckingUpdate = ref(false)
 const { checkForUpdates } = useAutoUpdate()
 
@@ -60,7 +60,7 @@ const openLink = (url: string) => {
         <div class="app-info">
           <div class="app-title-row">
             <h2>树夏Music</h2>
-            <span class="app-version">v{{ appVersion }}</span>
+            <span v-if="appVersion" class="app-version">v{{ appVersion }}</span>
           </div>
           <p class="app-subtitle">树夏音乐 播放器</p>
           <p class="app-description">

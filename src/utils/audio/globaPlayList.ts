@@ -8,6 +8,7 @@ import { PlayMode, type SongList } from '@renderer/types/audio'
 import { MessagePlugin } from 'tdesign-vue-next'
 import defaultCoverImg from '/default-cover.png'
 import mediaSessionController from '@renderer/utils/audio/useSmtc'
+import { mediaDiagLog } from '@renderer/utils/audio/useSmtc'
 import {
   getSongRealUrl,
   initPlaylistEventListeners,
@@ -19,6 +20,7 @@ import { getPreferredPlaybackQuality } from './qualityAvailability'
 import { isAppWindowVisible } from '@renderer/utils/appWindowState'
 import { isPodcastProgram } from '@renderer/api/podcast'
 import { isPlayableUrl } from './playableUrl'
+import { invoke } from '@tauri-apps/api/core'
 import { crossfadeManager } from './crossfade'
 import AudioManager from './audioManager'
 import {
@@ -78,7 +80,7 @@ let _unsubscribeDisabled: (() => void) | null = null
 const _prefetchedUrlCache = new Map<string, string>()
 // 预取 URL 缓存正常靠"消费即删"回收，但极端情况下（大量跳歌、预取从未被消费）
 // 可能只增不减；加一个上限做 FIFO 淘汰，防止长会话里 blob/URL 键值常驻。
-const _PREFETCH_URL_CACHE_MAX = 15
+const _PREFETCH_URL_CACHE_MAX = 30
 
 type PlaybackTimingSample = {
   songId: string
@@ -148,19 +150,7 @@ function _isSourceHardBlocked(source: string): boolean {
 // ==================== 候选搜索去重缓存 ====================
 // key: `${source}_${keyword}`，避免同一首歌反复请求 SDK search
 const _otherSourceCache = new Map<string, SongList[]>()
-const _OTHER_CACHE_MAX = 10  // 从 20 降低到 10
-
-// 监听激进内存清理事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('memory:aggressive-cleanup', () => {
-    const prefetchCount = _prefetchedUrlCache.size
-    const otherCount = _otherSourceCache.size
-    _prefetchedUrlCache.clear()
-    _otherSourceCache.clear()
-    console.log(`[globaPlayList] 激进清理: 清空 ${prefetchCount} 个预取URL, ${otherCount} 个其他来源缓存`)
-  })
-}
-
+const _OTHER_CACHE_MAX = 20
 function _getOtherSourceCacheKey(song: SongList): string {
   return `strict-v2_${song.source}_${song.name}_${song.singer}`
 }
@@ -419,6 +409,103 @@ const start = controlAudio.start
 const stop = controlAudio.stop
 const setCurrentTime = controlAudio.setCurrentTime
 
+/* ------------------------------------------------------------------ */
+/*  失速看门狗（stall watchdog）                                       */
+/*                                                                    */
+/*  verifyPlayableUrl 只做形状检查，不做网络探测（见 audioHelpers：   */
+/*  再起一个 mpv 探测会在插件 CDN 上卡死）。于是「格式合法但已过期/   */
+/*  403」的直链能通过检查、被 mpv load 成功、状态报 playing，却没有    */
+/*  真实音频推进——表现就是「响一下/完全不响后停住」，且无报错、不触  */
+/*  发 start() 的 reject 回退。这里在起播后盯住 mpv 真实播放位置：     */
+/*  若引擎自称在播、未暂停，但真实 current_time 不前进，则判定死链，   */
+/*  作废缓存并重走解析/降级链；同一首只自动恢复一次，再失速交给自动   */
+/*  下一首，避免死循环。                                               */
+/* ------------------------------------------------------------------ */
+type MpvState = {
+  backend_ready?: boolean
+  url?: string | null
+  paused?: boolean
+  current_time?: number
+}
+const STALL_GRACE_MS = 6000 // 起播后留足缓冲时间再采样
+const STALL_SAMPLE_GAP_MS = 1500 // 两次采样间隔
+const STALL_MIN_PROGRESS = 0.3 // 间隔内真实进度推进不足视为失速
+let stallWatchdogTimer: number | null = null
+let stallWatchdogUrl: string | null = null
+let stallWatchdogSongKey: string | null = null
+let stallRecoveredKey: string | null = null // 每首歌只自动恢复一次
+
+const songPlaybackKey = (song: SongList | null | undefined): string => {
+  if (!song) return ''
+  return `${(song as any).source || ''}:${(song as any).songmid || ''}`
+}
+
+const disarmStallWatchdog = () => {
+  if (stallWatchdogTimer !== null) {
+    window.clearTimeout(stallWatchdogTimer)
+    stallWatchdogTimer = null
+  }
+  stallWatchdogUrl = null
+  stallWatchdogSongKey = null
+}
+
+const armStallWatchdog = (song: SongList, url: string) => {
+  // 只在 native(mpv) 播放时布防；<audio> 路径有自身 stalled/ended/error 事件。
+  if (!isNativePlaybackActive()) return
+  if (!url) return
+  disarmStallWatchdog()
+  const songKey = songPlaybackKey(song)
+  stallWatchdogUrl = url
+  stallWatchdogSongKey = songKey
+  stallWatchdogTimer = window.setTimeout(() => {
+    void runStallCheck(song, url, songKey)
+  }, STALL_GRACE_MS)
+}
+
+const runStallCheck = async (song: SongList, url: string, songKey: string) => {
+  stallWatchdogTimer = null
+  if (!playbackInstalled) return
+  // 这些 guard 让过期的定时器触发也无害：用户已暂停 / 已切歌 / URL 已变即放行。
+  if (!Audio.value.isPlay) return
+  if (stallWatchdogSongKey !== songKey || stallWatchdogUrl !== url) return
+  if (songPlaybackKey(songInfo.value as any) !== songKey) return
+  try {
+    const s1 = (await invoke('mpv_get_state')) as MpvState
+    if (!s1 || s1.backend_ready !== true || s1.paused === true) return
+    const t1 = Number(s1.current_time || 0)
+    await new Promise((resolve) => setTimeout(resolve, STALL_SAMPLE_GAP_MS))
+    // 等待后重新确认仍是同一首、同一链接、仍在播。
+    if (!Audio.value.isPlay) return
+    if (stallWatchdogSongKey !== songKey || stallWatchdogUrl !== url) return
+    if (songPlaybackKey(songInfo.value as any) !== songKey) return
+    const s2 = (await invoke('mpv_get_state')) as MpvState
+    if (!s2 || s2.paused === true) return
+    const t2 = Number(s2.current_time || 0)
+    if (t2 - t1 >= STALL_MIN_PROGRESS) {
+      // 进度正常推进：清掉本首的「已恢复」标记，允许将来再次自愈。
+      if (stallRecoveredKey === songKey) stallRecoveredKey = null
+      return
+    }
+    // 引擎自称在播却不前进 → 死链。
+    if (stallRecoveredKey === songKey) {
+      // 已自动恢复过一次仍失速，不再死循环，交给自动下一首。
+      mediaDiagLog('stall-watchdog', `still stalled after recovery, auto-next: ${songKey}`)
+      disarmStallWatchdog()
+      tryAutoNext('播放失速，自动切下一首')
+      return
+    }
+    stallRecoveredKey = songKey
+    disarmStallWatchdog()
+    mediaDiagLog('stall-watchdog', `no real progress (${t1}->${t2}), re-resolving: ${songKey}`)
+    try {
+      await _invalidateCachedUrl(song, _getQuality(song))
+    } catch {}
+    void playSong(toRaw(song), { immediate: true, shouldAutoStart: () => true })
+  } catch {
+    // 查询失败不处理，避免误伤
+  }
+}
+
 const cancelPendingAutoNext = () => {
   pendingAutoNextToken++
   if (pendingAutoNextTimer !== null) {
@@ -551,6 +638,8 @@ const handlePlay = async () => {
 
 const handlePause = async () => {
   cancelPendingAutoNext()
+  // 暂停即撤防：避免暂停期间看门狗把「静止」误判成失速。
+  disarmStallWatchdog()
   /* 一起听:在房间且有控制权 → 发命令,不直接 stop 本地 */
   const lt = await getListenTogetherStore()
   if (lt.isInRoom) {
@@ -559,18 +648,19 @@ const handlePause = async () => {
     }
     return
   }
-  const a = Audio.value.audio
-  if (Audio.value.url && a && Audio.value.isPlay) {
+  // 只以 isPlay 判断是否要停：之前还要求 url/audio 元素非空，native 模式下任一为空
+  // 整条暂停分支就被跳过，系统状态也永远停在 playing——耳机按键失灵的根因之一。
+  if (Audio.value.isPlay) {
     const stopResult = stop()
     if (stopResult && typeof (stopResult as any).then === 'function') {
       await stopResult
     }
-    userInfo.value.wasPlaying = false
-    mediaSessionController.updatePlaybackState('paused')
-  } else if (Audio.value.url) {
-    userInfo.value.wasPlaying = false
-    mediaSessionController.updatePlaybackState('paused')
   }
+  userInfo.value.wasPlaying = false
+  mediaDiagLog('handlePause', `isPlay=${Audio.value.isPlay} url=${Audio.value.url ? 1 : 0}`)
+  // 无论走了哪个分支，都必须把"暂停"同步给系统（MediaRemote/耳机 AVRCP 都认这个状态）：
+  // 不同步的话系统一直认为在播，只会给耳机发 pause，永远不会发 play。
+  mediaSessionController.updatePlaybackState('paused')
   // 对齐安卓 persistPlaybackState(force=true)：手动暂停时立即把当前进度写盘，
   // 否则暂停听歌后重启会恢复到上一次 tick 的旧进度甚至 0。
   persistPlaybackPosition(true)
@@ -631,6 +721,8 @@ const playSong = async (
     })
   }
   cancelPendingAutoNext()
+  // 新的起播请求：撤掉上一首遗留的失速看门狗，避免跨歌误判。
+  disarmStallWatchdog()
   // 用户主动切歌，取消可能正在进行的无感过渡
   crossfadeManager.cancel()
 
@@ -769,6 +861,9 @@ const playSong = async (
 
     // 如果切歌了，这里先不更新 UI，等真正开始获取 URL 了再说？
     // 不，UI 应该立即响应。
+    // 收藏锚点 = 用户选中的这首歌。后续自动换源只会再次调 applyCurrentSongInfo 换播放实例，
+    // 锚点保持不变：底栏星号与收藏增删始终跟随这里选中的身份，不随音源漂移。
+    globalPlayStatus.setFavoriteAnchor(song)
     applyCurrentSongInfo(song)
     // 进度条立即归零，不等 URL 获取完成
     setCurrentTime(0)
@@ -978,6 +1073,8 @@ const playSong = async (
         }
         tryAutoNext('所有源均无法播放')
       })
+    // 起播后布防失速看门狗：mpv 自称 playing 却不推进真实进度时自愈/切下一首。
+    armStallWatchdog(song, urlToPlay)
     // 启动后预加载下一首到副槽（无感过渡准备），失败静默忽略
     if (!isNativePlaybackActive()) {
       void prefetchNextTrack()
@@ -1574,15 +1671,38 @@ let savePositionTimer: number | null = null
 let preheatedSongId: string | number | null | undefined
 let unsubPlaybackPositionPlay: (() => void) | null = null
 let unsubPlaybackPositionPause: (() => void) | null = null
+// 媒体键双路投递去重状态（Rust 链路与 Media Session 链路的同指令合并）
+let lastMediaKeyEvent: { name: string; at: number } = { name: '', at: 0 }
 const onGlobalCtrl = (e: any) => {
   const name = e?.detail?.name
   const val = e?.detail?.val
+  // 媒体键双路去重：同一次耳机/键盘媒体指令可能同时被两条链路各投递一次——
+  // Rust MPRemoteCommandCenter 一条，WKWebView 的 Media Session（页面 action handler）一条，
+  // 两者间隔几十 ms 内到齐。play/pause 若被触发两次会互相抵消，按键就像失灵。
+  // 只有带 source=media 标记（Rust emit 与 Media Session 回调）的事件参与去重，
+  // 键盘 Space 等页面内控制不受影响。
+  if (e?.detail?.source === 'media') {
+    const now = performance.now()
+    if (name === lastMediaKeyEvent.name && now - lastMediaKeyEvent.at < 250) {
+      mediaDiagLog('ctrl', `${name} deduped(media double-path)`)
+      return
+    }
+    lastMediaKeyEvent = { name, at: now }
+  }
   switch (name) {
     case 'play':
-      void handlePlay()
+      // 系统状态感知可能滞后（以为暂停其实已在播）→ 已在播就不重复启动
+      if (!Audio.value.isPlay) void handlePlay()
       break
     case 'pause':
-      void handlePause()
+      // 同样因为状态感知滞后，系统可能在"实际已暂停"时发 pause，直接 handlePause 会空转，
+      // 用户按多少次都只收到 pause —— 耳机键"完全失灵"的体感来源。
+      // 改成 toggle 语义：在播→暂停，不在播→播放，按键永远有实际效果。
+      if (Audio.value.isPlay) {
+        void handlePause()
+      } else {
+        void handlePlay()
+      }
       break
     case 'toggle':
       void togglePlayPause()
@@ -1592,7 +1712,7 @@ const onGlobalCtrl = (e: any) => {
       break
     case 'playNext':
       void playNext()
-      console.log('next')
+      mediaDiagLog('ctrl', 'playNext dispatched')
       break
     case 'autoNext':
       void playNextAuto()
@@ -1762,10 +1882,25 @@ const initPlayback = async () => {
 
       // 启动恢复复用正常点播链：缓存命中、当前源刷新、候选音源回退和失败后的自动下一首。
       const shouldAutoStart = usePlaySetting().autoPlayOnLaunch || wasPlayingAtExit
-      await playSong(toRaw(lastPlayedSong), {
-        immediate: true,
-        shouldAutoStart: () => shouldAutoStart
-      })
+      // 启动时插件 worker 可能还没完全预热，第一次 URL 解析可能失败。
+      // 加一次延迟重试，让 sidecar 初始化完成后再试。
+      try {
+        await playSong(toRaw(lastPlayedSong), {
+          immediate: true,
+          shouldAutoStart: () => shouldAutoStart
+        })
+      } catch (firstError) {
+        console.warn('[playback] 启动恢复首播失败，2s 后重试:', firstError)
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        try {
+          await playSong(toRaw(lastPlayedSong), {
+            immediate: true,
+            shouldAutoStart: () => shouldAutoStart
+          })
+        } catch (retryError) {
+          console.error('[playback] 启动恢复重试仍失败:', retryError)
+        }
+      }
 
 
       // SMTC 元数据更新
@@ -1827,6 +1962,54 @@ const persistPlaybackPosition = (force = false) => {
 const tickPlaybackPosition = () => {
   savePositionTimer = null
   if (!playbackInstalled) return
+  // 反向自愈：前端 isPlay=false 但 mpv 实际在播（启动恢复期 sidecar 未预热时
+  // nativePlay 的 IPC 偶发失败，mpv 照播、isPlay 留在 false，系统状态就永远停在
+  // paused，耳机按键直接变死键）。每个 8s tick 查一次真实引擎状态，
+  // 连续两个 tick（约 16s）确认在播才收敛，避免与进行中的切歌竞争。
+  if (!Audio.value.isPlay) {
+    void (async () => {
+      if (!Audio.value.url) return
+      // 注意：不能用 isNativePlaybackActive() 当判据——它依赖 nativePlayback
+      // 自己的 currentUrl，而 load 的 IPC 失败时 currentUrl 恰好被清空，
+      // 引擎状态以 mpv_get_state 为准。
+      try {
+        const state = (await invoke('mpv_get_state')) as {
+          backend_ready?: boolean
+          url?: string | null
+          paused?: boolean
+          current_time?: number
+        }
+        const enginePlaying =
+          !!state &&
+          state.backend_ready === true &&
+          state.paused === false &&
+          !!state.url &&
+          Number(state.current_time || 0) > 0.5
+        if (!enginePlaying) {
+          enginePlayingTicks = 0
+          return
+        }
+        enginePlayingTicks += 1
+        if (enginePlayingTicks < 2) return
+        enginePlayingTicks = 0
+        mediaDiagLog('self-heal', 'engine playing while isPlay=false, syncing to playing')
+        // 引擎已经在播，不需要再发 play；直接把前端状态收敛过去
+        // （currentUrl 可能为空，nativePlay 会在入口 guard 里空转）。
+        try {
+          Audio.value.currentTime = Number(state.current_time || 0)
+        } catch {}
+        Audio.value.isPlay = true
+        try {
+          // publish 是 store 运行时附带的方法，类型未声明，安全调用
+          const pub = (Audio.value as any).publish
+          if (typeof pub === 'function') pub.call(Audio.value, 'play')
+        } catch {}
+        mediaSessionController.updatePlaybackState('playing')
+      } catch {
+        // 查询失败不计数，等下个 tick
+      }
+    })()
+  }
   if (Audio.value.isPlay) {
     persistPlaybackPosition()
     const audio = Audio.value.audio
@@ -1847,6 +2030,9 @@ const schedulePlaybackPositionTick = () => {
   if (!playbackInstalled || savePositionTimer !== null) return
   savePositionTimer = window.setTimeout(tickPlaybackPosition, getPlaybackPositionDelay())
 }
+
+// 反向自愈的连续确认计数（见 tickPlaybackPosition）
+let enginePlayingTicks = 0
 
 const restartPlaybackPositionTracking = () => {
   clearPlaybackPositionTimer()
@@ -1927,6 +2113,7 @@ const uninstallPlayback = () => {
 
   userInfo.value.wasPlaying = false
   cancelPendingAutoNext()
+  disarmStallWatchdog()
   destroyPlaylistEventListeners()
   crossfadeManager.destroy()
   window.removeEventListener('global-music-control', onGlobalCtrl)

@@ -4,6 +4,7 @@ mod hotkeys;
 mod models;
 mod now_playing;
 mod process_util;
+mod windowed_fs;
 
 use commands::cover_proxy::*;
 use commands::dlna::*;
@@ -19,6 +20,7 @@ use commands::songlist::*;
 use db::Database;
 use hotkeys::{apply_global_hotkeys, handle_shortcut};
 use now_playing::{hotkeys_set_recording, init_now_playing, now_playing_update};
+use now_playing::media_diag_log;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -1053,7 +1055,8 @@ fn main_window_state_payload(win: &tauri::WebviewWindow) -> serde_json::Value {
         "focused": win.is_focused().unwrap_or(false),
         "minimized": minimized,
         "hidden": !visible || minimized,
-        "fullscreen": win.is_fullscreen().unwrap_or(false),
+        "fullscreen": win.is_fullscreen().unwrap_or(false)
+            || windowed_fs::is_windowed_fullscreen(),
     })
 }
 
@@ -1264,7 +1267,42 @@ fn handle_deep_link_url(handle: &tauri::AppHandle, url: String) {
     eprintln!("[deep-link] 未识别的 URL: {}", url);
 }
 
+/// release 包会 strip 符号，系统崩溃报告里只剩 `tao::send_event` 这种框架帧，
+/// 定位不到真正的 panic 点。这里把 panic 的文件、行号和消息追加到日志里。
+fn install_panic_logger() {
+    std::panic::set_hook(Box::new(|info| {
+        use std::io::Write;
+
+        let location = info
+            .location()
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "<unknown location>".to_string());
+        let message = if let Some(text) = info.payload().downcast_ref::<&str>() {
+            (*text).to_string()
+        } else if let Some(text) = info.payload().downcast_ref::<String>() {
+            text.clone()
+        } else {
+            "<non-string panic payload>".to_string()
+        };
+        let line = format!(
+            "[{}] {location}\n{message}\n",
+            chrono::Local::now().to_rfc3339()
+        );
+
+        let _ = writeln!(std::io::stderr(), "{line}");
+        if let Ok(mut file) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(std::env::temp_dir().join("ceru-tauri-panic.log"))
+        {
+            let _ = file.write_all(line.as_bytes());
+        }
+    }));
+}
+
 pub fn run() {
+    install_panic_logger();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -1370,7 +1408,8 @@ pub fn run() {
                         });
                     }
                     tauri::WindowEvent::Resized(_) => {
-                        let is_full = win2.is_fullscreen().unwrap_or(false);
+                        let is_full = win2.is_fullscreen().unwrap_or(false)
+                            || windowed_fs::is_windowed_fullscreen();
                         if is_full {
                             if !LAST_FULLSCREEN.swap(true, Ordering::SeqCst) {
                                 let _ = app_handle.emit("app-fullscreen-changed", true);
@@ -1568,6 +1607,9 @@ pub fn run() {
             close_desktop_lyric_window,
             desktop_lyric_window_ready,
             show_main_window,
+            // Windowed fullscreen (网易云式，盖住菜单栏/状态栏)
+            windowed_fs::windowed_fullscreen_get,
+            windowed_fs::windowed_fullscreen_set,
             // Song list
             songlist_get_all,
             songlist_get_by_id,
@@ -1607,6 +1649,7 @@ pub fn run() {
             hotkeys_set,
             hotkeys_set_recording,
             now_playing_update,
+            media_diag_log,
             // Directory settings
             directory_settings_get_directories,
             directory_settings_save_directories,

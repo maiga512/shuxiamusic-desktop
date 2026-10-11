@@ -1,3 +1,211 @@
+## 2026-10-10 根治系统权限反复弹窗：adhoc → 稳定自签名证书签名
+
+- 现象/诉求：用户抱怨已授权的系统权限（「设备控制和数据访问」= 本地网络/DLNA 投屏查找设备、
+  以及麦克风）每次重启/换版本都重弹，问是不是老版本不兼容。
+- 诊断：不是版本问题。打包一直是 **adhoc 签名**（`codesign -s -`，`codesign -dvvv` 显示
+  `Signature=adhoc`、`TeamIdentifier=not set`，DR=`cdhash H"…"`）。macOS TCC 把授权绑在
+  签名身份/DR 上，adhoc 的 cdhash 每次构建都变 → 系统每次当新 App → 全部重问。
+  （我每轮重打包 adhoc 重签 cdhash 都不同，正好让用户每次拿到新包都被重问。）
+- 决策（用户选「自签名」方案，非 Apple Developer ID）。
+- 做了什么：
+  - login 钥匙串新建 10 年期 codeSigning 证书 **`Ceru Music Self-Signed`**
+    （SHA-1 `3FCB56609A8A5577C9CBBC19F53C04F94D764A77`）。生成坑：OpenSSL 3 的 p12 默认算法
+    `security import` 读不了（`MAC verification failed`），必须 `openssl pkcs12 -legacy` 导出。
+  - `src-tauri/tauri.conf.json` → `bundle.macOS.signingIdentity = "Ceru Music Self-Signed"`，
+    以后 `tauri build` 自动用它签（已验证 codesign 能按该名字解析身份）。
+  - 已装 `/Applications/树夏Music.app` 用该身份 `--force --deep` 重签，`codesign --verify
+    --deep --strict` 通过，DR 变 `identifier "com.cerumusic.tauri" and certificate root =
+    H"3fcb…"`（跨构建稳定）；已干净重启（退旧实例+清残留 mpv/socket，新进程来自新签名二进制）。
+- 边界/后续：
+  - 证书未加入信任（没动 trust settings，避免 GUI 口令弹窗），故首次打开仍「未验证开发者」，
+    需右键→打开一次；之后正常。
+  - 本地网络(DLNA) 在个别新系统上仍可能偶发重问（macOS 侧已知毛病），麦克风等应已不再重弹。
+  - 麦克风保持**按需**（听歌识曲/设备名枚举，用户触发），绝不在启动期抢麦，否则重犯 AirPods
+    被切 HFP 无声的 bug（见下一条）。
+  - 彻底版（装了永不弹、无「未验证开发者」）仍需 Apple Developer ID 签名 + 公证，待用户给账号/证书。
+  - 换证书后「这一次」仍会再弹一轮授权，允许后即稳定。
+
+## 2026-10-10 修复蓝牙耳机播放无声 + 耳机媒体键失灵（去掉启动期抢麦）
+
+- 现象：连 AirPods 时播放没声音、耳机捏停/双击切歌没反应。
+- 诊断（实证）：连到运行中 mpv 的 IPC socket 看到它在正常解码出声（pause=false、
+  volume≈66-70、mute=false、coreaudio、aid=1），即播放器/mpv 本身没坏；再查系统音频，
+  AirPods 被置为「默认输入设备」且输入采样率 24kHz = 处于通话模式(HFP/SCO)，这会把音乐
+  输出甩到扬声器、噎住 mpv 时钟（time-pos 卡死）、并让耳机触控退化成通话控制。
+- 根因：`src/App.vue` 启动/首播后 `ensureStartupMicrophonePermission()` 调
+  `permissions.requestMicrophone()`→`getUserMedia({audio:true})` 抢麦，把 AirPods 拽进
+  HFP。此逻辑是仓库 HEAD 旧代码，非本轮 DLNA/性能改动引入（已核 `git diff`）。
+- 改动（仅 `src/App.vue`，surgical）：把 `ensureStartupMicrophonePermission` 改为不再
+  申请麦克风、不再 dispatch `ceru-audio-session-ready`；调用链与守卫保留。其余 mic 入口
+  （听歌识曲 `recognize.vue`/`AudioMatch.vue`、输出设备选择器 `audioOutput.ts` 的
+  `unlockBrowserDeviceLabels`）都是用户主动触发，未动。
+- 验证/交付：`npm run build` + `npx tauri build --bundles app` 均通过；已装机到
+  `/Applications/树夏Music.app` 并干净重启（期间清掉一个 killall(SIGTERM) 未回收的残留
+  mpv 子进程 + 过期 IPC socket，否则新实例起不来——这是个待修的 sidecar 回收 bug）。
+  装机验证时 AirPods 已从设备列表掉线（现输出=MacBook 扬声器），需用户重连 AirPods 后
+  用新包复测：预期不再被拖进通话模式，声音与耳机媒体键恢复。
+- 待办：本次只追加了 `AI_INDEX.md` 维护日志，未重跑 graphify 全量图产物（局部逻辑改动）；
+  装机包仍是 adhoc 签名，发版自动更新仍需带 `TAURI_SIGNING_PRIVATE_KEY` 重打。
+
+## 2026-10-10 DLNA 本地服务器按需启动（安全加固，不碰投屏功能/观感/播放链）
+
+- 背景：性能排查确认空闲时没有更多"零影响"性能可做（mpv 退出回收、不可见暂停 rAF、
+  卸载释放缓存、sidecar 心跳 `.unref()` 这些前几轮已在未提交工作树做完）。唯一还没动的
+  是 DLNA：`init()` 启动即无条件 `TcpListener::bind("0.0.0.0:0")` 常开 accept 循环
+  （观测端口 61082）。这是**安全问题**（空闲时暴露局域网端口），accept 循环本身 CPU/内存≈0。
+- 本轮按用户要求把它作为单独"安全项"做（先做 B 再做 A 验证打包）。
+- 改动（仅 `src-tauri/src/commands/dlna.rs`）：
+  - `init()` 不再 spawn 启动本地服务器，只 `manage(DlnaState::new())`。
+  - 新增 `ensure_local_server(app) -> Result<u16,String>`：幂等；`DlnaState` 新增
+    `server_started: AtomicBool`，用 `compare_exchange` 抢占启动权，同步 `bind` 取端口后
+    再 spawn `run_local_server(listener, app)` 跑 accept 循环；并发二次调用会等端口就绪。
+  - `dlna_play` 的三个需要本地服务器的分支（`file://`、相对路径、`127.0.0.1`/`localhost`
+    代理）把原来读 `local_server_port`（为 0 直接报"未启动"）改成 `ensure_local_server(&app)?`。
+    纯 http(s) 直链投屏分支从不需要本地服务器，保持不变。
+  - 删除旧 `start_local_server`。
+- 效果：不投屏时不再绑定/暴露 0.0.0.0 端口；首次投屏本地文件/本地代理后端口在会话内保持
+  （不主动回收，避免打断进行中的投屏）。SSDP 发现（按需临时 UDP）、AVTransport/
+  RenderingControl（reqwest）、前端 `dlna.ts` 调用链全部未改，投屏功能与观感不变。
+- 验证：`cargo check` 通过（仅既有 96 warnings，无新增、无 dlna 未用告警）。Graphify 增量
+  10707 nodes / 21135 edges / 747 communities；graph.html 已重建（约 10MB）。
+- 待办（A）：按需 `npm run tauri:build:macos` 出包装机实测前几轮优化 + 本轮加固后的收益。
+
+## 2026-10-09 媒体键收口（release 状态上报静默丢失 + 辅助功能权限失效自愈）
+
+- 现象：新包里耳机单击/双击全部控制了 Edge 里的音乐网页，树夏Music 完全收不到；
+  键盘 F7/F8/F9 在重打包后也失效。
+- 根因一：`tauri.conf.json` 未开 `withGlobalTauri` → release 包没有 `window.__TAURI__`。
+  `useSmtc.ts` 的 Now Playing 状态上报 + 诊断日志走 `__TAURI__?.core?.invoke` 被静默吞掉
+  → MediaRemote 不知道我们在播 → 耳机指令路由给其他活跃会话（浏览器网页）。
+  实锤：08:20 启动后 mpv time-pos 在走，日志零 `np:` 行。
+- 修复：状态上报/诊断日志改走 `@tauri-apps/api/core`（`safeTauriInvoke`）；
+  `HotkeySettings.vue` 第三处坏 `__TAURI__` invoke 一并修掉。
+- 根因二：CGEventTap 需辅助功能权限，权限绑定二进制 CDHash；重打包换签名后 tccd
+  明确 `Failed to match existing code requirement for subject com.cerumusic.tauri`，
+  两次 `kTCCServiceAccessibility` 查询被拒 → tap 注册静默失败。
+- 修复：`hotkeys.rs` `register_media_keys` 返回 bool；失败时 `ax_is_trusted(true)`
+  弹一次系统授权框，`spawn_ax_retry` 每 2s 后台重试 15 分钟，授权后自动补注册，
+  每次尝试写 `/tmp/ceru-media-keys.log`（`hotkeys:` 行）。
+- **重打包收口时发现：09:33 新包启动数秒即崩**。`create_mpmedia_artwork` 调用
+  `+[NSImage imageWithData:]`，macOS 27 已移除该类方法（本机实测 respondsToSelector=0，
+  类还在方法没了）→ 首次 Now Playing 封面构造抛未捕获 NSException → 进程 abort。
+  旧包从不崩因为状态上报被吞、封面路径从未执行。修复：改用 `alloc` + `initWithData:`
+  （实测=1），保留 respondsToSelector 兜底（不响应则跳过封面+日志，心跳下轮重试）。
+  `MPMediaItemArtwork initWithImage:` / `dataWithContentsOfURL:` 实测 27 仍可用。
+  崩溃栈符号化方法：`cargo build --release --config 'profile.release.strip=false'`
+  得到带符号表的 `ceru-tauri` 二进制（tauri mainBinaryName 重命名为 ceru-music，
+  代码布局一致，符号表可共用），nm 地址区间映射崩溃 offset。
+- **反向自愈**：运行中实测抓到"mpv 在播（红豆 220s）但前端 isPlay=false、
+  系统状态 paused"的脱同步（启动恢复期 nativePlay IPC 竞争）。`nativeIsPaused()`
+  读的是 store 自己的 isPlay（循环依赖），不能当引擎状态。修复：暂停态 8s tick
+  用 `mpv_get_state`（真实引擎 paused/current_time/backend_ready）连续两 tick 确认
+  才直接同步前端 isPlay/currentTime + 重发 play + 上报 playing（nativePlay 入口
+  guard `isNativePlaybackActive()` 依赖 currentUrl，load 失败时已清空，会空转），
+  日志 `self-heal:` 行可观测。
+- 喜欢列表乱跳（问题二）：上一轮已修（`list.vue` mergeLocalSongsInto 行对象复用 +
+  SongVirtualList 签名判等），本包已含，用户重测新包确认。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过；`npm run tauri:build:macos` 出包
+  `src-tauri/target/release/bundle/macos/树夏Music.app`。
+- 用户实测步骤：退旧 App → 开新包 → 弹辅助功能授权框就授权（列表两个树夏Music 时
+  删旧勾新，授权后 15 分钟内键盘自动恢复）→ 先暂停/关掉 Edge 音乐网页 → 放歌 →
+  耳机单击暂停/再按恢复、双击下一首（需 系统设置→蓝牙→AirPods→双击=下一首）。
+
+## 2026-10-08 耳机媒体键根因（bundle 身份）+ 喜欢页抖动 + 插件配置自激
+## 2026-10-09 耳机播放/暂停状态回环修复（bundle 身份之后的第二战场）
+
+- 现象：bundle 身份修好后耳机键事件已到进程（日志 4 条 `mp-remote: pause`），但用户
+  按多少次都只收到 pause、永远不会收到 play，体感"耳机完全控制不了"。
+- 根因：MediaRemote 按会话上报的播放状态决定发 play/pause。暂停后系统状态没被改成
+  paused（心跳硬编码 `playing:true` + `handlePause` 的状态同步依赖 `url && audio` 条件，
+  native 模式下条件不满足时整段跳过），系统一直认为在播 → 永远发 pause。
+- 修复（全部在包内）：`useSmtc.ts` 心跳读 `nativeIsPaused()` 真实状态、未播时自愈回
+  paused 并停心跳；`globaPlayList.ts` `handlePause` 只按 `isPlay` 停、无条件同步 paused；
+  `onGlobalCtrl` pause 改 toggle 语义（在播→暂停/不在播→播放）、play 仅在未播时启动；
+  `source=media` 同指令 250ms 去重（Rust 与 WKWebView Media Session 可能双路投递）。
+- 新增诊断：`now_playing.rs` `set_info` 每次写 `np state=..` 时间线；`media_diag_log`
+  命令收前端关键节点（ctrl/handlePause/smtc-state/heartbeat），同写
+  `/tmp/ceru-media-keys.log`。
+- 双击下一首：链路完整（nextTrackCommand → playNext），若仍不切歌先查系统设置
+  蓝牙→AirPods→双击是否映射为"下一首"；测试后读日志 `mp-remote: playNext` 是否存在。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过，`npm run tauri:build:macos` 出包；
+  端到端待用户戴耳机按一次后读 `/tmp/ceru-media-keys.log` 时间线。
+
+
+- 耳机（AVRCP）播放暂停 / 双击下一首此前在开发版永远不会到进程：`tauri dev` 跑裸
+  可执行文件，`[[NSBundle mainBundle] bundleIdentifier]` 实测为 nil，MediaRemote 不
+  会把 remote command 投给没有 bundle 身份的进程。`src-tauri/build.rs` 现在编译期
+  在 `target/<profile>/` 生成 `Info.plist`（`com.cerumusic.tauri`），启动日志已确认
+  `init: bundleIdentifier=com.cerumusic.tauri`。
+- `useSmtc.ts` 播放期间每 10s 复述 Now Playing（会话过期系统就不再路由），
+  `now_playing.rs` 的 `artwork_for()` 按 URL 缓存封面对象；`beginReceivingRemoteControlEvents`
+  实测会让进程 abort，已确认不可调用；`MEDIA_KEY_BINDINGS` 去掉必然注册失败的
+  `MediaStop`；`CERU_DISABLE_MEDIA_TAP=1` 可只留 remote 通道排障。
+- 喜欢页"歌曲一直跳"：`list.vue` 静默刷新改 `mergeLocalSongsInto()`，按
+  `source|songmid` 复用行对象、内容一致时零响应式写入、空封面不覆盖已解析封面，
+  并发重读用 in-flight + rerun 合并；`SongVirtualList.vue` 的 `vObserveCover.updated`
+  只在绑定歌曲变化时重新观察，`props.songs` 的 watch 用签名判等再掐断在飞封面请求。
+- 插件日志实测每 40~55 秒循环 `插件配置已保存 → 已加载到 Node worker →
+  onConfigUpdate not implemented`；`pluginSync.ts` 的 `applyCapabilityPlugin` 三处
+  `saveConfig` 前加 `samePluginConfig()` 判等打断自激。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过；`npm run tauri:build:macos` 出包；
+  Graphify 10692 nodes / 21093 edges / 762 communities，`graph.html` 聚合 332 社区节点 /
+  800 跨社区边。耳机端到端仍需用户按一次耳机键后看 `/tmp/ceru-media-keys.log`。
+
+## 2026-10-08 全屏背景闪烁 + 光照简化
+
+- resize 不再重新烘焙背景（`handleBackdropResize` 置空），`background-size: cover` 自动等比缩放，消除最大化/还原时的"截图"闪烁。
+- 光照去掉方向雾 + Overlay 柔光 + 大范围环境光，只保留渐变底 + 三个取色光斑，对齐安卓版简单自然的单层光照。
+- 验证：`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配。
+
+## 2026-10-08 全屏封面尺寸 + 双指滑动手势修复
+
+- 无歌词/播客封面放大：`.no-lyrics` CD 尺寸 24vw/560px → 32vw/720px，方形封面 480px/45vh → 580px/55vh。
+- 双指滑动卡死：只在手势真正触发后锁定 `armed`，冷却期挡住时重置累积距离；`GESTURE_COOLDOWN_MS` 520ms → 220ms。
+- 验证：`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配。
+
+## 2026-10-08 四项用户反馈修复
+
+- 更新端点：`tauri.conf.json` updater endpoint 改为 `releases/latest/download/latest.json`（GitHub 最新 Release），`autoUpdateService.ts` 增加 30 秒错误去重防止后台检查反复弹窗。需要在发桌面版时把 `latest.json` + 安装包上传到 `maiga512/shuxiamusic-release` 的 Release。
+- 播放/暂停按钮竞态：`nativePlayback.ts` 新增 `stateTransitioning` 标志，在 `nativePlay`/`nativePause` 命令期间抑制 `applyStateToStore` 对 `isPlay` 的覆盖。
+- macOS 媒体键：`hotkeys.rs` 的 `register_media_keys` 在 macOS 上跳过，避免与 `MPRemoteCommandCenter` 抢事件；Windows 仍用 `global_shortcut` 注册系统媒体键。用户自定义快捷键不受影响。
+- 启动第一首歌：`globaPlayList.ts` 的 `initPlayback` 恢复路径增加 2 秒延迟重试，解决插件 worker 未预热时首次 URL 解析失败。
+- 验证：`cargo check` 通过；`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配（与本次无关）。
+- Graphify：`graphify update .` + `graphify export html` 已执行（10648 nodes / 21003 edges / 749 communities）。
+
+## 2026-10-04 启动化开停顿收尾
+
+- 启动欢迎页 `STARTUP_MIN_MS` 从 2000ms 提前到 1500ms，星空还没跑到视觉结尾就开始切 `/home`。
+- `src/App.vue` 的启动化开动画改为 0.72s `linear`，去掉了原 `cubic-bezier(0.22,0.61,0.36,1)` 结尾减速带来的“快完成时卡一下”。
+- `initPlayback()` 改为 `router.replace('/home')` 后延迟 720ms 再执行，让主页挂载和本地状态读取不跟化开动画抢主线程。
+
+## 2026-10-04 安卓播放链路性能补齐
+
+- 安卓仓库 `/Volumes/致钛 2T/shuxiamusic` 已完成播放链性能补齐：持久 URL 缓存 debounce 落盘、新鲜缓存免同步探测、播放状态进度/队列分写、有守卫的 Media3 单条预备项、预取按网络/电量降深、当前源音质逐档降级。
+- 验证：`:app:compileDebugKotlin` 通过；`:app:testDebugUnitTest` 仍被既有 `PlaybackKeepAlivePolicyTest` 的 Media3 API 不匹配阻塞。
+
+## 2026-10-04 后台空转功耗（不碰播放链/动效）
+
+- 着色器/频谱只在全屏打开且正在播放时跑 rAF；收起全屏后不再每首取色。
+- 窗口隐藏时跳过背景烘焙、播客扫码/推荐刷新、DLNA 进度同步。
+- 正式版关闭 MPV 1Hz `/tmp/ceru-mpv-hot.log` 线程。
+- `.dormant` 只留 `visibility: hidden`，去掉会让黑胶/歌词回不来的 `content-visibility`/`contain:strict`。
+- 一起听 ping、MPV 本地时钟、媒体键、切歌、封面缓存和烘焙画质都没动。后台播放/控制/切歌必须继续可用。
+
+## 2026-10-04 启动化开 + 全屏播放手势
+
+## 2026-10-04 sidecar 依赖缺失导致启动慢 + 歌单/播客/插件加载失败
+
+- 根因：`scripts/prepare-sidecar-runtime.mjs` 用 `fs.cp` 复制 `axios`/`iconv-lite` 时没开 `dereference`，在 pnpm 工程里 `node_modules/<pkg>` 是指向 `.pnpm` store 的软链，于是被复制成软链；Tauri 打包资源时跳过软链，最终 bundle 里缺这两个包。
+- 结果：Node sidecar 一启动就 `ERR_MODULE_NOT_FOUND: axios` 崩掉；欢迎页等 `service-plugin-initialize-system` 卡到 30s 超时（动画中段显得很慢），进主页后歌单/播客/插件每次 `node_sidecar_request` 都超时，表现为"加载不出来"。
+- 修复：`fs.cp(..., { dereference: true })` 复制真实目录，并重跑 `sidecar:prepare-runtime`、重新打包替换。验证：sidecar 的 health 请求返回 `ok:true`，主进程/sidecar/mpv 三进程正常。
+
+- 启动页不再先把星空淡成黑再切 `/home`。最短动画结束后立刻 `router.replace('/home')`，由 `App.vue` 路由 Transition 把启动层留在最上面放大模糊淡出，主页在下面化开出现。
+- 全屏播放手势（最终方案）：双指左右滑切换黑胶/方形封面（前端 `wheel`，单次横滑即切一次，阈值 48px，方向无关）；双指放大进真全屏、双指捏合恢复（Safari `gesturestart`/`gesturechange` + `ctrl`+`wheel` 兜底，方向由桥接层用原生 `isFullscreen()` 判断）。三指按用户要求不做。
+- 横滑切完会"弹回来"的修复：触控板惯性会在切完后继续发 `wheel`，又攒到阈值触发第二次切换。`onFullPlayWheel` 里加了 `armed` 锁定 + `GESTURE_REARM_MS=220` 离手计时：触发一次后 `armed=false`，任何后续滚轮都刷新计时，只有停顿 220ms（手指离手、惯性结束）才重新 `armed=true`，保证一次横滑只切一次。
+- 手势全部在前端 `FullPlay.vue` 实现，不再用 AppKit 本地监听。之前那套 NSEvent 监听有两个问题并已整体删除：一是闭包跑在 `NSApplication sendEvent:` 里，任何 Rust panic 或 ObjC 异常都会 abort 进程（`touchesMatchingPhase:inView:` 会抛 ObjC 异常，`catch_unwind` 抓不住）；二是它会吞掉 `magnify` 事件，导致双指捏合到不了 WebKit。
+- 全屏方式改为 macOS 原生全屏（`appWindow.setFullscreen`），不再用 `setSimpleFullscreen`。simple fullscreen 有两个问题：`isFullscreen` 不把 simple fullscreen 算进去，捏合只能进不能出；菜单栏只是自动隐藏、鼠标一碰又冒出来。原生全屏会进入独立 Space 并真正隐藏菜单栏/Dock，`app-fullscreen-changed` 也能正确回写。
+- 保留的进程级兜底：`[profile.release] panic = "unwind"`，`run()` 里装了 panic 日志钩子，panic 会追加到 `$TMPDIR/ceru-tauri-panic.log`，release strip 后也能拿到文件和行号。
+
 ## 2026-09-30 启动自动播放与失败换源链修复
 
 - Electron 对照：`src/renderer/src/views/welcome/index.vue` 的 `onMounted` 顺序是先完成插件初始化和欢迎页等待，再 `initPlayback()`，最后切换 `/home`；Tauri `src/views/welcome/index.vue` 现先完成最短欢迎动画并 `router.replace('/home')`，再恢复播放，避免动画期间 MPV 出声后被路由打断。

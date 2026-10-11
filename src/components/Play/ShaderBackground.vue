@@ -19,6 +19,17 @@ const { Audio } = storeToRefs(controlAudio)
 const playSettingStore = playSetting()
 const { bgPlaying } = storeToRefs(playSettingStore)
 
+const shouldKeepShaderReady = () =>
+  props.show !== false && Boolean(bgPlaying.value) && !document.hidden
+
+const shouldRenderShader = () =>
+  shouldKeepShaderReady() &&
+  Boolean(Audio.value.isPlay) &&
+  isAppWindowVisible() &&
+  !isPageIdle()
+
+let colorsNeedRefresh = true
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let gl: WebGLRenderingContext | null = null
 let program: WebGLProgram | null = null
@@ -309,13 +320,13 @@ function initWebGL() {
   // 设置画布大小
   resizeCanvas()
 
-  // 开始渲染循环
-  startRenderLoop()
+  if (shouldRenderShader()) startRenderLoop()
 }
 
 // 调整画布大小
 function resizeCanvas() {
   if (!canvasRef.value || !gl) return
+  if (!shouldKeepShaderReady()) return
 
   const canvas = canvasRef.value
   const displayWidth = canvas.clientWidth
@@ -333,14 +344,7 @@ let _lastRenderTime = 0
 function render(now: number) {
   if (!gl || !program) return
 
-  // 【CPU 优化】只在全屏打开 + 播放中 + 用户开启背景动画时才渲染
-  if (!props.show || !Audio.value.isPlay || !bgPlaying.value) {
-    animationFrameId = null
-    console.log('[ShaderBackground] 已停止渲染（全屏未开启、未播放或用户关闭背景动画）')
-    return
-  }
-
-  if (!isAppWindowVisible() || isPageIdle()) {
+  if (!shouldRenderShader()) {
     animationFrameId = null
     return
   }
@@ -377,24 +381,30 @@ function render(now: number) {
 
 // 页面可见性变化或闲置结束时重启渲染
 const onShaderVisibilityChange = () => {
-  // 只在全屏打开 + 播放中 + 用户开启背景动画 + 窗口可见时才重启
-  if (props.show && Audio.value.isPlay && bgPlaying.value && isAppWindowVisible() && !isPageIdle() && animationFrameId === null) {
+  if (shouldRenderShader() && animationFrameId === null) {
     _lastRenderTime = 0
     startRenderLoop()
+  } else if (!shouldRenderShader()) {
+    stopRenderLoop()
   }
 }
 
-// 监听播放状态、全屏状态、背景动画开关变化
-watch(() => [Audio.value.isPlay, props.show, bgPlaying.value], ([isPlaying, isShow, isBgEnabled]) => {
-  if (isPlaying && isShow && isBgEnabled && isAppWindowVisible() && !isPageIdle()) {
-    startRenderLoop()
-  } else {
-    stopRenderLoop()
+watch(
+  () => [Audio.value.isPlay, props.show, bgPlaying.value],
+  async () => {
+    if (shouldKeepShaderReady() && colorsNeedRefresh) await updateColors()
+    if (shouldRenderShader()) startRenderLoop()
+    else stopRenderLoop()
   }
-})
+)
 
 // 开始渲染循环
 function startRenderLoop() {
+  if (!shouldRenderShader()) {
+    stopRenderLoop()
+    return
+  }
+  resizeCanvas()
   if (animationFrameId !== null) {
     cancelAnimationFrame(animationFrameId)
   }
@@ -423,11 +433,12 @@ async function updateColors() {
       b: colors[0].b / 255
     }
 
-    console.log('提取的颜色:', colors)
+    colorsNeedRefresh = false
   } catch (error) {
     console.error('提取颜色失败:', error)
     // 使用默认颜色
     dominantColor.value = { r: 0.3, g: 0.3, b: 0.5 }
+    colorsNeedRefresh = false
   }
 }
 
@@ -435,16 +446,17 @@ async function updateColors() {
 watch(
   () => actualCoverImage.value,
   async () => {
-    await updateColors()
+    colorsNeedRefresh = true
+    if (shouldKeepShaderReady()) await updateColors()
   },
   { immediate: true }
 )
 
 // 组件挂载时初始化
-onMounted(async () => {
-  await updateColors()
+onMounted(() => {
   window.addEventListener('resize', resizeCanvas)
   document.addEventListener('visibilitychange', onShaderVisibilityChange)
+  window.addEventListener('ceru-window-state-change', onShaderVisibilityChange)
   window.addEventListener('ceru-wake', onShaderVisibilityChange)
   window.addEventListener('ceru-sleep', onShaderVisibilityChange)
   initWebGL()
@@ -454,6 +466,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCanvas)
   document.removeEventListener('visibilitychange', onShaderVisibilityChange)
+  window.removeEventListener('ceru-window-state-change', onShaderVisibilityChange)
   window.removeEventListener('ceru-wake', onShaderVisibilityChange)
   window.removeEventListener('ceru-sleep', onShaderVisibilityChange)
   stopRenderLoop()

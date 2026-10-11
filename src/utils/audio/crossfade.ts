@@ -72,6 +72,9 @@ let _beginningInProgress = false
 let _fadeInClearTimer: any = null
 let _naturalNextDelayEnabled = false
 
+let _visibilityHandler: (() => void) | null = null
+let _wasRmsWatchingBeforeHidden = false
+
 // ------- 工具 -------
 
 const stopRmsWatch = () => {
@@ -602,6 +605,23 @@ export const crossfadeManager = {
     _unsubs.push(audioStore.subscribe('timeupdate', onTimeUpdate))
     _unsubs.push(audioStore.subscribe('seeked', onSeeked))
     _unsubs.push(audioStore.subscribe('ended', onPlaybackEnded))
+
+    // 窗口隐藏时停止 RMS 采样定时器，节省 CPU
+    _visibilityHandler = () => {
+      if (document.hidden) {
+        _wasRmsWatchingBeforeHidden = _rmsInterval !== null
+        if (_wasRmsWatchingBeforeHidden) {
+          stopRmsWatch()
+        }
+      } else {
+        // 窗口显示时，如果之前在采样且交叉淡入仍处于调度状态，则恢复采样
+        if (_wasRmsWatchingBeforeHidden && crossfadeState.scheduled) {
+          startRmsWatch()
+        }
+        _wasRmsWatchingBeforeHidden = false
+      }
+    }
+    document.addEventListener('visibilitychange', _visibilityHandler)
   },
 
   /**
@@ -647,6 +667,10 @@ export const crossfadeManager = {
 
   /** 清理事件订阅（组件卸载时调用） */
   destroy() {
+    if (_visibilityHandler) {
+      document.removeEventListener('visibilitychange', _visibilityHandler)
+      _visibilityHandler = null
+    }
     for (const u of _unsubs) {
       try {
         u()

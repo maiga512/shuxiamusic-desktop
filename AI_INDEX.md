@@ -1,4 +1,32 @@
 ---
+
+## 2026-10-11 修复在线歌曲"播到一半突然断了、不播了"
+
+- **现象**：播放在线歌曲，播到中途突然掐断、停住不播。
+- **根因**：在线直链在播放途中偶发 TCP 连接被服务器关闭 / 网络瞬断。内置 mpv 的 ffmpeg http 协议默认不重连，一次读失败就发出 `end-file(reason=error)`（`mpv_player.rs` 的事件分发把它转成 `emit_error_event("mpv_end_file_error")`）；前端 `nativePlayback.handleError` → `publishOnce('error')` → `globaPlayList` 的 `controlAudio.subscribe('error')` 把它当成播放错误跑 `currentPlaybackErrorHandler`（换源 / `tryAutoNext`），听感就是"中途断了、不播了"。此前已把 `--cache-secs` 从 2s 放大到 30s 抗抖动，但缓存只能平滑短暂卡顿，socket 真断了必须让 ffmpeg 自己重连。
+- **修复（仅 `src-tauri/src/commands/mpv_player.rs` 主 mpv 启动参数）**：新增 `--network-timeout=30` + `--stream-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=5`，开启 ffmpeg http 自动重连（IINA / mpv.net 同款做法）。探活用的短命 mpv（`mpv_probe`）不动。
+- **验证**：bundled mpv v0.41 / FFmpeg 9.0.1 实测接受这些参数（`--list-options` 有 `--stream-lavf-o`/`--network-timeout`，带参空跑 exit 0）；`cargo check` 通过（仅既有 96 warnings，无新增）。
+- 索引：纯 mpv 启动参数改动，不涉及代码图拓扑 / 数据流 / 执行路径，未重跑 graphify 全量产物，仅追加本日志。待出包实测中途断流是否消除。
+
+## 2026-10-09 媒体键收口：release 状态上报静默丢失 + 辅助功能权限失效自愈
+
+- **根因一（耳机指令全被路由到浏览器网页）**：`tauri.conf.json` 未开 `withGlobalTauri`，release 包里 `window.__TAURI__` 不存在；`useSmtc.ts` 的 Now Playing 状态上报与诊断日志都走 `window.__TAURI__?.core?.invoke`，被 `typeof invoke !== 'function'` 守卫静默吞掉，系统（MediaRemote）永远收不到"我们在播放"，耳机指令被投给别的活跃会话（Edge 里开着的音乐网页）。其余 IPC 走 `@tauri-apps/api/core`（基于恒存在的 `__TAURI_INTERNALS__`），所以播放本身正常。日志实锤：08:20 启动后 mpv time-pos 在走，`/tmp/ceru-media-keys.log` 零 `np:` 行。
+- **修复**：`syncNativeNowPlaying` / `mediaDiagLog` 改走 `@tauri-apps/api/core` 的 `invoke`（`safeTauriInvoke` 包装，吞异常不阻塞播放）；`HotkeySettings.vue` 录制态的第三处坏 `__TAURI__` invoke 同步修掉。
+- **根因二（重打包后键盘 F7/F8/F9 失效）**：CGEventTap 依赖 macOS 辅助功能权限，权限绑定二进制 CDHash；重打包换签名后 tccd 统一日志明确 `Failed to match existing code requirement for subject com.cerumusic.tauri` + 两次 `kTCCServiceAccessibility` 查询被拒 → tap 注册静默失败（release 无 eprintln 出口），表现为零 `global-shortcut` 日志行。
+- **修复（`hotkeys.rs`）**：`register_media_keys` 改返回 bool；注册失败时 `ax_is_trusted(true)` 弹一次系统授权对话框，`spawn_ax_retry` 后台线程每 2s 复查、最多 15 分钟，用户授权后自动补注册媒体键（无需重启 App），每次尝试写 `hotkeys: media keys re-register...` 进同一诊断日志。
+- **根因三（新包启动数秒即崩，09:59 / 10:04 两次）**：Now Playing 首次生成封面时 `create_mpmedia_artwork` 调用 `+[NSImage imageWithData:]` —— 该类方法在 **macOS 27 被移除**（类对象还在、方法没了，本机 `respondsToSelector` 实测 0），运行时抛未捕获 `NSInvalidArgumentException` 直接 abort 整个进程（崩溃报告 `ceru-music-2026-10-09-100407.ips`，符号化确认崩溃帧在 `now_playing::macos::set_info` 内联的封面构造）。旧包从不崩是因为状态上报被静默吞掉、封面路径从未执行；状态上报修复后此隐患首次暴露。
+- **修复（`now_playing.rs`）**：改用仍可用的实例方法 `alloc` + `initWithData:`（实测 =1），保留 `respondsToSelector:` 兜底——未来系统再删 API 时降级为"无封面+日志"，不再 abort；封面生成失败不缓存，下一次 `set_info` 心跳自然重试。同批实测 `MPMediaItemArtwork initWithImage:`、`dataWithContentsOfURL:` 在 macOS 27 均可用。
+- **反向自愈（`globaPlayList.ts`）**：实测发现启动恢复期存在"mpv 在播但前端 `isPlay=false`"的竞争（sidecar 未预热时 load 的 IPC 偶发失败，mpv 照播、`isPlay` 留在 false），系统状态永远停在 paused、耳机键变死键。注意 `nativeIsPaused()` 读的是前端 store 自己的 `isPlay`、`isNativePlaybackActive()` 依赖 `currentUrl`（load 失败时被清空）——都不能当引擎状态用；修复在暂停态的 8s 进度 tick 里用 `mpv_get_state` 查真实引擎，连续两个 tick（约 16s）确认"引擎在播 + `isPlay=false`"才收敛：直接把前端 `isPlay`/`currentTime` 同步为引擎状态、重发 `play` 事件并上报 `playing`（不能调 `nativePlay()`，入口 guard 会空转）。日志 `self-heal:` 行可观测。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过，`npm run tauri:build:macos` 出包（注：09:33 包启动数秒即崩，见根因三，修复后重打包）。用户步骤：启新包→弹授权框就授权（列表里两个树夏Music 时删旧勾新）→先暂停/关掉 Edge 里的音乐网页→放歌后测耳机单击暂停/双击下一首。
+
+## 2026-10-09 耳机播放/暂停状态回环修复 + 媒体键 toggle 语义 + 双路去重
+
+- **根因**：系统（MediaRemote/AVRCP）按"会话当前上报的播放状态"决定给耳机发 play 还是 pause。此前前端心跳硬编码 `playing:true`、`handlePause` 的状态同步又依赖 `url && audio 元素` 条件，暂停后系统状态停在 playing，用户按多少次都只收到 pause，且永远不会收到 play —— 耳机键"完全失灵"。
+- **`useSmtc.ts`**：心跳改读真实状态（`nativeIsPaused()`，native 引擎为准），实际未播放时主动把系统状态改回 paused 并停心跳（自愈，10s 内兜底任意漏报路径）；`updatePlaybackState` 每次留诊断日志。新增导出 `mediaDiagLog()` 写 `/tmp/ceru-media-keys.log`（经新命令 `media_diag_log`）。
+- **`globaPlayList.ts`**：`handlePause` 只按 `isPlay` 决定停不停，且**无条件** `updatePlaybackState('paused')`；`onGlobalCtrl` 对 `pause` 改 toggle 语义（在播→暂停，不在播→播放）、`play` 仅在未播时启动，系统状态感知滞后时按键也永远有实际效果；`source=media` 的同指令 250ms 去重（Rust MPRemoteCommandCenter 与 WKWebView Media Session 可能双路投递同一次按键，toggle 语义下双触发会互相抵消）。
+- **`now_playing.rs`**：`set_info` 每次系统状态更新写 `np` 时间线日志（state/rate/elapsed/title），下次排障可直接从 `/tmp/ceru-media-keys.log` 看状态有没有同步、何时被覆盖；新增 `media_diag_log` 命令。
+- **`Provider.vue` / `globalControls.ts`**：Rust 媒体键通道与 Media Session 回调的事件打上 `source=media` 标记供去重。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过；`npm run tauri:build:macos` 出包。待用户戴耳机实测：播放中按一次→应暂停，再按一次→应恢复；双击下一首依赖系统设置里 AirPods 双击映射为"下一首"（设置→蓝牙→AirPods→双击）。
 project: ceru-tauri
 project_name: Ceru Music Tauri
 project_aliases:
@@ -52,9 +80,84 @@ graph:
   html: graphify-out/graph.html
   labels: graphify-out/.graphify_labels.json
   top_graph: TOP_GRAPH.md
-last_indexed: 2026-09-30
+last_indexed: 2026-10-09
 graph_stats_source: graphify-out/GRAPH_REPORT.md
 ---
+
+## 2026-10-08 耳机媒体键根因（bundle 身份）+ 喜欢页静默刷新去抖
+
+- **耳机控制根因**：`tauri dev` 跑的是 `target/debug/ceru-tauri` 裸可执行文件，
+  `[[NSBundle mainBundle] bundleIdentifier]` 为 nil（实测日志已确认）。MediaRemote /
+  MPRemoteCommandCenter 只把耳机（AVRCP：播放暂停、双击下一首）和控制面板指令投给
+  有 bundle 身份且被认定为"正在播放"的 App，所以键盘媒体键（CGEventTap）能用而
+  耳机键永远送不到本进程。修复：`src-tauri/build.rs` 在编译期向可执行文件同级目录
+  生成 `Info.plist`（`com.cerumusic.tauri`），dev 裸跑也有 bundle 身份；实测
+  `/tmp/ceru-media-keys.log` 出现 `init: bundleIdentifier=com.cerumusic.tauri`。
+- **Now Playing 心跳**：`useSmtc.ts` 播放期间每 10s 复述一次 now-playing
+  （title/artist/album/artwork/elapsed/rate），否则系统会把会话判为过期，耳机键
+  不再路由过来、控制面板进度也会冻结；`now_playing.rs` 新增 `artwork_for()` 按 URL
+  缓存 `MPMediaItemArtwork`，心跳不再每 10s 同步下载一次封面。
+- **踩坑记录**：不要在 Tauri setup 里调 `-[NSApplication
+  beginReceivingRemoteControlEvents]`，实测直接 abort 进程（panic in a function
+  that cannot unwind）；`MEDIA_KEY_BINDINGS` 去掉 `MediaStop`（Apple 键盘/耳机没有
+  停止键，global-hotkey 报 `Unknown scancode for MediaStop`），停止指令由
+  `stopCommand` 负责。诊断开关 `CERU_DISABLE_MEDIA_TAP=1` 可只保留 MPRemote 通道。
+- **喜欢页"一直在跳"**：`list.vue` 的 `fetchLocalPlaylistSongs` 过去整体替换
+  `songs.value`，NAS/收藏事件每来一次就等于整表重建。改为 `mergeLocalSongsInto()`
+  按 `source|songmid` 复用原行对象、内容一致时零响应式写入，并加
+  `localSongsInFlight/localSongsRerun` 合并并发重读；`SongVirtualList.vue` 的
+  `vObserveCover.updated` 只在绑定歌曲真的换了才 unobserve+observe（否则每次无关
+  patch 都会让 IntersectionObserver 重跑一屏封面解析），`props.songs` 的 watch 用
+  轻量签名判断内容是否变化再决定掐断在飞封面请求。
+- **插件配置自激循环**：插件日志实测每 40~55 秒重复
+  `插件配置已保存 → 插件已加载到 Node worker → onConfigUpdate not implemented`。
+  根因在 `pluginSync.ts` 的 `applyCapabilityPlugin`：本地写回后指纹仍与云端不等，
+  每轮同步都再写一次；三处 `saveConfig` 前加 `samePluginConfig()` 判等，配置没变
+  就不写盘、不拉 worker。
+- 验证：`cargo check`、`npx vue-tsc --noEmit` 通过；`npm run tauri:build:macos`
+  重新出包。耳机端到端仍需用户按一次耳机键后读 `/tmp/ceru-media-keys.log`。
+
+## 2026-10-08 窗口化全屏填充状态栏 + 安卓 A1 单层背景移植 + 媒体键诊断日志
+
+- **背景改按安卓新版（A1 省电版）移植**：安卓仓当前 `PlayerGpuBackdrop.kt` 是 `BACKDROP_USE_BITMAP_CACHE = true`：整组光斑/方向雾/Overlay/Scrim 预光栅化成一张缓存位图（720P 封顶）每帧只贴图，视觉与旧版逐层绘制像素级一致。`FullPlay.vue` 的 `bakeCurrentBackdrop` 重写为同策略：切歌/改尺寸烤一次、播放只合成。stack A/B（`.bg-fallback`：对角底渐变 + 右下/左上/左下椭圆主光斑 + 有封面时 art 三层 + 方向雾三层，`transform: scale(1.1)` 对应 Compose `scale(1.10, pivot=center)`）+ 独立 `.bg-overlay-a/b`（scale 组外 `BlendMode.Overlay` 白柔光 → CSS `mix-blend-mode: overlay`）+ `.bg-backdrop-scrim`（`DesktopEnvironmentScrim` 同款四层常量黑：平涂 0.256 + 横向 0.03/0.12 + 纵向白 0.012/黑 0.30 + 径向暗角 0.30、圆心 48%/46%、半径 1.02w）。色阶按新版 `CoverColorUtils.extractBackdropColors`：Mac `ColorObject`（`colorExtractor.ts` 已 enhance）直接当 vibrant，lightAccent=mix(white,0.8)、secondary=main×0.35、base=main×0.18；新增 `boostForLightField`（先向白提亮再按 saturation 拉回饱和）；`hasBackdropArtwork()` 控制 art 光场与 alphaScale 1/1.08；`nextKey` 含宽高与 hasArtwork。
+- **窗口化全屏（填充顶部状态栏）**：新增 `src-tauri/src/windowed_fs.rs` 复刻 Electron 网易云式 `enterWindowedFullScreen`：不走 macOS 原生全屏独立 Space，`set_decorations(false)` + `set_always_on_top(true)` + NSWindow `setLevel:1000`（NSScreenSaver 层，高于菜单栏 24，真正盖住状态栏）+ 窗口摆到显示器物理原点并铺满整屏物理尺寸；进入先置 `FS_ACTIVE` 再改尺寸（Resized guard 不误判），快照 position/size/maximized/alwaysOnTop/decorations，退出完整还原。命令 `windowed_fullscreen_get/set`，切换 emit `app-fullscreen-changed`；`main_window_state_payload` 与 Resized 上报的 `fullscreen` 改为原生∥窗口化。`tauri-bridge.ts` 的 `toggleFullscreen`/`getWindowStatePayload` 改查 Rust 状态（native `isFullscreen` 窗口化下恒 false）；`FullPlay.vue` 根节点加 `fullscreen` class，全屏时去 22px 窗口圆角。
+- **媒体键诊断日志**：`now_playing.rs` 新增 `log_media_event` 写 `/tmp/ceru-media-keys.log`；`global-shortcut`（CGEventTap）与 `mp-remote`（MPRemoteCommandCenter）双通道都埋来源与 debounced 标记，用于区分耳机场景“事件没到进程”还是“到了没派发”。
+- 验证：`cargo check`、`vue-tsc --noEmit`、`npm run tauri:build:macos` 全部通过。
+
+- **媒体键全平台恢复**：`src-tauri/src/hotkeys.rs` 的 `register_media_keys` 恢复全平台注册 `MediaPlayPause/MediaTrackNext/MediaTrackPrevious/MediaStop`（上一会话曾在 macOS 跳过，只剩 `now_playing.rs` 的 MPRemoteCommandCenter，后台+耳机下完全不可用）。global-hotkey 0.8 在 macOS 走 SystemDefined CGEventTap 截获 NX_KEYTYPE 事件（键盘/有线耳机/AirPods/蓝牙），命中即消费，前后台都可靠；MPRemoteCommandCenter 保留为 Now Playing 展示 + 兜底，`MEDIA_EVENT_DEBOUNCE_MS=100ms` 防双通道重复触发。CGEventTap 需要 macOS 辅助功能权限，未授权时注册失败只打日志、不阻塞。
+- **全屏背景对齐安卓横屏**：`FullPlay.vue` 的 `bakeCurrentBackdrop` 重写为安卓 `CarFullPlayerPreviewLayout` 五层打光（纵向白/黑遮罩 → 中心暗角 → 右下主色光斑 → 左上浅光斑 → deep→dark 底渐变；CSS 第一层在最上，与 Compose 顺序相反）。色阶与 `CoverColorUtils.extractBackdropColors` 一致：先 `enhanceDesktopMainColor`（S=min(S*1.2,0.9)、V<0.3→min(V*1.5,0.5)、V>0.7→max(V*0.8,0.5)），再 deep=main*0.18（base）、dark=main*0.35（muted/secondary）、light=mix(main,white,0.8)（lightAccent）；光斑半径按舞台宽度换算 px（0.86w/0.78w/0.62w）。渐变下纯色 `bgBaseColorA/B` 随层切换；`backdropInputKey` watch 暂停时不再跳过烘焙（一次性字符串计算）；删除 `isAudioPlaying` 清烘焙定时器的 watch；`handleBackdropResize` settle 后重新烘焙（窗口变宽要重算光斑 px 半径）；`releaseFullPlayHeavyResources` 同步清 base 色。
+- **触控板一甩一切**：`FullPlay.vue` 的 `onFullPlayWheel` 水平段改为滑动段锁存：`swipeState`(acc/dir/latched/lastEventAt) + `SWIPE_GAP_MS=180`；事件断流 >180ms 或方向反转 = 新滑动段；累计 |acc| ≥ `GESTURE_TRIGGER_DISTANCE=48` 触发 `applyFullPlayGesture('layout')` 并锁存，本段剩余惯性事件全部忽略；`applyFullPlayGesture('layout')` 不再叠加 300ms 共享冷却（快速连续两次甩动第二下不再被误吞）。
+- 验证：`cargo check` 与 `vue-tsc --noEmit` 通过。Graphify AST 增量：10660 nodes / 21022 edges / 746 communities；`graph.html` 社区聚合导出（332 社区节点 / 799 跨社区边）。
+
+## 2026-10-08 全屏背景闪烁 + 光照简化
+
+- 背景闪烁修复：`FullPlay.vue` 的 `handleBackdropResize` 改为空函数，resize 时不再重新烘焙背景。`background-size: cover` 本身就自动等比缩放，重新烘焙反而导致旧图被拉伸 80ms 产生"截图"闪烁。
+- 光照简化：`bakedAmbientBackdrop.ts` 去掉三层"方向雾"和两层 Overlay 白色柔光，以及三层大范围环境光，只保留底部渐变 + 左上/右下/左下三个取色光斑。对齐安卓版的简单单层自然光照。
+- 验证：`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配（与本次无关）。
+
+## 2026-10-08 全屏封面尺寸 + 双指滑动手势修复
+
+- 无歌词/播客封面放大：`FullPlay.vue` 的 `.no-lyrics` CD 尺寸从 `max(200px, min(24vw, 560px, ...))` 提升到 `max(260px, min(32vw, 720px, ...))`；方形封面从 `min(480px, 45vh)` 提升到 `min(580px, 55vh)`。
+- 双指滑动卡死修复：`FullPlay.vue` 的 `onFullPlayWheel` 只在手势真正触发后才锁定 `armed=false`；冷却期挡住时不锁定并重置累积距离。`GESTURE_COOLDOWN_MS` 从 520ms 降到 220ms 与 `GESTURE_REARM_MS` 对齐，连续滑动不再卡住。
+- 验证：`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配（与本次无关）。
+
+## 2026-10-08 四项用户反馈修复
+
+- **更新端点**：`tauri.conf.json` 的 updater endpoint 从 `desktop-latest/latest.json` 改为 `releases/latest/download/latest.json`，跟随 GitHub 最新 Release；`autoUpdateService.ts` 增加 30 秒错误去重，后台检查网络失败不再反复弹窗。
+- **播放/暂停按钮竞态**：`nativePlayback.ts` 新增 `stateTransitioning` 标志，在 `nativePlay`/`nativePause` 命令执行期间抑制 `applyStateToStore` 对 `isPlay` 的覆盖，消除 MPV 状态事件与显式命令的竞态。
+- **macOS 媒体键（当日已恢复）**：本条原方案为 `hotkeys.rs` 的 `register_media_keys` 在 macOS 上直接跳过（`#[cfg(target_os = "macos")]`）；实测 Now Playing 路径在后台/戴耳机时完全不可用，已在同日「媒体键恢复 + 全屏背景对齐安卓横屏 + 一甩一切」条目恢复全平台注册。
+- **启动第一首歌重试**：`globaPlayList.ts` 的 `initPlayback` 恢复路径增加 2 秒延迟重试，解决插件 worker 未预热时首次 URL 解析失败的问题。
+- 验证：`cargo check` 通过；`vue-tsc` 仅报 `main.ts` 既有 `LogtoClient` 类型不匹配（与本次改动无关）。
+
+## 2026-10-04 安卓播放链路性能补齐
+
+- 对照桌面 Ceru / 落雪安卓，补齐安卓 `/Volumes/致钛 2T/shuxiamusic` 播放链的剩余性能点：
+  - `MusicViewModel.kt`：当前源按声明音质最多 3 档逐档降级；`playNext` 恢复有守卫的 Media3 单条预备项快路径；预取深度按非计量网络和电量降为 1，缓冲中暂停预取。
+  - `PersistentPlaybackUrlCache.kt`：落盘改为单线程 debounce IO，切歌热路径不再同步序列化 JSON；新鲜缓存跳过同步 Range 探测。
+  - `LocalStorage.kt` / `MusicViewModel.kt`：播放状态拆成“进度高频小写 + 队列/歌词变化时全量写”，避免每 3 秒重写 1400+ 完整队列。
+  - `docs/CERU_PLAYBACK_LINKCHAIN.md`、`docs/LX_MOBILE_PLAYBACK_PARITY.md` 已同步新行为。
+- 验证：安卓 `:app:compileDebugKotlin` 通过；`:app:testDebugUnitTest` 被既有 `PlaybackKeepAlivePolicyTest` 与当前 Media3 API 不匹配阻塞，与本次改动无关。
+- Graphify：安卓侧 `scripts/ai-refresh.sh` 与 `scripts/refresh-graphify.sh` 已刷新；本仓库 `graphify update .` 与 `graphify export html` 已执行。
 
 ## 2026-09-29 MPV 退出生命周期修复
 
@@ -148,6 +251,7 @@ details are in `graphify-out/GRAPH_REPORT.md`.
 | Need | Start with | Then inspect |
 | --- | --- | --- |
 | App startup and routing | `src/main.ts`, `src/App.vue`, `src/router/index.ts` | `src/components/layout/Provider.vue` |
+| Main layout / left sidebar | `src/components/layout/HomeLayout.vue` | `src/components/layout/Provider.vue`, `src/components/Play/PlayMusic.vue` |
 | Tauri command bridge | `src/tauri-bridge.ts` | `src-tauri/src/lib.rs` |
 | Node background service | `sidecar/index.mjs` | `sidecar/services/*/index.mjs` |
 | Playback chain | `src/utils/audio/globaPlayList.ts` | `src/utils/audio/mediaGateway.ts`, `src/utils/audio/playableUrl.ts`, `src/services/media/nativeMedia.ts` |
@@ -170,15 +274,19 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 
 | User wording | Canonical concepts | Primary files |
 | --- | --- | --- |
+| 左侧栏、侧边栏、导航栏、树夏Music 标题、侧栏居中、菜单间距 | main layout sidebar, logo-section, nav-section | `src/components/layout/HomeLayout.vue` |
+| 收藏星、切源掉星、换源收藏丢失、喜欢状态、取消收藏 | favorite anchor（切源前用户选中身份）、source fallback、我的喜欢歌单 | `src/store/GlobalPlayStatus.ts`, `src/components/Play/PlayMusic.vue`, `src/utils/audio/globaPlayList.ts` |
 | 音源、切源、源切换、wyy、mg | current source, plugin candidates, fallback, source identity | `src/utils/audio/audioHelpers.ts`, `src/tauri-bridge.ts` |
 | 音质、可用音质、下载音质、320K、无损 | preferred quality, plugin qualitys, declared quality, download source | `src/utils/audio/qualityAvailability.ts`, `src/utils/playlist/playlistManager.ts` |
 | 播放慢、点播没反应、播客播放 | URL resolution, media gateway, native audio, MPV, sidecar latency | `src/utils/audio/globaPlayList.ts`, `src/utils/audio/mediaGateway.ts` |
 | 切歌慢、上一首、下一首、飞牛 401 | cache-hit syntax, Feiniu stream proxy, prev/next immediate | `src/utils/audio/globaPlayList.ts`, `src/tauri-bridge.ts`, `src-tauri/src/commands/media_stream_proxy.rs` |
-| 快捷键、全局热键、自定义快捷键、媒体键、键盘上一首下一首、F7 F8 F9、启动自动播放 | global hotkeys, hardware media keys, Now Playing, autoPlayOnLaunch | `src-tauri/src/now_playing.rs`, `src-tauri/src/hotkeys.rs`, `src/components/Settings/HotkeySettings.vue`, `src/store/playSetting.ts` |
+| 快捷键、全局热键、自定义快捷键、媒体键、系统原生媒体键、键盘上一首下一首、F7 F8 F9、CommandOrControl 跨平台、启动自动播放 | global hotkeys, native media keys (OS-adapted), Now Playing, autoPlayOnLaunch | `src-tauri/src/now_playing.rs`, `src-tauri/src/hotkeys.rs`, `src/components/Settings/HotkeySettings.vue`, `src/store/playSetting.ts` |
 | 首次播放慢、启动后点播慢 | plugin worker prewarm, legacy initialize channel, sidecar initialization dedupe | `src/main.ts`, `src/tauri-bridge.ts`, `sidecar/services/plugins/index.mjs` |
 | 发现慢、歌单慢、播客加载慢 | request sequencing, stale response, session cache, concurrent fetch | `src/views/music/find.vue`, `src/views/music/podcast.vue`, `src/utils/cache/sessionCache.ts` |
 | 桌面歌词、歌词锁定、双排歌词 | lyric window lifecycle, logical pixels, drag, resize, reveal | `src-tauri/src/commands/lyric_window.rs`, `src/views/DeskTopLyric/DeskTopLyric.vue` |
 | Dock、底栏、全屏播放、卡顿 | dock layout, full player transition, visualizer, background | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` |
+| 全屏手势、双指滑、捏合全屏、封面模式、黑胶、手势闪退 | two-finger cover/vinyl swipe, pinch window fullscreen, frontend-only | `src/components/Play/FullPlay.vue`, `src/store/playSetting.ts` |
+| 启动动画、欢迎页化开、星空衔接、进主页动画 | welcome dissolve overlay, home reveal | `src/views/welcome/index.vue`, `src/App.vue` |
 | 底栏进度一格一格、进度条跳、匀速进度 | dock bar compositor remaining-duration animation; Pinia/mpv clock stays 1s | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` |
 | 全屏内存不回落、退出全屏内存、最小化内存、回主页内存 | hide/minimize release FullPlay heavy tree; list covers keep hot layer decoded, drop cold decoded bitmaps; KeepAlive max=1 while hidden | `src/components/Play/FullPlay.vue`, `src/components/sImage.vue`, `src/views/home/index.vue` |
 | 全屏底栏要点两下、Dock 唤醒、自动隐藏底栏 | idle dock wake strip, pointerdown, WKWebView transform hit-testing | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` |
@@ -265,6 +373,29 @@ treating raw edge counts as exact.
 
 ## Maintenance Log
 
+| 2026-10-10 | 根治「每次重启/换版本后系统权限反复弹窗」：根因不是老版本不兼容，而是打包一直用 **adhoc 签名**（`codesign -s -`，`TeamIdentifier=not set`、DR 为 `cdhash H"…"`）。macOS TCC 隐私授权按「签名身份/指定要求(DR)」记忆，adhoc 的 cdhash 每次构建都变 → 系统每次都当成全新 App → 已授的麦克风/本地网络(DLNA 投屏「查找并连接本地设备」) 全部重问。改为 **稳定自签名证书**：在 login 钥匙串新建 10 年期 codeSigning 证书 `Ceru Music Self-Signed`（SHA-1 `3FCB56609A8A5577C9CBBC19F53C04F94D764A77`，OpenSSL 3 生成、`openssl pkcs12 -legacy` 导出以兼容 `security import`），`src-tauri/tauri.conf.json` 的 `bundle.macOS.signingIdentity` 设为该证书，以后 `tauri build` 自动用它签；已装 `/Applications/树夏Music.app` 已用该身份重签（DR 变为 `identifier "com.cerumusic.tauri" and certificate root = H"3fcb…"`，跨构建稳定）。效果：换证书这一次会再弹一轮授权，允许后因 DR 恒定、后续我出的新版本之间不再重弹。麦克风仍保持按需（听歌识曲/设备名枚举用户触发），**不**在启动期抢麦（否则重犯 AirPods 被切 HFP 的 bug）。证书自签名未加入信任，故首次打开仍是「未验证开发者」需右键→打开一次；本地网络(DLNA) 在个别新系统上仍可能偶发重问（系统侧已知问题）。彻底消除需 Apple Developer ID 签名 + 公证（待用户提供账号/证书）。 | `codesign --verify --deep --strict` 通过（`valid on disk` + `satisfies its Designated Requirement`，`Authority=Ceru Music Self-Signed`，不再是 adhoc）；按名字解析签名成功，确认 `tauri build` 可用该 `signingIdentity`；已干净重启（新进程 pid 来自新签名二进制）。索引：配置/签名流程改动（仅 `src-tauri/tauri.conf.json` 加 `signingIdentity`），不涉及代码图拓扑/数据流/执行路径，**未重跑 graphify 全量产物**，仅追加本日志。 |
+| 2026-10-10 | 修复「连 AirPods 等蓝牙耳机时播放没声音 + 耳机捏停/双击切歌失灵」：根因是 App 启动/首播后自动申请麦克风权限，`src/App.vue` 的 `ensureStartupMicrophonePermission()` 里 `permissions.requestMicrophone()` → `getUserMedia({audio:true})` 一旦被调用，就把已连接的 AirPods 从音乐模式(A2DP)切进通话模式(HFP/SCO)，导致：①音乐输出被系统甩到扬声器、耳机没声；②mpv 的 CoreAudio 输出被设备切换噎住、播放时钟卡死；③耳机触控退化成通话控制、媒体键失效。播放器本身不消费麦克风流（听歌识曲 `recognize.vue`/`AudioMatch.vue`、音频输出设备选择器 `audioOutput.ts` 才需要，且均为用户主动触发），故把启动期这次无谓的抢麦改为空操作：`ensureStartupMicrophonePermission` 不再调用 `requestMicrophone()`、不再广播 `ceru-audio-session-ready`（该事件原本是用来从抢麦打断中恢复播放的，现在没有打断也就无需恢复）。`scheduleDelayedMicrophoneRequest`/`watch(isAppReady)` 调用链保留（守卫标志仍置位），其余 mic 入口不动（surgical）。 | `npm run build`（vue-tsc + vite）通过（built in 2m17s，无类型错误）；`npx tauri build --bundles app` 成功（exit 0，仅末尾 `TAURI_SIGNING_PRIVATE_KEY` 未设的更新包签名告警，不影响 .app）。已重打包装机到 `/Applications/树夏Music.app`（adhoc 重签、`codesign --verify` 通过）并清理掉一个 killall 未回收的残留 mpv + 过期 IPC socket 后干净重启。索引：此次为局部逻辑改动（不涉及 god/hub 节点、社区归属、跨模块数据流、执行路径或播放/持久化架构），**未重跑 graphify 全量图产物**，仅追加本维护日志；如需严格对齐可执行 `graphify update .` 增量重建。 |
+| 2026-10-10 | DLNA 本地 HTTP 服务器改按需启动（安全加固，不改投屏功能/观感/播放链）：`src-tauri/src/commands/dlna.rs` 的 `init()` 不再在启动时 `thread::spawn(start_local_server)` 无条件 `TcpListener::bind("0.0.0.0:0")` 常开 accept 循环；改为新增 `ensure_local_server()`（幂等、`server_started: AtomicBool` + `compare_exchange` 抢占启动权、同步绑定取端口后再 spawn `run_local_server` accept 循环），仅在 `dlna_play` 真正需要本地取文件 / 本地代理（`file://`、相对路径、`127.0.0.1`/`localhost` 三个分支）时才首次绑定；纯 http(s) 直链投屏分支从不需要本地服务器。SSDP 发现仍按需绑临时 UDP、AVTransport/RenderingControl 仍走 reqwest，均未改。效果：不投屏时不再暴露 0.0.0.0 局域网端口（原观测 61082），首次投屏本地文件后端口在会话内保持（避免打断进行中的投屏）。 | `cargo check` 通过（仅既有 96 warnings，无新增、无 dlna 未用告警）。Graphify 增量：10707 nodes / 21135 edges / 747 communities；`GRAPHIFY_VIZ_NODE_LIMIT=12000 graphify cluster-only . --no-label` 重建 graph.html（约 10MB）。 |
+| 2026-10-09 | 修复切源后收藏星丢失：收藏/喜欢状态从“跟随播放实例（音源+songmid）”改为锚定“用户选中的歌”（收藏锚点）。`GlobalPlayStatus` 新增 `player.favoriteAnchor` + `setFavoriteAnchor()`；`globaPlayList.ts` 的 `playSong` 选中歌时设锚点，自动换源路径（`replaceCurrentSongInList`/`applyCurrentSongInfo`）不再触碰锚点；`PlayMusic.vue` 的 `refreshLikeState`/`onToggleLike` 按锚点做 `hasSong` 判定与收藏增删（锚点缺失时退回当前播放歌），取消收藏的队列移除仍用当前播放实例（fallback 后队列里是 fallback 歌，能正确命中切下一首）。前端收藏展示从此不随音源漂移：收藏的星一直在，取消收藏就从“我的喜欢”消失，与后台换什么源无关。 | `npx vue-tsc --noEmit` 通过。Graphify：内部函数不在当前图粒度内（与 `updatePlayerInfo` 等同级处理），09:40 重建产物已覆盖当前代码（10698 nodes / 21093 edges / 760 communities）。 |
+| 2026-10-09 | 左侧栏整栏下移：`src/components/layout/HomeLayout.vue` 的 `.sidebar-content` 顶部 padding 0.6rem → 2.2rem，「树夏Music」标题与发现/播客/歌单/本地/下载 菜单整体离开窗口顶部（承接同日「标题居中 + 菜单下移」）。纯 CSS 改动，不涉及架构/数据流。 | SCSS 编译验证通过；`graphify update .` 报告无代码图拓扑变化，graph 产物沿用 2026-10-09 早些时候的重建（10692 nodes / 21093 edges / 760 communities）。 |
+| 2026-10-09 | 左侧栏布局微调：`src/components/layout/HomeLayout.vue` 的 `.sidebar-content .logo-section` 加 `justify-content: center` + `text-align: center`，「树夏Music」标题在 15rem 侧栏内水平居中；`margin-bottom` 0.9rem → 1.5rem，发现/播客/歌单/本地/下载 菜单整体下移、与标题拉开间距。纯 CSS 改动，不涉及架构/数据流。 | SCSS 编译验证通过（vite build）。Graphify AST 增量：10692 nodes / 21093 edges / 760 communities；`GRAPHIFY_VIZ_NODE_LIMIT=12000 graphify cluster-only . --no-label` 重建 graph.html（约 10MB）。 |
+| 2026-10-08 | 耳机媒体键根因修复 + 喜欢页抖动：`src-tauri/build.rs` 编译期在 `target/<profile>/` 生成 `Info.plist`，让 `tauri dev` 裸跑的可执行文件也有 `com.cerumusic.tauri` bundle 身份（实测此前 `bundleIdentifier` 为 nil，MPRemoteCommandCenter 注册成功但系统永远不会把耳机 AVRCP 指令投过来）；`useSmtc.ts` 播放期 10s Now Playing 心跳 + `now_playing.rs` 封面对象按 URL 缓存；`MEDIA_KEY_BINDINGS` 去掉注册必然失败的 `MediaStop`；`list.vue` 静默刷新改 `mergeLocalSongsInto` 复用行对象、内容一致不写入，`SongVirtualList.vue` 修 `vObserveCover.updated` 反复重观察与封面请求被无谓掐断；`pluginSync.ts` 用 `samePluginConfig` 打断每约 50 秒一次的插件配置保存/worker 重载自激循环。 | `cargo check`、`npx vue-tsc --noEmit` 通过；`npm run tauri:build:macos` 出包；实测启动日志 `init: bundleIdentifier=com.cerumusic.tauri`、`MPRemoteCommandCenter 已注册 toggle/play/pause/next/prev/stop`。 |
+| 2026-10-08 | 媒体键恢复 + 全屏背景对齐安卓横屏 + 触控板一甩一切：`hotkeys.rs` 的 `register_media_keys` 恢复全平台注册标准媒体键（macOS 走 SystemDefined CGEventTap 命中即消费，前后台可靠；MPRemoteCommandCenter 保留 Now Playing 展示 + 兜底，debounce 100ms 防双触发）；`FullPlay.vue` 的 `bakeCurrentBackdrop` 对齐安卓横屏 `CarFullPlayerPreviewLayout` 五层打光 + `CoverColorUtils` 色阶（enhanceDesktopMainColor → deep 0.18 / dark 0.35 / light mix white 0.8），光斑半径按舞台宽 px 换算，新增 `bgBaseColorA/B` 纯色兜底层、暂停也烘焙、resize settle 后重烘焙；`onFullPlayWheel` 横滑改滑动段锁存（180ms 断流/方向反转=新段，48px 触发后本段忽略），layout 不再走 300ms 共享冷却。 | `cargo check` 与 `vue-tsc --noEmit` 通过。Graphify AST 增量：10660 nodes / 21022 edges / 746 communities；graph.html 社区聚合（332 节点 / 799 边）。 |
+| 2026-10-04 | 修复启动慢 + 歌单/播客/插件加载失败：根因是 `scripts/prepare-sidecar-runtime.mjs` 用 `fs.cp` 复制 `axios`/`iconv-lite` 时未 `dereference`，在 pnpm 工程里复制成了软链，Tauri 打包资源跳过软链导致 bundle 缺这两个包，Node sidecar 一启动就 `ERR_MODULE_NOT_FOUND: axios` 崩掉，进而欢迎页等初始化卡 30s 超时、进主页后各页请求全部超时。已改 `dereference: true`、重跑 prepare 并重新打包替换；sidecar health 返回 ok。 | `node --check scripts/prepare-sidecar-runtime.mjs` 与打包替换验证通过。Graphify AST 增量：10648 nodes / 21002 edges / 758 communities。 |
+| 2026-10-04 | 修复横滑切封面后"马上弹回来"：触控板惯性在切完后继续发 `wheel`，又攒到 48px 阈值触发第二次 `applyFullPlayGesture('layout')`，把模式切回。`onFullPlayWheel` 增加 `armed` 锁定 + `GESTURE_REARM_MS=220` 离手计时：触发一次后锁定，任何后续滚轮刷新计时，停顿 220ms 才重新武装，保证一次横滑只切一次。 | `vue-tsc --noEmit` 仅剩 `src/main.ts` Logto 既有报错。Graphify AST 增量：10648 nodes / 21002 edges / 756 communities。 |
+| 2026-10-04 | 启动化开收尾：欢迎页最短等待从 2000ms 提前到 1500ms，避免星空播到视觉尾部才切页；`App.vue` 的 welcome dissolve/reveal 从 0.96s `cubic-bezier(0.22,0.61,0.36,1)` 改为 0.72s `linear`，去掉曲线末尾减速造成的“快完成时停顿”。`initPlayback()` 在 `router.replace('/home')` 后延迟 720ms 启动，让 home 挂载和本地播放状态恢复不跟化开动画抢主线程。 | `npx vite build` 通过；`npm run build` 的 `vue-tsc` 仍被既有 `src/main.ts` Logto 重复依赖类型错误挡住，与本次改动无关。Graphify AST 增量：10648 nodes / 21002 edges / 754 communities；`graph.html` 按社区聚合导出（332 社区节点 / 799 跨社区边）。 |
+| 2026-10-04 | 双指手势手感与方向收口：横滑判定放宽（去掉 `deltaMode` 硬性检查、阈值 72→48、只要求横向明显占优），单次左/右滑即切一次黑胶/方形封面；捏合改成方向式——放大进真全屏、捏合恢复，方向判断下沉到 `tauri-bridge.ts` 的 `toggleFullscreen(enter)` 用原生 `isFullscreen()` 决定目标状态，避免动画期间前端 `isFullscreen` 滞后漏掉恢复。原 AppKit 手势监听已确认零残留（无 `addLocalMonitor`/`touchesMatchingPhase`/`RcBlock`）。 | `cargo check` 与 `vue-tsc --noEmit`（仅剩 `src/main.ts` Logto 既有报错）通过。Graphify AST 增量：10648 nodes / 21002 edges / 757 communities。 |
+| 2026-10-04 | 安卓播放链路性能补齐：`MusicViewModel.kt` 当前源音质最多 3 档降级、有守卫的 Media3 单条预备项快路径、按网络/电量自适应预取；`PersistentPlaybackUrlCache.kt` debounce 落盘与新鲜缓存免探测；`LocalStorage.kt` 进度/队列分写。 | 安卓 `:app:compileDebugKotlin`、`:app:assembleDebug` 通过；`:app:testDebugUnitTest` 被既有 `PlaybackKeepAlivePolicyTest` 阻塞。本仓库 `graphify update .` + `graphify export html` 已执行。 |
+| 2026-10-04 | 全屏播放"最大化后还留顶部菜单栏"：`src/tauri-bridge.ts` 的 `toggleFullscreen` 从 macOS `setSimpleFullscreen` 改为原生 `appWindow.setFullscreen`。simple fullscreen 只撑满当前桌面、菜单栏仅自动隐藏，且 `isFullscreen` 不认 simple fullscreen 导致捏合只能进不能出；原生全屏进入独立 Space、真正隐藏菜单栏/Dock，`app-fullscreen-changed` 也能正确回写。 | `vue-tsc --noEmit` 仅剩 `src/main.ts` Logto 重复依赖的既有报错。Graphify AST 增量：10648 nodes / 21002 edges / 756 communities。 |
+| 2026-10-04 | 全屏手势收口：按用户要求去掉三指，双指手势改为纯前端实现。删除 `src-tauri/src/lib.rs` 的 AppKit 本地事件监听(`install_macos_fullplay_gestures`、`FullPlayRawEvent`、`fullplay-gesture` 后台线程、`fullplay:gesture-capture`)和桥接 `onFullPlayTrackpadGesture`，前端 `FullPlay.vue` 也移除 native 订阅/捕获开关。双指左右滑走 `wheel`，捏合走 Safari `gesturestart/gesturechange` + `ctrl`+`wheel` 兜底。原生监听原本会吞掉 `magnify` 事件，拆掉后 WebKit 反而能正常收到捏合手势，双指捏合才真正生效。 | `cargo check` 通过；`vue-tsc --noEmit` 仅剩 `src/main.ts` Logto 重复依赖的既有报错。Graphify AST 增量：10648 nodes / 21002 edges / 755 communities；节点超 5000 上限，graph.html 按社区聚合导出(332 社区节点 / 799 跨社区边)。 |
+| 2026-10-04 | 全屏手势二次闪退：新报告(16:01 `ceru-music`)栈停在 `_NSSendEventToObservers` → abort，且无 Rust `rust_begin_unwind` 符号，判定为 Objective-C 异常而非 Rust panic（`catch_unwind` 抓不住）。真凶是 `touchesMatchingPhase:inView:`，双指滑动(scroll wheel、phase 非 0)就会触发并在部分触控板抛异常。用 `objc2::exception::catch`（`@try/@catch`）包住这次查询，异常按 0 指处理；`cargo check` 通过。 | 未重编 release（本轮按用户要求只做类型检查）。Graphify 无需刷新（纯函数体内改动，符号图不变）。 |
+| 2026-10-04 | 修复全屏播放划手势必闪退：崩溃报告两次都落在 `tao::send_event` → `panic_cannot_unwind` → `abort()`，即 Rust panic 从 AppKit 事件分发栈里跨 `extern "C"` 边界炸穿进程。根因是 `install_macos_fullplay_gestures` 的 NSEvent 本地监听闭包(block2 是 `extern "C-unwind"`)在主线程事件分发里直接跑 `Mutex` 累加并调用 `app_handle.emit`，重入 WebView/取锁都会 panic。改为闭包只读数值入队(`FullPlayRawEvent` + `Condvar`)，累加判断与 `emit` 交给 `fullplay-gesture` 后台线程；`catch_unwind` 兜底保留；`[profile.release]` 由 `panic = "abort"` 改为 `"unwind"`，并在 `run()` 装 panic 日志钩子写到临时目录 `ceru-tauri-panic.log`，release strip 后也能拿到文件行号。 | `cargo check`、`cargo build --release` 通过(96 warnings，均为既有未用代码)。`vue-tsc --noEmit` 仅剩 `src/main.ts` Logto 重复依赖的既有报错。Graphify AST 增量：10656 nodes / 21020 edges / 761 communities；节点超 5000 上限，graph.html 按社区聚合导出(332 社区节点 / 799 跨社区边)。 |
+| 2026-10-04 | 续做空转功耗：着色器收起后不再每首取色；频谱/着色器跟窗口最小化停 rAF；隐藏窗口跳过背景烘焙和播客推荐刷新；正式版关掉 MPV 1Hz hot logger；`.dormant` 去掉会砸黑胶/歌词的 `content-visibility`/`contain:strict`。播放链、一起听 ping、媒体键、切歌、缓存尺寸和烘焙画质都没动。 | `vue-tsc --noEmit` 与 `cargo check` 通过。Graphify AST 增量：10588 nodes / 20917 edges / 763 communities。 |
+| 2026-10-04 | 启动星空改真正化开进主页：欢迎页不再自己先淡成黑，路由 Transition 让主页先挂在下面，启动层放大模糊淡出。全屏播放手势：双指横滑切黑胶/方形封面，双指捏合切窗口全屏/恢复，三指横滑切左侧面板（封面+歌词 / 全屏歌词）。Mac 三指/捏合走 AppKit 本地监听，WKWebView 另接 ctrl+wheel 与 gesture 事件。 | `vue-tsc --noEmit` 与 `cargo check` 通过。Graphify AST 增量：10607 nodes / 20958 edges / 753 communities。 |
+| 2026-10-04 | 功耗优化只保留不碰 UI/动效/播放链的部分：全屏着色器/频谱仅在全屏打开且正在播放时跑 rAF；生产环境关闭 IPC 统计刷新；窗口隐藏时跳过播客扫码轮询和 DLNA 进度同步；全屏卸载时清烘焙定时器。明确不做：降低背景烘焙分辨率/JPEG 质量、激进清空封面缓存、隐藏窗口立刻拆 FullPlay、一起听后台停 ping。 | 不改播放时序与视觉资产；`vue-tsc --noEmit` 通过。Graphify 无需刷新。 |
+| 2026-10-02 | 修复多页面无法滚动 / Dock 变窄 / 歌单按钮溢出 / 全屏播放画布错乱：根因是 `src/main.ts` 没有 import `src/assets/base.css`（Electron 在 `main.ts` 第 2 行就导入了它）。`base.css` 定义了三件全局基础：根字号 `html{font-size:min(max(1.4vw,15px),18px)}`、底栏高度变量 `--play-bottom-height: max(min(10vh,80px),70px)`、以及 `*{box-sizing:border-box}` 等重置。缺失后 `--play-bottom-height` 全程 undefined，`HomeLayout .home-container height:calc(100vh - var(...))`、`PlayMusic` 的 dock `height:var(...)`、`FullPlay --cd-width-auto/--height` 等 calc 整条失效，导致 `.mainContent height:0` 的 flex 高度链塌陷（发现/播客/歌单/搜索都无法滚动）、Dock 变窄、歌单右上角按钮溢出窗口、全屏播放背景与黑胶/歌词布局错乱（唱臂探针异常放大）。此前另一个 Agent 把问题归到各页面 overflow（SCROLL_FIX_TEST.md）与功耗优化改动，方向错误。修复：在 `main.ts` 顶部、tdesign 样式之前 `import './assets/base.css'`，与 Electron 对齐。 | 仅补一行样式入口导入，不改架构/数据流/符号图；`vue-tsc --noEmit` 通过，Vite 已热重载确认 base.css 进入模块图且含根字号/dock 变量。Graphify 无需刷新。 |
+| 2026-10-01 | 修复全屏播放“只剩唱臂、黑胶/歌词/背景全空白”：根因是 `FullPlay.vue` 休眠优化 `.dormant` 里用了 `content-visibility: hidden` + `contain: strict`，在 macOS WKWebView 下这两个属性开启再关闭会让黑胶唱片(drop-shadow 滤镜+旋转)和 AMLL 歌词(canvas)这类独立合成图层回收不回来，重新打开只剩普通 `<img>` 唱臂能绘制。改为仅保留 `visibility: hidden`（配合 `:not(.is-open)` 已暂停动画，开销足够低）。此前把病因误判为 `isAppWindowState` 窗口可见性误报（JS 逻辑），方向错误；`appWindowState.ts` 的可见性简化保留，无害。 | 纯 SCSS 边界改动，不涉架构/数据流；`npx vite build` 通过。Graphify 无需刷新（未改符号图）。 |
+| 2026-10-01 | 全局媒体键去硬编码：删除 `hotkeys.rs` 的 `HARDWARE_FKEY_BINDINGS`（原 F7→上一首/F8→播放暂停/F9→下一首），只注册标准媒体键 MediaPlayPause/TrackNext/TrackPrevious/Stop。上一首/播放暂停/下一首默认交给系统原生：macOS 走 Now Playing(MPRemoteCommandCenter)，Windows 走全局快捷键捕获硬件媒体键；F7–F12 仍可作为自定义键录入。自定义快捷键用 `CommandOrControl`，一套配置在 Mac=Cmd / Windows=Ctrl 自动适配。版本号改为单一来源：`tauri.conf.json` 的 `version` 指向 `../package.json`，`get_app_version` 改读 `app.package_info().version`，关于页/安装包随 `package.json` 一处更新；`Cargo.toml` 版本仅为 Cargo 必填项（已注释说明，不参与展示）。前端去掉 About 页硬编码的 `1.0.0` 回退、更新 F7/F8/F9 相关文案。 | 仅动热键/版本边界；已过 `cargo check` 与 `npm run build`。已同步更新 `TOP_GRAPH.md` Playback And Media 热键流；Graphify 生成文件待下次增量刷新。 |
 | 2026-09-30 | 桌面自动更新签名密钥轮换：原 `ceru-updater.key` 密码遗失无法签名，重新生成新 minisign 密钥对（无历史兼容包袱），更新 `tauri.conf.json` 的 `pubkey` 与 `ceru-updater.key.pub`，并写入发布仓 secrets（`TAURI_SIGNING_PRIVATE_KEY` / `_PASSWORD`）。同步配置 `CERU_MPV_WINDOWS_URL`。旧钥匙备份为 `*.old`（gitignore）。 | 仅动发布/签名边界，不涉架构；Graphify 无需刷新。已装 0.1.0 因换钥无法自动升级，需手动装一次 1.0.0，之后自动更新恢复。 |
 | 2026-09-22 | Dock/Now Playing 封面链路统一：媒体元数据支持 `coverImgUrl`/`cover`/专辑封面字段，异步复用 `resolveSongCover` 补全并回写当前歌曲，切歌和跨淡入口传入完整歌曲对象；不改变播放时序。 | Graphify 增量刷新；已重新编译并替换 `/Applications/澜音.app`。 |
 | 2026-09-22 | 最小化内存：热层封面钉住、冷层只丢解码图、隐藏时 KeepAlive 只留当前页、列表小封面解码 96。不卸整页、不改播放。 | Graphify 增量刷新。 |

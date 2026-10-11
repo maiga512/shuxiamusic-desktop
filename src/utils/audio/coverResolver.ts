@@ -6,21 +6,9 @@ const SEARCHABLE_SOURCE_ORDER = ['wy', 'tx', 'kg', 'kw', 'mg', 'bd', 'git']
 const NON_SEARCHABLE_SOURCES = new Set(['local', 'share', 'all'])
 const NAME_MATCH_MIN = 0.86
 const SINGER_MATCH_MIN = 0.72
-const COVER_CACHE_MAX = 40  // 从 96 降低到 40
+const COVER_CACHE_MAX = 96
 const coverCache = new Map<string, string | null>()
 const pending = new Map<string, Promise<string | null>>()
-const PENDING_CACHE_MAX = 20  // 限制并发请求缓存
-
-// 监听激进内存清理事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('memory:aggressive-cleanup', () => {
-    const coverCount = coverCache.size
-    const pendingCount = pending.size
-    coverCache.clear()
-    pending.clear()
-    console.log(`[coverResolver] 激进清理: 清空 ${coverCount} 个封面缓存, ${pendingCount} 个待处理请求`)
-  })
-}
 
 const rememberCover = (cacheKey: string, img: string | null) => {
   if (coverCache.has(cacheKey)) coverCache.delete(cacheKey)
@@ -213,11 +201,6 @@ export async function resolveSongCover(
   })()
 
   pending.set(cacheKey, task)
-  // 限制 pending 缓存大小，防止内存泄漏
-  if (pending.size > PENDING_CACHE_MAX) {
-    const oldestPending = pending.keys().next().value
-    if (oldestPending) pending.delete(oldestPending)
-  }
   try {
     return await task
   } finally {

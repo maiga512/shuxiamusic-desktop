@@ -10,6 +10,8 @@
  */
 
 import { nativeCurrentTime, nativeDuration } from './nativePlayback'
+import { nativeIsPaused } from './nativePlayback'
+import { invoke as tauriInvoke } from '@tauri-apps/api/core'
 import { resolveSongCover } from './coverResolver'
 import { rewritePublicCoverUrl } from '../coverThumb'
 
@@ -68,9 +70,27 @@ type NativeNowPlayingPayload = {
 }
 
 const syncNativeNowPlaying = (payload: NativeNowPlayingPayload) => {
-  const invoke = (window as any)?.__TAURI__?.core?.invoke
-  if (typeof invoke !== 'function') return
-  void invoke('now_playing_update', payload).catch(() => {})
+  // 必须走 @tauri-apps/api/core（基于永远存在的 __TAURI_INTERNALS__）：
+  // 此前用 window.__TAURI__?.core?.invoke，而工程未开 withGlobalTauri，
+  // release 包里该全局不存在，状态上报被静默吞掉——系统永远收不到
+  // "我们在播放"，耳机指令就全被路由到别的活跃会话（浏览器网页）。
+  void safeTauriInvoke('now_playing_update', payload)
+}
+
+/**
+ * 媒体控制链路诊断日志（写 /tmp/ceru-media-keys.log，与 Rust 侧媒体键事件同一时间线）。
+ * 打包后的 .app 没有控制台，耳机键这类系统级问题全靠这份日志定位。
+ */
+export const mediaDiagLog = (source: string, detail: string) => {
+  void safeTauriInvoke('media_diag_log', { source, detail })
+}
+
+const safeTauriInvoke = (cmd: string, args?: Record<string, any>) => {
+  try {
+    return tauriInvoke(cmd, args).catch(() => {})
+  } catch {
+    return Promise.resolve()
+  }
 }
 
 const readPlaybackClock = () => {
@@ -97,12 +117,71 @@ class MediaSessionController {
     handler: EventListener
   }> = []
   private artworkRequestId = 0
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null
 
   /**
    * 检查浏览器是否支持 Media Session API
    */
   private get isSupported(): boolean {
     return 'mediaSession' in navigator
+  }
+
+  /**
+   * macOS 的 MediaRemote 只会把耳机（AVRCP）和控制中心的播放指令投给
+   * "最近活跃"的 Now Playing 会话。只在建队/切歌时上报一次，会话会被系统
+   * 判为过期，之后耳机键再也送不到本进程，控制面板的进度也会停在原地。
+   * 播放期间每 10 秒复述一次，并带上最新的 elapsed/rate。
+   */
+  private startNowPlayingHeartbeat(): void {
+    if (this.heartbeatTimer !== null) return
+    this.heartbeatTimer = setInterval(() => {
+      const meta = navigator.mediaSession?.metadata
+      if (!meta) return
+      const clock = readPlaybackClock()
+      // 以 native 播放引擎的真实状态为准，而不是"心跳在跑就算在播"：
+      // 之前硬编码 playing:true 会在暂停后持续把系统状态覆盖回 playing，
+      // MediaRemote 就只会给耳机发"暂停"指令，永远不发"播放"——耳机键感觉完全失灵。
+      const actuallyPlaying = !nativeIsPaused()
+      if (!actuallyPlaying) {
+        this.stopNowPlayingHeartbeat()
+        try {
+          if (navigator.mediaSession?.playbackState === 'playing') {
+            navigator.mediaSession.playbackState = 'paused'
+          }
+        } catch {
+          // ignore
+        }
+        mediaDiagLog('heartbeat', 'self-heal -> paused')
+        syncNativeNowPlaying({
+          title: meta.title || undefined,
+          artist: meta.artist || undefined,
+          album: meta.album || undefined,
+          artworkUrl: meta.artwork?.[0]?.src || undefined,
+          elapsed: clock.elapsed,
+          duration: clock.duration,
+          playing: false,
+          rate: 0
+        })
+        return
+      }
+      syncNativeNowPlaying({
+        title: meta.title || undefined,
+        artist: meta.artist || undefined,
+        album: meta.album || undefined,
+        // 系统侧是整份 info 覆盖，这里不带封面的话 10 秒后封面就没了
+        artworkUrl: meta.artwork?.[0]?.src || undefined,
+        elapsed: clock.elapsed,
+        duration: clock.duration,
+        playing: true,
+        rate: 1
+      })
+    }, 10_000)
+  }
+
+  private stopNowPlayingHeartbeat(): void {
+    if (this.heartbeatTimer === null) return
+    clearInterval(this.heartbeatTimer)
+    this.heartbeatTimer = null
   }
 
   /**
@@ -135,6 +214,9 @@ class MediaSessionController {
         duration: clock.duration,
         playing: navigator.mediaSession.playbackState === 'playing'
       })
+      if (safeMetadata && navigator.mediaSession.playbackState === 'playing') {
+        this.startNowPlayingHeartbeat()
+      }
 
       // A playlist item can expose coverImgUrl/cover while img is empty. Resolve
       // that artwork asynchronously so metadata updates never delay playback.
@@ -228,6 +310,7 @@ class MediaSessionController {
 
     try {
       navigator.mediaSession.playbackState = state
+      mediaDiagLog('smtc-state', state)
       const meta = navigator.mediaSession.metadata
       const clock = readPlaybackClock()
       syncNativeNowPlaying({
@@ -239,6 +322,11 @@ class MediaSessionController {
         playing: state === 'playing',
         rate: state === 'playing' ? 1 : 0
       })
+      if (state === 'playing') {
+        this.startNowPlayingHeartbeat()
+      } else {
+        this.stopNowPlayingHeartbeat()
+      }
     } catch (error) {
       console.warn('Failed to update playback state:', error)
     }
@@ -248,6 +336,8 @@ class MediaSessionController {
    * 清理事件监听器和媒体会话
    */
   cleanup(): void {
+    this.stopNowPlayingHeartbeat()
+
     // 移除音频事件监听器
     this.eventListeners.forEach(({ element, event, handler }) => {
       element.removeEventListener(event, handler)

@@ -10,9 +10,8 @@
 
     <router-view v-slot="{ Component }">
       <Transition
-        :enter-active-class="`animate__animated animate__fadeIn animate__slow pagesApp`"
-        :leave-active-class="`animate__animated animate__fadeOut pagesApp`"
-        mode="out-in"
+        :enter-active-class="dissolvingWelcome ? 'welcome-reveal pagesApp' : `animate__animated animate__fadeIn pagesApp`"
+        :leave-active-class="dissolvingWelcome ? 'welcome-dissolve pagesApp' : `animate__animated animate__fadeOut pagesApp`"
       >
         <component :is="Component" />
       </Transition>
@@ -71,12 +70,71 @@ html.desktop-lyric-window #app {
 }
 </style>
 
+<!-- 启动星空化开：主页先挂在下面，启动层放大模糊淡出 -->
+<style>
+.welcome-dissolve.pagesApp {
+  z-index: 30000;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  transform-origin: center center;
+  animation: ceruWelcomeDissolve 0.72s linear both;
+  will-change: opacity, transform, filter;
+}
+.welcome-reveal.pagesApp {
+  z-index: 1;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  transform-origin: center center;
+  animation: ceruWelcomeReveal 0.72s linear both;
+  will-change: opacity, transform, filter;
+}
+@keyframes ceruWelcomeDissolve {
+  0% {
+    opacity: 1;
+    filter: blur(0) saturate(1) brightness(1);
+    transform: scale(1);
+  }
+  55% {
+    opacity: 0.42;
+    filter: blur(10px) saturate(1.06) brightness(1.07);
+    transform: scale(1.035);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(20px) saturate(1.12) brightness(1.12);
+    transform: scale(1.07);
+  }
+}
+@keyframes ceruWelcomeReveal {
+  0% {
+    opacity: 0.3;
+    filter: blur(8px);
+    transform: scale(1.025);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-dissolve.pagesApp,
+  .welcome-reveal.pagesApp {
+    animation-duration: 0.01ms !important;
+  }
+}
+</style>
+
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useSettingsStore } from '@renderer/store/Settings'
-import { ControlAudioStore } from '@renderer/store/ControlAudio'
 import shareAPI from '@renderer/api/share'
 import { startNasSyncPoller, stopNasSyncPoller } from '@renderer/services/nasSyncPoller'
 import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'
@@ -86,7 +144,10 @@ import { startWindowDrag } from './utils/windowDrag'
 const route = useRoute()
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const controlAudioStore = ControlAudioStore()
+const dissolvingWelcome = ref(false)
+const stopWelcomeDissolveGuard = router.beforeEach((to, from) => {
+  dissolvingWelcome.value = from.name === 'welcome' && to.path.startsWith('/home')
+})
 const setDesktopLyricRootState = (enabled: boolean) => {
   document.documentElement.classList.toggle('desktop-lyric-window', enabled)
 }
@@ -220,23 +281,14 @@ let startupMicrophoneRequested = false
 const ensureStartupMicrophonePermission = async () => {
   if (startupMicrophoneRequested) return
   startupMicrophoneRequested = true
-  try {
-    const permissions = (window as any)?.api?.permissions
-    if (typeof permissions?.getMediaStatus === 'function') {
-      const status = await permissions.getMediaStatus('microphone')
-      if (status === 'granted' || status === 'denied' || status === 'restricted') return
-    }
-    if (typeof permissions?.requestMicrophone === 'function') {
-      await permissions.requestMicrophone()
-    }
-  } catch (error) {
-    console.warn('[app] startup microphone permission request failed', error)
-  } finally {
-    // macOS 上申请麦克风会重开音频会话，可能把正在播放的 mpv 掐断。
-    // 这里广播一次，让播放层在需要时按原进度恢复，
-    // 避免出现"启动响一下→被掐掉→必须手动点播放"。
-    window.dispatchEvent(new Event('ceru-audio-session-ready'))
-  }
+  // 不再在启动/首播时主动申请麦克风权限。
+  // 原因：requestMicrophone() 内部的 getUserMedia({ audio: true }) 一旦被调用，会把已连接的
+  // AirPods 等蓝牙耳机从音乐模式(A2DP)切进通话模式(HFP/SCO)，后果是：
+  //   1) 音乐输出被系统甩到笔记本扬声器，耳机里没声；
+  //   2) mpv 的 CoreAudio 输出被设备切换噎住，播放时钟卡死；
+  //   3) 耳机的捏停 / 双击切歌退化成「通话控制」，媒体控制失效。
+  // 播放器本身没有任何功能消费麦克风流，这个开机抢麦是无谓的。若将来某功能确实需要，
+  // 应在该功能入口按需调用 permissions.requestMicrophone()，而不是启动即抢。
 }
 
 // 延迟请求麦克风权限：监听第一次播放开始后再请求，避免阻塞启动播放流程
@@ -296,7 +348,6 @@ onMounted(async () => {
   // Start sync before awaiting optional startup services. Some share/plugin IPC calls can
   // wait for the sidecar; delaying the poller behind them loses realtime events at launch.
   startNasSyncPoller()
-  
   // 启动时把窗口标题置为软件名(若 PlayMusic 后续挂载且有歌,会立刻覆盖为"歌名 - 歌手")
   try {
     ;(window as any).api?.app?.setTitle?.('树夏Music')
@@ -348,6 +399,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   setDesktopLyricRootState(false)
+  stopWelcomeDissolveGuard()
   unsubShareOpen?.()
   unsubShareOpen = null
   unsubPlaylistShareOpen?.()

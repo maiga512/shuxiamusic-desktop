@@ -1,6 +1,6 @@
 # Ceru Music Tauri Top Graph
 
-Last generated: 2026-09-29
+Last generated: 2026-10-04
 Graph source: `graphify-out/graph.json`  
 Generated report: `graphify-out/GRAPH_REPORT.md`
 
@@ -62,7 +62,7 @@ through Graphify.
 | Podcast Discovery UI | Categories, shelves, blocks, login, radio loading. | `src/views/music/podcast.vue` |
 | NAS Library Sync | Operation-driven local outboxes, server revision events, SSE wake-up with long-poll compensation, and responsive library/plugin updates. | `src/api/nasSync.ts`, `src/services/nasSyncPoller.ts`, `src/utils/playlist/cloudLibrarySync.ts`, `src/utils/playlist/pluginSync.ts`, `nas-sync-server/src/http.ts` |
 | Listen Together | Room synchronization, chat, queue actions, notifier and overlays. | `src/store/ListenTogether.ts`, `src/components/ListenTogether/*` |
-| DLNA Output Backend | Discovery, playback, volume and position control for DLNA devices. | `src-tauri/src/commands/dlna.rs` |
+| DLNA Output Backend | Discovery, playback, volume and position control for DLNA devices. Local HTTP server (file serve / loopback proxy) is started on demand inside `dlna_play` via `ensure_local_server()`, not at startup, so no `0.0.0.0` port is exposed while idle. | `src-tauri/src/commands/dlna.rs` |
 | Audio Quality Formats | Quality normalization, comparison, display names, verified capability. | `src/common/utils/quality.ts`, `src/utils/audio/qualityAvailability.ts` |
 
 ## Cross-Community Flows
@@ -92,7 +92,9 @@ safe.
 
 ### 2. Playback And Media
 
-Startup keeps plugin initialization inside the welcome screen, but playback restoration runs only after the minimum splash duration and `/home` route replacement complete. `initPlayback()` restores the last song through the same `playSong()` pipeline as manual playback, preserving URL-cache validation, current-source refresh, candidate-source fallback, and bounded failure auto-next. MPV errors arriving before a per-song error handler is installed are held against the current playback request and replayed once the handler is ready.
+Startup keeps plugin initialization inside the welcome screen. The minimum splash wait is 1500ms, then `/home` route replacement starts the overlapping transition; `initPlayback()` is delayed 720ms after route replacement so home mount and local playback-state restore do not compete with the dissolve animation. It restores the last song through the same `playSong()` pipeline as manual playback, preserving URL-cache validation, current-source refresh, candidate-source fallback, and bounded failure auto-next. MPV errors arriving before a per-song error handler is installed are held against the current playback request and replayed once the handler is ready.
+
+Welcome-to-home uses an overlapping route transition: the starfield stays on top and dissolves (scale/blur/fade) while `/home` mounts underneath. The dissolve/reveal pair runs for 720ms with `linear` timing, so the old decelerating tail that made the final frames appear to pause is removed. FullPlay trackpad gestures are handled entirely in the frontend: two-finger horizontal swipe toggles `layoutMode` (`cd` vinyl vs square cover) with per-swipe latching — an 180ms event gap or a direction reversal starts a new swipe segment, and once a segment crosses the 48px trigger it latches so the remaining inertial wheel events are ignored (one swipe = at most one toggle); pinch (Safari `gesturestart`/`gesturechange`, plus `ctrl`+`wheel` fallback) toggles window fullscreen. Three-finger is intentionally not implemented. The earlier macOS AppKit local event monitor was removed because any Objective-C exception thrown inside `NSApplication sendEvent:` (for example `touchesMatchingPhase:inView:`) cannot be caught by Rust and aborts the whole process; the frontend-only path has no such native crash surface.
 
 ```text
 src/utils/audio/globaPlayList.ts
@@ -120,11 +122,81 @@ At application exit, `src-tauri/src/lib.rs` routes `RunEvent::ExitRequested` and
 `--input-media-keys=no`. After MPV owns audio, WebKit Media Session cannot catch
 Fn+F7/F8/F9. `now_playing.rs` registers `MPRemoteCommandCenter` with `ClassBuilder` + `addTarget:action:` (not `define_class!` / `addTargetWithHandler:`) for play/pause/next/prev
 and publishes Now Playing info; recording mode emits `hotkeys:media-capture` instead
-of dispatching playback. `hotkeys.rs` still registers MediaPlayPause /
-MediaTrackPrevious / MediaTrackNext / MediaStop plus F7/F8/F9 fallbacks, mapping
-them to Electron `toggle` / `playPrev` / `playNext` / `pause`. User global hotkeys
-are stored in the `hotkeys` table, merged onto defaults, and re-applied after every
-save. Launch autoplay is `playSetting.autoPlayOnLaunch` (default off) and only
+of dispatching playback. `hotkeys.rs` registers the standard media keys
+MediaPlayPause / MediaTrackPrevious / MediaTrackNext / MediaStop (no hardcoded
+F7/F8/F9) on every platform. On macOS the global-hotkey SystemDefined CGEventTap
+catches NX_KEYTYPE events from the keyboard, wired earbuds, and Bluetooth/AirPods
+and consumes them on hit, so media keys work in the foreground and background;
+`MPRemoteCommandCenter` stays as the Now Playing display and fallback, with a
+100ms debounce so the two channels never double-fire. The CGEventTap needs macOS
+Accessibility permission; without it registration only logs and Now Playing takes
+over — on macOS `hotkeys.rs` then raises the system permission prompt once and
+retries in the background every 2s for up to 15 minutes (`ax_is_trusted` /
+`spawn_ax_retry`), so a re-signed rebuild that invalidates the old TCC grant
+self-heals after the user approves, without restarting the app. `MediaStop` is
+deliberately not registered (no such hardware key;
+global-hotkey returns `Unknown scancode`) and `stopCommand` is served by
+MPRemoteCommandCenter only.
+
+**Headphone (AVRCP) control needs a bundle identity.** Bluetooth/AirPods
+play-pause and stem double-tap do not arrive as `CGEvent` media keys; they are
+delivered by MediaRemote to whichever app owns the current Now Playing session,
+and that requires a real `CFBundleIdentifier`. `tauri dev` executes
+`target/debug/ceru-tauri` as a bare binary, where `bundleIdentifier` is `nil`, so
+remote commands are silently never routed there. `src-tauri/build.rs` now writes
+an `Info.plist` next to the built executable so the dev binary also reports
+`com.cerumusic.tauri` (verified in `/tmp/ceru-media-keys.log`
+`init: bundleIdentifier=...`). `useSmtc.ts` keeps the session alive with a 10s
+Now Playing heartbeat while playing (metadata alone goes stale and the system
+stops routing), `now_playing.rs` caches `MPMediaItemArtwork` per URL so the
+heartbeat never re-downloads artwork, and `-[NSApplication
+beginReceivingRemoteControlEvents]` must not be called from setup (it aborts the
+process). `CERU_DISABLE_MEDIA_TAP=1` drops the CGEventTap so only the remote
+command channel remains when diagnosing routing. User global hotkeys are stored in the `hotkeys` table, merged onto
+
+**Now Playing state must track real playback or earphone keys die.** MediaRemote
+decides whether an earphone press sends `playCommand` or `pauseCommand` from the
+session's last reported playback state, so the app must push the *real* state on
+every transition: `globaPlayList.ts` `handlePause` now pauses on `isPlay` alone and
+unconditionally calls `updatePlaybackState('paused')` (the old `url && audio` guard
+silently skipped the sync in native mode); the `useSmtc.ts` 10s heartbeat reads the
+native engine (`nativeIsPaused()`) and self-heals the system state back to paused if
+it ever lags behind. `onGlobalCtrl` treats `pause` as a toggle (playing→pause,
+otherwise→play) so a stale system perception can never make the button dead, and
+dedupes same-action `source=media` events within 250ms because one physical press
+can be delivered both by `MPRemoteCommandCenter` (Rust) and by the WKWebView's own
+Media Session handler. `now_playing.rs` logs every `setPlaybackState` to
+`/tmp/ceru-media-keys.log` (`np` lines) and `media_diag_log` records frontend
+transitions in the same timeline. AirPods double-tap→next track additionally
+requires the macOS setting (Bluetooth→AirPods→double tap→next track).
+
+**Release builds must never route system-state reporting through `window.__TAURI__`.**
+`tauri.conf.json` does not enable `withGlobalTauri`, so a packaged build only has
+`__TAURI_INTERNALS__`. `useSmtc.ts` once reported Now Playing state via
+`window.__TAURI__?.core?.invoke`; the missing global silently swallowed every
+report, MediaRemote never learned the app was playing, and earphone presses were
+routed to the other active session (a music page open in the browser). Anything
+that feeds system state or diagnostics must go through `@tauri-apps/api/core`
+(`safeTauriInvoke` in `useSmtc.ts`); the same defect in `HotkeySettings.vue`
+recording is fixed the same way.
+
+**macOS 27 removed `+[NSImage imageWithData:]`.** The class object still
+exists but the class method is gone; calling it throws an uncaught
+`NSInvalidArgumentException` that aborts the whole process. Now Playing
+artwork must be built with the instance method `-[NSImage initWithData:]`
+(or `initWithContentsOfURL:`) behind a `respondsToSelector:` guard, so a
+future API removal degrades to "no artwork + log line" instead of a crash.
+
+**The engine's real state comes from `mpv_get_state`, never from
+`nativeIsPaused()`.** That frontend helper reads the store's own `isPlay`
+(a circular alias), so it cannot detect desyncs. The 8s position tick in
+`globaPlayList.ts` queries `mpv_get_state` while the frontend is paused and, after
+two consecutive ~16s confirmations of "engine playing but `isPlay=false`" (a
+startup sidecar-warmup race on `nativePlay`'s IPC), re-enters playback through
+the canonical `nativePlay()` path and reports `playing` to the system.
+defaults, and re-applied after every save; they use `CommandOrControl` so one config
+resolves to Cmd on macOS and Ctrl on Windows, and any key (incl. F1–F12) can be
+recorded. Launch autoplay is `playSetting.autoPlayOnLaunch` (default off) and only
 starts after the restored URL actually loads.
 
 The canonical current song and source must be normalized after every successful
@@ -132,6 +204,15 @@ URL fallback. Download quality checks read the same canonical state; do not let
 the queue store and playback store diverge. Feiniu and other cookie-protected
 plugin results must keep their auth headers via the local stream proxy; a bare
 CDN/NAS URL will 401 and look like a source failure.
+
+Favorite display follows a separate stable identity. `GlobalPlayStatus.player.favoriteAnchor`
+is set once per `playSong` (the song the user picked) and is never rewritten by source
+fallbacks inside that play session. The dock like star (`PlayMusic.refreshLikeState` /
+`onToggleLike`) and favorites add/remove resolve against the anchor, so a song's star
+survives automatic source switching and unliking always targets the picked identity
+(`source:songmid`); the queue entry may still show the fallback instance. Queue eviction
+on unliking (`evictUnlikedFromPlayback`) keeps using the current playback
+instance, so the currently playing (possibly fallback) song still advances correctly.
 
 Every resolved URL must pass `isPlayableUrl` before it is cached or handed to
 `mpv_load`. Aggregation APIs return CDN root addresses such as
@@ -259,15 +340,19 @@ architecture. A low Tauri shell number alone does not prove lower total cost.
 | Podcast/discover is slow | `src/views/music/find.vue`, `src/views/music/podcast.vue`, `src/utils/cache/sessionCache.ts` | concurrent first screen, request IDs, stale response rejection |
 | Desktop lyric missing | `src-tauri/src/commands/lyric_window.rs`, `src/views/DeskTopLyric/DeskTopLyric.vue` | logical pixels, transparent boot, reveal, lock, drag |
 | Full player animation stutters | `src/components/Play/FullPlay.vue`, `src/components/Play/PlayMusic.vue` | animation path, compositor properties, visualizer cost |
+| Welcome dissolve into home | `src/views/welcome/index.vue`, `src/App.vue` | splash stays on top, home mounts underneath, scale/blur fade |
+| FullPlay trackpad gestures | `src/components/Play/FullPlay.vue`, `src/store/playSetting.ts` | two-finger layout, pinch fullscreen; frontend-only, no AppKit monitor |
 | Fullscreen dock needs two clicks | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` | idle wake strip, parked full-play off dock, hidden dock pointer-events |
 | Dock progress jumps every second | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` | animate remaining duration with transform; do not raise `progressPublishInterval` |
 | First song after restart is slow | `src/utils/audio/globaPlayList.ts`, `src/utils/audio/audioHelpers.ts` | startup restore must not mpv_probe before mpv_load |
-| Fullscreen CPU/memory stays high after close | `src/components/Play/FullPlay.vue`, `src/components/sImage.vue`, `src/views/home/index.vue` | hide/minimize release FullPlay; keep current-page hot covers; drop cold decoded bitmaps; KeepAlive max=1 while hidden |
+| Fullscreen CPU/memory stays high after close | `src/components/Play/FullPlay.vue`, `src/components/Play/ShaderBackground.vue`, `src/components/Play/AudioVisualizer.vue` | shader/visualizer rAF only while fullscreen playing; dormant uses visibility:hidden only; hide/minimize can still release FullPlay; do not cut bake quality or cover caches |
 | Window buttons / settings unclickable | `src/App.vue`, `src/components/TitleBarControls.vue`, `src/components/Play/FullPlay.vue` | drag strip right inset, TitleBar z-index above playbox, no-drag on buttons |
-| Memory/CPU is high | `src-tauri/src/commands/node_sidecar.rs`, `sidecar/index.mjs`, cache stores | full process tree, idle work, cache bounds, retained listeners |
+| Memory/CPU is high | `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/ShaderBackground.vue`, `src/tauri-bridge.ts` | production must not run mpv hot logger; pause hidden QR/DLNA/recommendation timers; keep listen-together ping and native playback clock |
 | Settings CPU/memory spikes when switching modules | `src/views/settings/index.vue`, `src/views/settings/sections/PluginSection.vue`, `src/views/settings/sections/PlaybackSection.vue` | current category only, no KeepAlive, plugins/EQ/device scan not on appearance |
 | localhost memory ~400MB | `src/utils/coverThumb.ts`, `src/components/sImage.vue`, `src/views/music/find.vue`, `src-tauri/src/lib.rs` | decoded CDN covers, hover backdrop double-decode, WKWebView NSURLCache |
 | Playback CPU both sides high (`澜音` + `localhost`) | `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue`, `src/tauri-bridge.ts` | first check `mpv_set_playback_rate` ↔ `canplay` loop and `/tmp/ceru-mpv-hot.log` `set_rate=`; then lyric noise / progress clock |
+| Headphone / Now Playing keys do nothing | `src-tauri/build.rs`, `src-tauri/src/now_playing.rs`, `src/utils/audio/useSmtc.ts`, `/tmp/ceru-media-keys.log` | bundleIdentifier must be non-nil for MediaRemote routing; 10s Now Playing heartbeat; artwork cached per URL |
+| Favorites list keeps jumping | `src/views/music/list.vue`, `src/components/Music/SongVirtualList.vue` | silent refresh must merge into existing row objects, never replace the array; cover directive re-observes only when the bound song really changed |
 | Plugin/source mapping is wrong | `src/utils/playlist/pluginIdentity.ts`, `src/tauri-bridge.ts` | normalized source identity, plugin registry, duplicate IDs |
 
 ## Query Commands

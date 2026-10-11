@@ -389,15 +389,17 @@ onMounted(() => {
   installGlobalMusicControls()
   installDesktopLyricBridge()
   // 全局监听来自主进程的播放控制事件，确保路由切换也可响应
-  const forward = (name: string, val?: any) => {
-    console.log('forward', name, val)
-    window.dispatchEvent(new CustomEvent('global-music-control', { detail: { name, val } }))
+  const forward = (name: string, val?: any, source?: string) => {
+    window.dispatchEvent(new CustomEvent('global-music-control', { detail: { name, val, source } }))
   }
-  window.electron?.ipcRenderer?.on?.('play', () => forward('play'))
-  window.electron?.ipcRenderer?.on?.('pause', () => forward('pause'))
-  window.electron?.ipcRenderer?.on?.('toggle', () => forward('toggle'))
-  window.electron?.ipcRenderer?.on?.('playPrev', () => forward('playPrev'))
-  window.electron?.ipcRenderer?.on?.('playNext', () => forward('playNext'))
+  // source='media'：这些通道同时承载键盘媒体键（hotkeys.rs 单路投递）和耳机媒体键
+  //（MPRemoteCommandCenter，可能与 WKWebView Media Session 双路投递），
+  // onGlobalCtrl 对同指令 250ms 去重，防止 toggle 语义被触发两次互相抵消。
+  window.electron?.ipcRenderer?.on?.('play', () => forward('play', undefined, 'media'))
+  window.electron?.ipcRenderer?.on?.('pause', () => forward('pause', undefined, 'media'))
+  window.electron?.ipcRenderer?.on?.('toggle', () => forward('toggle', undefined, 'media'))
+  window.electron?.ipcRenderer?.on?.('playPrev', () => forward('playPrev', undefined, 'media'))
+  window.electron?.ipcRenderer?.on?.('playNext', () => forward('playNext', undefined, 'media'))
   window.electron?.ipcRenderer?.on?.('volumeDelta', (_: any, val: number) =>
     forward('volumeDelta', val)
   )

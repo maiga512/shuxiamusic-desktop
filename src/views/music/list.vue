@@ -411,16 +411,64 @@ const fetchPlaylistSongs = async () => {
 }
 
 // 获取本地歌单歌曲
+//
+// 静默刷新（NAS 同步、收藏变更总线）会反复走到这里。数据库重读返回的是一批
+// 全新对象，过去直接 songs.value = result.data 等于整张表重建：虚拟列表重新挂载、
+// 封面重新解析、行位置重算，用户看到的就是"歌曲一直在跳、像在刷新"。
+// 现在按 source+songmid 复用原来的行对象，内容没变时一次响应式写入都不做。
+const SONG_ROW_KEY = (song: any) => `${song?.source ?? ''}|${song?.songmid ?? ''}`
+const SONG_ROW_FIELDS = ['name', 'singer', 'albumName', 'interval', 'duration', 'img']
+
+const mergeLocalSongsInto = (incoming: any[]): void => {
+  const previous = songs.value
+  const pool = new Map<string, any>()
+  for (const item of previous) pool.set(SONG_ROW_KEY(item), item)
+
+  let changed = previous.length !== incoming.length
+  const merged = incoming.map((item, index) => {
+    const existing = pool.get(SONG_ROW_KEY(item)) ?? item
+    if (previous[index] !== existing) changed = true
+    if (existing !== item) {
+      for (const field of SONG_ROW_FIELDS) {
+        const incoming = item[field]
+        // 数据库里的封面常常是空的，而界面上这张已经解析出来了。
+        // 用空值覆盖会让图片消失再重新解析，行就会闪一下。
+        if ((field === 'img' || field === 'albumName') && !incoming && existing[field]) continue
+        if (existing[field] !== incoming) {
+          existing[field] = incoming
+          changed = true
+        }
+      }
+    }
+    return existing
+  })
+
+  if (!changed) return
+  songs.value = merged as MusicItem[]
+}
+
+let localSongsInFlight = false
+let localSongsRerun = false
+
 const fetchLocalPlaylistSongs = async () => {
+  if (localSongsInFlight) {
+    // 刷新风暴时只补跑最后一次，别让多个重读互相覆盖
+    localSongsRerun = true
+    return
+  }
+  localSongsInFlight = true
   try {
     // 调用本地歌单API获取歌曲列表
     const result = await window.api.songList.getSongs(playlistInfo.value.id)
 
     if (result.success && result.data) {
-      songs.value = result.data
+      mergeLocalSongsInto(result.data as any[])
 
       // 更新歌单信息中的歌曲总数
-      playlistInfo.value.total = songs.value.length
+      const nextTotal = songs.value.length
+      if (playlistInfo.value.total !== nextTotal) {
+        playlistInfo.value.total = nextTotal
+      }
 
       // 获取歌单详细信息
       const playlistResult = await window.api.songList.getById(playlistInfo.value.id)
@@ -440,22 +488,39 @@ const fetchLocalPlaylistSongs = async () => {
           if (currentMeta.cloudUpdatedAt) newMeta.cloudUpdatedAt = currentMeta.cloudUpdatedAt
         }
 
-        playlistInfo.value = {
-          ...playlistInfo.value,
-          title: playlist.name,
-          cover: playlist.coverImgUrl || playlistInfo.value.cover,
-          total: songs.value.length,
-          desc: playlist.description || '',
-          meta: newMeta
+        const nextCover = playlist.coverImgUrl || playlistInfo.value.cover
+        const nextDesc = playlist.description || ''
+        const metaChanged = JSON.stringify(newMeta) !== JSON.stringify(currentMeta)
+        // 头部整体替换会重绘背景，只有真的变了才换对象
+        if (
+          playlistInfo.value.title !== playlist.name ||
+          playlistInfo.value.cover !== nextCover ||
+          playlistInfo.value.desc !== nextDesc ||
+          metaChanged
+        ) {
+          playlistInfo.value = {
+            ...playlistInfo.value,
+            title: playlist.name,
+            cover: nextCover,
+            total: nextTotal,
+            desc: nextDesc,
+            meta: newMeta
+          }
         }
       }
     } else {
       console.error('获取本地歌单失败:', result.error)
-      songs.value = []
+      if (songs.value.length) songs.value = []
     }
   } catch (error) {
     console.error('获取本地歌单歌曲失败:', error)
-    songs.value = []
+    if (songs.value.length) songs.value = []
+  } finally {
+    localSongsInFlight = false
+    if (localSongsRerun) {
+      localSongsRerun = false
+      void fetchLocalPlaylistSongs()
+    }
   }
 }
 

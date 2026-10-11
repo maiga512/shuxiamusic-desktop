@@ -17,7 +17,7 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 // 参数与安卓启动遮罩 StartupPreloadOverlay 完全一致：
 // particleCount 150 / speed 5.2 / density 96 / starSize 20 / focalDepth 5 /
 // turbulence 3.6 / brightness 100 / glitter 4.5 / trails 42 / reverse false。
-const STARTUP_MIN_MS = 2000
+const STARTUP_MIN_MS = 1500
 const CFG = {
   particleCount: 150,
   speed: 5.2,
@@ -224,23 +224,17 @@ async function bootThenEnter() {
   await new Promise<void>((resolve) => window.setTimeout(resolve, wait))
   if (entered) return
   entered = true
-  
-  // 启动淡出动画
-  const root = document.querySelector('.splash-root')
-  if (root) {
-    root.classList.add('fade-out')
-    // 等待淡出动画完成（600ms）
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 600))
-  }
-  
   await router.replace('/home')
   // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
   // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
-  try {
-    await initPlayback()
-  } catch (e) {
-    console.error('[welcome] initPlayback failed', e)
-  }
+  // 星空遮罩的化开交给 App.vue 的路由 Transition：主页先在下面挂好，
+  // 启动层再放大模糊淡出，避免先淡成黑再突然切界面。
+  // 恢复播放再等一帧过渡，避免 home 挂载和本地状态读取跟化开动画抢主线程。
+  window.setTimeout(() => {
+    void initPlayback().catch((e) => {
+      console.error('[welcome] initPlayback failed', e)
+    })
+  }, 720)
 }
 
 onUnmounted(() => {
@@ -263,14 +257,8 @@ onUnmounted(() => {
   height: 100vh;
   background: #000000;
   overflow: hidden;
-  z-index: 10;
+  z-index: 30000;
   opacity: 1;
-  transition: opacity 0.6s ease-out;
-}
-
-.splash-root.fade-out {
-  opacity: 0;
-  pointer-events: none;
 }
 
 .splash-canvas {

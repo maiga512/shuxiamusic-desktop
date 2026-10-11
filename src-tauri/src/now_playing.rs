@@ -12,7 +12,9 @@ static LAST_MEDIA_EVENT_MS: AtomicU64 = AtomicU64::new(0);
 static APP_HANDLE: OnceLock<AppHandle> = OnceLock::new();
 
 const MP_REMOTE_COMMAND_HANDLER_STATUS_SUCCESS: isize = 0;
-const MEDIA_EVENT_DEBOUNCE_MS: u64 = 220;
+// 双通道防重：一次物理按键可能同时触发 MPRemoteCommandCenter 的
+// togglePlayPauseCommand 与 play/pauseCommand，取 100ms 去抖合并为一次。
+const MEDIA_EVENT_DEBOUNCE_MS: u64 = 100;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +44,20 @@ fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
+/// 耳机/键盘媒体键链路诊断日志：写固定文件方便 tail 确认事件是否真的到达进程
+/// （打包后的 .app 看不到 stdout，只能靠这份文件区分“事件没送到”和“送到了但没派发”）。
+pub fn log_media_event(source: &str, detail: &str) {
+    use std::io::Write;
+
+    if let Ok(mut file) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("/tmp/ceru-media-keys.log")
+    {
+        let _ = writeln!(file, "[{}] {source}: {detail}", now_ms());
+    }
+}
+
 pub fn claim_media_event() -> bool {
     let now = now_ms();
     let last = LAST_MEDIA_EVENT_MS.load(Ordering::SeqCst);
@@ -63,8 +79,10 @@ fn capture_accelerator(action: &str) -> &'static str {
 
 pub fn dispatch_media_action(action: &'static str) {
     if !claim_media_event() {
+        log_media_event("mp-remote", &format!("{action} debounced"));
         return;
     }
+    log_media_event("mp-remote", action);
     if RECORDING_MEDIA_KEY.load(Ordering::SeqCst) {
         if let Some(app) = APP_HANDLE.get() {
             let _ = app.emit("hotkeys:media-capture", capture_accelerator(action));
@@ -105,7 +123,21 @@ mod macos {
             }
 
             let image_class = AnyClass::get(c"NSImage")?;
-            let image: *mut AnyObject = msg_send![image_class, imageWithData: data];
+            // macOS 27 移除了类方法 +[NSImage imageWithData:]（运行时抛
+            // unrecognized selector 未捕获异常直接 abort 进程，2026-10-09
+            // 启动数秒即崩的元凶）。改用仍可用的实例方法 initWithData:，
+            // 并保留响应性检查兜底未来系统再删 API：不响应就跳过封面，
+            // Now Playing 照常工作，下一次 set_info 心跳自然重试。
+            let image: *mut AnyObject = msg_send![image_class, alloc];
+            if image.is_null() {
+                return None;
+            }
+            let responds: bool = msg_send![image, respondsToSelector: sel!(initWithData:)];
+            if !responds {
+                log_media_event("now-playing", "artwork skip: NSImage initWithData: not available");
+                return None;
+            }
+            let image: *mut AnyObject = msg_send![image, initWithData: data];
             if image.is_null() {
                 return None;
             }
@@ -125,11 +157,39 @@ mod macos {
     use objc2::runtime::{AnyClass, AnyObject, ClassBuilder, Sel};
     use objc2::{msg_send, sel};
 
+    use std::sync::Mutex;
+
     struct TargetHolder(*mut AnyObject);
     unsafe impl Send for TargetHolder {}
     unsafe impl Sync for TargetHolder {}
 
     static TARGET: OnceLock<TargetHolder> = OnceLock::new();
+
+    /// Now Playing 封面。set_info 每次都会重建 info 字典，心跳每 10 秒就会
+    /// 再走一遍，如果每次都 dataWithContentsOfURL 同步下载一张 512 的图，
+    /// 等于给自己加了个每 10 秒一次的网络请求。这里按 URL 缓存住已解码的对象。
+    struct ArtworkCacheEntry(String, *mut AnyObject);
+    unsafe impl Send for ArtworkCacheEntry {}
+    static ARTWORK_CACHE: OnceLock<Mutex<Option<ArtworkCacheEntry>>> = OnceLock::new();
+
+    fn artwork_for(url: &str) -> Option<*mut AnyObject> {
+        let cache = ARTWORK_CACHE.get_or_init(|| Mutex::new(None));
+        let mut guard = cache.lock().ok()?;
+        if let Some(ArtworkCacheEntry(cached_url, object)) = guard.as_ref() {
+            if cached_url == url {
+                return Some(*object);
+            }
+        }
+        let object = create_mpmedia_artwork(url)?;
+        if let Some(ArtworkCacheEntry(_, old)) =
+            guard.replace(ArtworkCacheEntry(url.to_string(), object))
+        {
+            unsafe {
+                let _: () = msg_send![old, release];
+            }
+        }
+        Some(object)
+    }
 
     #[link(name = "MediaPlayer", kind = "framework")]
     extern "C" {}
@@ -207,8 +267,7 @@ mod macos {
             let nil: *mut AnyObject = std::ptr::null_mut();
             let _: () = msg_send![command, removeTarget: nil];
             let _: () = msg_send![command, addTarget: target, action: action];
-            let enabled: objc2::runtime::Bool = objc2::runtime::Bool::YES;
-            let _: () = msg_send![command, setEnabled: enabled];
+            let _: () = msg_send![command, setEnabled: true];
         }
     }
 
@@ -247,8 +306,40 @@ mod macos {
         dict_set_object(dict, key, num);
     }
 
+    /// MPRemoteCommandCenter / MediaRemote 只会把耳机（AVRCP）和控制面板的播放
+    /// 指令投给"有 bundle 身份、且当前被系统认定为正在播放"的 App。裸跑的 dev 版
+    /// 没有 bundle id 时注册会静默成功但永远收不到事件，所以把 bundle id 写进日志，
+    /// 一眼能分清是"没注册"还是"注册了但系统没路由过来"。
+    fn bundle_identifier() -> String {
+        let Some(bundle_class) = AnyClass::get(c"NSBundle") else {
+            return "<no NSBundle>".to_string();
+        };
+        unsafe {
+            let bundle: *mut AnyObject = msg_send![bundle_class, mainBundle];
+            if bundle.is_null() {
+                return "<nil mainBundle>".to_string();
+            }
+            let value: *mut AnyObject = msg_send![bundle, bundleIdentifier];
+            if value.is_null() {
+                return "<nil bundleIdentifier>".to_string();
+            }
+            let utf8: *const std::os::raw::c_char = msg_send![value, UTF8String];
+            if utf8.is_null() {
+                return "<unreadable>".to_string();
+            }
+            std::ffi::CStr::from_ptr(utf8).to_string_lossy().into_owned()
+        }
+    }
+
+    // 注意：不要再调 -[NSApplication beginReceivingRemoteControlEvents]。
+    // 实测在 macOS 上从 Tauri setup 里调用会直接 abort 进程（panic in a
+    // function that cannot unwind），而且 MPRemoteCommandCenter 本身不需要它。
+
     fn install_remote_commands() {
         eprintln!("[now-playing] 开始注册 MPRemoteCommandCenter");
+        let identity = bundle_identifier();
+        log_media_event("init", &format!("bundleIdentifier={identity}"));
+        eprintln!("[now-playing] bundleIdentifier = {identity}");
         let Some(cls) = register_target_class() else {
             eprintln!("[now-playing] CeruNowPlayingTarget 注册失败");
             return;
@@ -296,6 +387,19 @@ mod macos {
         }
 
         eprintln!("[now-playing] MPRemoteCommandCenter 已接管键盘媒体键");
+        log_media_event("init", "MPRemoteCommandCenter 已注册 toggle/play/pause/next/prev/stop");
+
+        // 设置初始 Now Playing 状态，让 macOS 立即把媒体键路由到本 App
+        set_info(&NowPlayingPayload {
+            title: Some("澜音".to_string()),
+            artist: None,
+            album: None,
+            artwork_url: None,
+            duration: None,
+            elapsed: None,
+            playing: Some(false),
+            rate: Some(0.0),
+        });
     }
 
     pub fn init(app: &AppHandle) {
@@ -353,24 +457,40 @@ mod macos {
         dict_set_f64(dict, "playbackRate", rate);
 
         // Set artwork (album cover) on Now Playing info center.
-        if let Some(artwork_url) = payload.artwork_url.as_deref() {
-            if let Some(artwork) = create_mpmedia_artwork(artwork_url) {
+        // 缓存持有自己的 +1，setObject:forKey: 会再保留一份，这里不能 release。
+        if let Some(artwork_url) = payload
+            .artwork_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            if let Some(artwork) = artwork_for(artwork_url) {
                 dict_set_object(dict, "MPMediaItemPropertyArtwork", artwork);
-                unsafe {
-                    let _: () = msg_send![artwork, release];
-                }
             }
         }
 
+        let state: isize = if payload.playing.unwrap_or(false) {
+            1
+        } else {
+            2
+        };
+
         unsafe {
             let _: () = msg_send![center, setNowPlayingInfo: dict];
-            let state: isize = if payload.playing.unwrap_or(false) {
-                1
-            } else {
-                2
-            };
             let _: () = msg_send![center, setPlaybackState: state];
         }
+        // 状态时间线诊断：每次系统侧状态更新都留一行，方便从 /tmp/ceru-media-keys.log
+        // 直接判断"状态到底有没有同步、什么时候又被覆盖回 playing"。
+        log_media_event(
+            "np",
+            &format!(
+                "state={} rate={:.2} elapsed={:.1} title={}",
+                state,
+                rate,
+                payload.elapsed.unwrap_or(0.0),
+                title
+            ),
+        );
     }
 }
 
@@ -420,4 +540,11 @@ pub fn now_playing_update(
 pub fn hotkeys_set_recording(recording: bool) -> Result<(), String> {
     set_recording_media_key(recording);
     Ok(())
+}
+
+/// 前端关键节点（暂停/状态同步/控制事件）诊断日志，与媒体键事件同写一份文件，
+/// 打包后的 .app 没有控制台，全靠这份时间线定位"事件到了但状态没同步"这类问题。
+#[tauri::command]
+pub fn media_diag_log(source: String, detail: String) {
+    log_media_event(&source, &detail);
 }

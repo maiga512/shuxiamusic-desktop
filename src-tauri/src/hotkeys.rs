@@ -7,17 +7,24 @@ use crate::emit_music_control;
 use crate::models::HotkeyEntry;
 use crate::now_playing;
 
-/// Electron always registers these, independent of the user hotkey table.
-/// Tauri must do the same: hardware prev/next never live in `hotkeys`.
+/// 标准多媒体键，独立于用户快捷键表注册。
+/// 这些是操作系统原生的播放控制键（播放/暂停、上一首、下一首、停止）：
+/// - 全平台：由全局快捷键捕获。macOS 上 global-hotkey 会用 SystemDefined
+///   CGEventTap 直接截获键盘媒体键 / 有线耳机 / AirPods / 蓝牙的
+///   NX_KEYTYPE 事件并消费，应用在前台或后台都能收到，不依赖
+///   "Now Playing" 路由（那是耳机控制曾经完全失效的根因）。
+/// - macOS 上 `now_playing` 的 MPRemoteCommandCenter 同时保留兜底：
+///   tap 命中即消费事件，MPRemoteCommandCenter 不会重复收到；
+///   当 tap 不可用（未授权辅助功能）时它负责接管，并展示 Now Playing。
+/// 不再硬编码 F7/F8/F9，默认交给系统原生适配；F7/F8/F9 仍可被用户录为自定义键。
 const MEDIA_KEY_BINDINGS: &[(&str, &str)] = &[
     ("toggle", "MediaPlayPause"),
     ("playNext", "MediaTrackNext"),
     ("playPrev", "MediaTrackPrevious"),
-    ("pause", "MediaStop"),
+    // 不再注册 MediaStop：Apple 键盘和绝大多数耳机根本没有"停止"键，
+    // global-hotkey 会直接报 Unknown scancode，白刷一条注册失败日志。
+    // 停止指令由 MPRemoteCommandCenter 的 stopCommand 负责（见 now_playing）。
 ];
-
-const HARDWARE_FKEY_BINDINGS: &[(&str, &str)] =
-    &[("playPrev", "F7"), ("toggle", "F8"), ("playNext", "F9")];
 
 pub fn normalize_accelerator(raw: &str) -> String {
     let trimmed = raw.trim().replace(' ', "");
@@ -27,9 +34,6 @@ pub fn normalize_accelerator(raw: &str) -> String {
         "MEDIATRACKPREV" => "MediaTrackPrevious".into(),
         "MEDIAPLAYPAUSE" => "MediaPlayPause".into(),
         "MEDIASTOP" => "MediaStop".into(),
-        "F7" => "F7".into(),
-        "F8" => "F8".into(),
-        "F9" => "F9".into(),
         _ => trimmed,
     }
 }
@@ -79,10 +83,7 @@ fn match_user_hotkey(app: &tauri::AppHandle, shortcut: &Shortcut) -> Option<Stri
 }
 
 fn match_media_hotkey(shortcut: &Shortcut) -> Option<&'static str> {
-    for (action, accelerator) in MEDIA_KEY_BINDINGS
-        .iter()
-        .chain(HARDWARE_FKEY_BINDINGS.iter())
-    {
+    for (action, accelerator) in MEDIA_KEY_BINDINGS.iter() {
         if let Some(expected) = parse_accelerator(accelerator) {
             if &expected == shortcut {
                 return Some(*action);
@@ -122,7 +123,10 @@ pub fn handle_shortcut(app: &tauri::AppHandle, shortcut: &Shortcut, event: Short
     }
     if let Some(action) = match_media_hotkey(shortcut) {
         if now_playing::claim_media_event() {
+            now_playing::log_media_event("global-shortcut", action);
             dispatch_hotkey_action(app, action);
+        } else {
+            now_playing::log_media_event("global-shortcut", &format!("{action} debounced"));
         }
     }
 }
@@ -158,11 +162,18 @@ fn register_media_keys(
     app: &tauri::AppHandle,
     failed_actions: &mut Vec<String>,
     action_errors: &mut Map<String, Value>,
-) {
-    for (action, accelerator) in MEDIA_KEY_BINDINGS
-        .iter()
-        .chain(HARDWARE_FKEY_BINDINGS.iter())
-    {
+) -> bool {
+    // 全平台注册消费式媒体键捕获。macOS 的 CGEventTap 命中即消费事件，
+    // MPRemoteCommandCenter 不会重复收到；tap 创建失败（未授权辅助功能）
+    // 时只记录日志，绝不阻塞用户快捷键或把设置页判为失败。
+    if std::env::var("CERU_DISABLE_MEDIA_TAP").is_ok() {
+        // 排障开关：只保留 MPRemoteCommandCenter 一条通道，用来区分
+        // "CGEventTap 抢走了媒体键"和"系统根本没把指令投给我们"。
+        eprintln!("[hotkeys] CERU_DISABLE_MEDIA_TAP=1，跳过媒体键 CGEventTap");
+        return true;
+    }
+    let mut all_ok = true;
+    for (action, accelerator) in MEDIA_KEY_BINDINGS.iter() {
         // Media-key CGEventTap can fail without Accessibility; never block
         // user hotkeys or treat this as a settings-row failure.
         let Some(shortcut) = parse_accelerator(accelerator) else {
@@ -172,6 +183,7 @@ fn register_media_keys(
             continue;
         }
         if let Err(error) = app.global_shortcut().register(shortcut) {
+            all_ok = false;
             eprintln!(
                 "[hotkeys] 注册系统媒体键失败 [{} / {}]: {}",
                 action, accelerator, error
@@ -183,6 +195,82 @@ fn register_media_keys(
             );
         }
     }
+    all_ok
+}
+
+/// macOS：查询进程是否有辅助功能权限（CGEventTap 截获媒体键的前提）。
+/// prompt=true 时弹系统授权对话框（未授权时才会出现，系统自动去重不骚扰）。
+#[cfg(target_os = "macos")]
+fn ax_is_trusted(prompt: bool) -> bool {
+    use objc2::msg_send;
+    use objc2::runtime::{AnyClass, AnyObject};
+
+    extern "C" {
+        fn AXIsProcessTrusted() -> bool;
+        // options 是 CFDictionaryRef；NSDictionary 与其 toll-free bridged，指针直传即可。
+        fn AXIsProcessTrustedWithOptions(options: *mut AnyObject) -> bool;
+    }
+
+    if !prompt {
+        return unsafe { AXIsProcessTrusted() };
+    }
+    unsafe {
+        let Some(ns_string_cls) = AnyClass::get(c"NSString") else {
+            return AXIsProcessTrusted();
+        };
+        let key: *mut AnyObject = msg_send![ns_string_cls, stringWithUTF8String: c"AXTrustedCheckOptionPrompt".as_ptr()];
+        let Some(ns_number_cls) = AnyClass::get(c"NSNumber") else {
+            return AXIsProcessTrusted();
+        };
+        let true_val: *mut AnyObject = msg_send![ns_number_cls, numberWithBool: true];
+        let Some(ns_dict_cls) = AnyClass::get(c"NSDictionary") else {
+            return AXIsProcessTrusted();
+        };
+        let dict: *mut AnyObject = msg_send![ns_dict_cls, dictionaryWithObject: true_val, forKey: key];
+        if dict.is_null() {
+            return AXIsProcessTrusted();
+        }
+        AXIsProcessTrustedWithOptions(dict)
+    }
+}
+
+static AX_RETRY_STARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// 媒体键 tap 注册失败（几乎都是缺辅助功能权限）时的恢复流程：
+/// 弹一次系统授权对话框，再后台每 2 秒复查、最多 15 分钟，
+/// 用户一授权就自动补注册媒体键，不用重启 App。
+/// 重新打包后签名变化、权限失效时，下次启动会再次走这个流程。
+#[cfg(target_os = "macos")]
+fn spawn_ax_retry(app: &tauri::AppHandle) {
+    use std::sync::atomic::Ordering;
+    if AX_RETRY_STARTED.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    let app = app.clone();
+    let _ = std::thread::Builder::new()
+        .name("ceru-media-key-ax-retry".into())
+        .spawn(move || {
+            for attempt in 0..450 {
+                std::thread::sleep(std::time::Duration::from_secs(2));
+                if !ax_is_trusted(false) {
+                    continue;
+                }
+                let mut failed = Vec::new();
+                let mut errors = Map::new();
+                let ok = register_media_keys(&app, &mut failed, &mut errors);
+                now_playing::log_media_event(
+                    "hotkeys",
+                    &format!(
+                        "media keys re-register after accessibility grant: {} (attempt {})",
+                        if ok { "ok" } else { "still failing" },
+                        attempt + 1
+                    ),
+                );
+                if ok {
+                    break;
+                }
+            }
+        });
 }
 
 pub fn apply_global_hotkeys(app: &tauri::AppHandle) -> Value {
@@ -220,8 +308,28 @@ pub fn apply_global_hotkeys(app: &tauri::AppHandle) -> Value {
         );
     }
 
-    register_media_keys(app, &mut failed_actions, &mut action_errors);
 
+    #[cfg_attr(not(target_os = "macos"), allow(unused_variables))]
+    let media_keys_ok = register_media_keys(app, &mut failed_actions, &mut action_errors);
+
+    // macOS：媒体键 tap 注册失败几乎都是缺辅助功能权限。弹一次系统授权对话框，
+    // 并后台自动重试，用户授权后立即补注册（重打包换签名后权限会失效，靠这个自愈）。
+    #[cfg(target_os = "macos")]
+    {
+        let trusted = ax_is_trusted(false);
+        now_playing::log_media_event(
+            "hotkeys",
+            &format!("accessibility_trusted={trusted} media_keys_registered={media_keys_ok}"),
+        );
+        if !media_keys_ok {
+            let _ = ax_is_trusted(true);
+            now_playing::log_media_event(
+                "hotkeys",
+                "媒体键注册失败（疑似缺辅助功能权限），已弹系统授权提示，授权后自动重试",
+            );
+            spawn_ax_retry(app);
+        }
+    }
     failed_actions.sort();
     failed_actions.dedup();
     let user_failed: Vec<String> = failed_actions

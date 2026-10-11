@@ -23,6 +23,9 @@ import mediaSessionController from '@renderer/utils/audio/useSmtc'
 interface Player {
   songId?: string
   songInfo?: Omit<SongList, 'songmid'> & { songmid: null | number | string }
+  // 收藏锚点：当前播放“用户选中的那首歌”（切源前）。星号/喜欢状态按此身份判定，
+  // 播放中自动换源只换播放实例，不改变锚点，收藏展示不随音源漂移。
+  favoriteAnchor?: Omit<SongList, 'songmid'> & { songmid: null | number | string } | null
   // base64编码 封面
   cover?: string
   // 封面详情
@@ -234,6 +237,7 @@ export const useGlobalPlayStatusStore = defineStore(
     const player = reactive<Player>({
       songId: void 0,
       songInfo: DEFAULT_SONG_INFO,
+      favoriteAnchor: null,
       cover: void 0,
       coverDetail: {
         ColorObject: void 0,
@@ -791,6 +795,11 @@ export const useGlobalPlayStatusStore = defineStore(
       localUserStore.userInfo.lastPlaySongSource = songInfo.source || null
     }
 
+    // 设置收藏锚点：playSong 选中新歌时调用；自动换源不得调用（锚点保持不变）。
+    function setFavoriteAnchor(song: SongList | null) {
+      player.favoriteAnchor = song ? { ...song } : null
+    }
+
     async function fetchComments(page = 1, type: 'hot' | 'latest' = 'hot') {
       const currentSongInfo = toRaw(player.songInfo)
       if (!currentSongInfo || !currentSongInfo.songmid) return
@@ -867,6 +876,7 @@ export const useGlobalPlayStatusStore = defineStore(
     return {
       player,
       updatePlayerInfo,
+      setFavoriteAnchor,
       fetchComments
     }
   },

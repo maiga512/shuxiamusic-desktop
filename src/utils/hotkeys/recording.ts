@@ -62,10 +62,7 @@ const MEDIA_DISPLAY: Record<string, string> = {
   MediaPlayPause: '播放/暂停',
   MediaTrackNext: '下一首',
   MediaTrackPrevious: '上一首',
-  MediaStop: '停止',
-  F7: 'F7 上一首',
-  F8: 'F8 播放/暂停',
-  F9: 'F9 下一首'
+  MediaStop: '停止'
 }
 
 const STANDALONE_KEYS = new Set([

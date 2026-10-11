@@ -43,7 +43,7 @@ import LtDanmakuLayer from '@renderer/components/ListenTogether/LtDanmakuLayer.v
 import { useLyricExtrasStore } from '@renderer/store/LyricExtras'
 import { appWindowState, isAppWindowActive, isAppWindowVisible } from '@renderer/utils/appWindowState'
 import DefaultCover from '@renderer/assets/images/Default.jpg'
-import { bakeAmbientBackdropDataUrl, clearAmbientBackdropCache } from '@renderer/utils/color/bakedAmbientBackdrop'
+import { clearAmbientBackdropCache } from '@renderer/utils/color/bakedAmbientBackdrop'
 import { startWindowDrag } from '@renderer/utils/windowDrag'
 
 const playSetting = usePlaySettingStore()
@@ -75,21 +75,107 @@ const showLeftPanel = computed({
   set: (val) => playSetting.setShowLeftPanel(val)
 })
 
-// 触控板手势只绑定全屏播放器内容区：双指横滑切换封面模式，
-// 三指横滑切换左侧面板。纵向手势不处理，继续交给歌词滚动或 macOS。
+// 全屏播放手势：
+// 双指左右滑 = 黑胶 / 方形封面
+// 双指放大 = 进真正全屏，双指捏合 = 恢复窗口
+type FullPlayGestureKind = 'layout' | 'panel' | 'fullscreen'
+type SafariGestureEvent = Event & { scale?: number }
+
 const gestureWheelState = {
   horizontal: 0,
   vertical: 0,
   lastDirection: 0,
   lastTriggeredAt: 0
 }
-const GESTURE_TRIGGER_DISTANCE = 72
-const GESTURE_COOLDOWN_MS = 420
+const GESTURE_TRIGGER_DISTANCE = 48
+const GESTURE_COOLDOWN_MS = 300
+const PINCH_WHEEL_THRESHOLD = 92
+const PINCH_SCALE_THRESHOLD = 0.14
+const THREE_FINGER_TOUCH_DISTANCE = 72
+const pinchWheelState = { acc: 0, lastDir: 0 }
+const pinchScaleState = { start: 1, armed: false }
+const threeFingerTouchState = {
+  active: false,
+  startX: 0,
+  startY: 0,
+  triggered: false
+}
 
 const resetGestureWheelState = () => {
   gestureWheelState.horizontal = 0
   gestureWheelState.vertical = 0
   gestureWheelState.lastDirection = 0
+}
+
+// 双指横滑"滑动段"状态：一次甩动只允许触发一次布局切换。
+// 触控板甩动会带出数百 ms 的惯性 wheel 事件流，仅靠固定冷却挡不住
+// 惯性 —— 惯性没停就会再次累计过阈值，造成"滑一下切好几下"。
+// 按"段"处理：同方向累计位移，过阈值切一次并锁存(latched)；
+// 直到事件断流(>SWIPE_GAP_MS)或方向反转才解锁，下一次甩动才会再切。
+const swipeState = {
+  acc: 0,
+  dir: 0,
+  latched: false,
+  lastEventAt: 0
+}
+const SWIPE_GAP_MS = 180
+
+const resetSwipeState = () => {
+  swipeState.acc = 0
+  swipeState.dir = 0
+  swipeState.latched = false
+  swipeState.lastEventAt = 0
+}
+const resetPinchState = () => {
+  pinchWheelState.acc = 0
+  pinchWheelState.lastDir = 0
+  pinchScaleState.start = 1
+  pinchScaleState.armed = false
+}
+
+const resetThreeFingerTouchState = () => {
+  threeFingerTouchState.active = false
+  threeFingerTouchState.startX = 0
+  threeFingerTouchState.startY = 0
+  threeFingerTouchState.triggered = false
+}
+
+const averageTouchPoint = (touches: TouchList) => {
+  let x = 0
+  let y = 0
+  for (let i = 0; i < touches.length; i++) {
+    x += touches[i].clientX
+    y += touches[i].clientY
+  }
+  const count = Math.max(1, touches.length)
+  return { x: x / count, y: y / count }
+}
+
+const isFullPlayGestureActive = () => props.show && isSlideOpen.value
+
+const applyFullPlayGesture = (kind: FullPlayGestureKind, enter?: boolean) => {
+  if (!isFullPlayGestureActive()) return false
+  // 'layout' 已由滑动段锁存保证一次甩动只切一次；这里不再叠加固定冷却，
+  // 否则快速连续的两次甩动(间隔 <300ms)会被误吞掉第二下。
+  if (kind !== 'layout') {
+    const now = performance.now()
+    if (now - gestureWheelState.lastTriggeredAt < GESTURE_COOLDOWN_MS) return false
+    gestureWheelState.lastTriggeredAt = now
+  }
+  if (kind === 'layout') {
+    playSetting.setLayoutMode(playSetting.getLayoutMode === 'cd' ? 'cover' : 'cd')
+  } else if (kind === 'panel') {
+    playSetting.setShowLeftPanel(!playSetting.getShowLeftPanel)
+  } else {
+    // 方向式捏合：放大(enter=true)进全屏，捏合(enter=false)恢复。
+    // 目标状态由 Rust 端窗口化全屏快照判断，避免动画期间状态滞后。
+    window.api?.toggleFullscreen?.(enter)
+  }
+  resetGestureWheelState()
+  resetSwipeState()
+  resetPinchState()
+  resetThreeFingerTouchState()
+  return true
 }
 
 const isGestureExcludedTarget = (target: EventTarget | null): boolean => {
@@ -100,37 +186,117 @@ const isGestureExcludedTarget = (target: EventTarget | null): boolean => {
 }
 
 const onFullPlayWheel = (event: WheelEvent) => {
-  if (!props.show || !isSlideOpen.value || isGestureExcludedTarget(event.target)) return
-  if (event.ctrlKey || event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return
+  if (!isFullPlayGestureActive() || isGestureExcludedTarget(event.target)) return
 
+  // WKWebView 把双指捏合映射成 ctrl + wheel，用来切窗口全屏而不是页面缩放。
+  if (event.ctrlKey) {
+    event.preventDefault()
+    const delta = event.deltaY || event.deltaX
+    if (!delta) return
+    const direction = delta > 0 ? 1 : -1
+    if (pinchWheelState.lastDir && pinchWheelState.lastDir !== direction) {
+      pinchWheelState.acc = 0
+    }
+    pinchWheelState.lastDir = direction
+    pinchWheelState.acc += delta
+    if (Math.abs(pinchWheelState.acc) < PINCH_WHEEL_THRESHOLD) return
+    applyFullPlayGesture('fullscreen', delta < 0)
+    return
+  }
+
+  // 滑动段锁存：一次甩动最多触发一次 layout 切换，惯性尾事件被忽略
+  const now = performance.now()
   const absX = Math.abs(event.deltaX)
   const absY = Math.abs(event.deltaY)
   // 垂直占优时完全不干预，保留歌词上下滚动和系统行为。
-  if (absY >= absX * 1.15) {
-    resetGestureWheelState()
+  if (absY > absX * 1.15) {
+    resetSwipeState()
     return
   }
-  if (absX < 1 || absX < absY * 1.35) return
+  // 太小只当抖动忽略。
+  if (absX < 8) return
+
+  // 事件断流 = 上一次甩动结束了，开新的滑动段。
+  if (swipeState.lastEventAt && now - swipeState.lastEventAt > SWIPE_GAP_MS) {
+    resetSwipeState()
+  }
+  swipeState.lastEventAt = now
 
   const direction = event.deltaX > 0 ? 1 : -1
-  if (gestureWheelState.lastDirection && gestureWheelState.lastDirection !== direction) {
-    resetGestureWheelState()
+  // 方向反转 = 上一段滑完了，按新方向重新累计（来回甩都各算一次）。
+  if (swipeState.dir !== 0 && direction !== swipeState.dir) {
+    swipeState.acc = 0
+    swipeState.latched = false
   }
-  gestureWheelState.lastDirection = direction
-  gestureWheelState.horizontal += event.deltaX
-  gestureWheelState.vertical += event.deltaY
+  swipeState.dir = direction
+  swipeState.acc += event.deltaX
 
-  if (Math.abs(gestureWheelState.horizontal) < GESTURE_TRIGGER_DISTANCE) return
-  const now = performance.now()
-  if (now - gestureWheelState.lastTriggeredAt < GESTURE_COOLDOWN_MS) {
-    resetGestureWheelState()
+  // 本段已经切过一次 → 剩余的惯性事件全部忽略，保证"滑一下切一次"。
+  if (swipeState.latched) return
+  if (Math.abs(swipeState.acc) < GESTURE_TRIGGER_DISTANCE) return
+
+  event.preventDefault()
+  swipeState.latched = true
+  applyFullPlayGesture('layout')
+}
+
+const onFullPlayGestureStart = (event: Event) => {
+  if (!isFullPlayGestureActive()) return
+  event.preventDefault()
+  const scale = Number((event as SafariGestureEvent).scale || 1)
+  pinchScaleState.start = Number.isFinite(scale) && scale > 0 ? scale : 1
+  pinchScaleState.armed = true
+}
+
+const onFullPlayGestureChange = (event: Event) => {
+  if (!isFullPlayGestureActive() || !pinchScaleState.armed) return
+  event.preventDefault()
+  const scale = Number((event as SafariGestureEvent).scale || 1)
+  if (!Number.isFinite(scale) || scale <= 0) return
+  const delta = scale - pinchScaleState.start
+  if (Math.abs(delta) < PINCH_SCALE_THRESHOLD) return
+  // 放大(scale 变大)= 进全屏，捏合(scale 变小)= 恢复。
+  applyFullPlayGesture('fullscreen', delta > 0)
+}
+
+const onFullPlayGestureEnd = () => {
+  pinchScaleState.armed = false
+  pinchScaleState.start = 1
+}
+
+const onFullPlayTouchStart = (event: TouchEvent) => {
+  if (!isFullPlayGestureActive() || isGestureExcludedTarget(event.target)) return
+  if (event.touches.length !== 3) {
+    resetThreeFingerTouchState()
     return
   }
-  gestureWheelState.lastTriggeredAt = now
+  const point = averageTouchPoint(event.touches)
+  threeFingerTouchState.active = true
+  threeFingerTouchState.triggered = false
+  threeFingerTouchState.startX = point.x
+  threeFingerTouchState.startY = point.y
+}
 
-  if (playSetting.getLayoutMode === 'cd') playSetting.setLayoutMode('cover')
-  else playSetting.setLayoutMode('cd')
-  resetGestureWheelState()
+const onFullPlayTouchMove = (event: TouchEvent) => {
+  if (!isFullPlayGestureActive() || !threeFingerTouchState.active || threeFingerTouchState.triggered) {
+    return
+  }
+  if (event.touches.length !== 3) {
+    resetThreeFingerTouchState()
+    return
+  }
+  const point = averageTouchPoint(event.touches)
+  const dx = point.x - threeFingerTouchState.startX
+  const dy = point.y - threeFingerTouchState.startY
+  if (Math.abs(dx) < THREE_FINGER_TOUCH_DISTANCE) return
+  if (Math.abs(dx) <= Math.abs(dy) * 1.2) return
+  event.preventDefault()
+  threeFingerTouchState.triggered = true
+  applyFullPlayGesture('panel')
+}
+
+const onFullPlayTouchEnd = (event: TouchEvent) => {
+  if (event.touches.length < 3) resetThreeFingerTouchState()
 }
 
 const festivalOverlay = ref<HTMLDivElement | null>(null)
@@ -624,7 +790,7 @@ const jumpTime = (e) => {
     Audio.value.audio.currentTime = next
   }
 }
-// 全屏背景只保留 Electron 同款封面取色打光（.bg-fallback）。
+// 全屏背景只保留安卓横屏同款封面取色打光（.bg-backdrop，对齐 PlayerGpuBackdrop）。
 // 用户明确不要 AMLL/PIXI 流光层盖住取色背景，因此这里不再创建 WebGL 背景。
 const shouldRunBackground = () => props.show && isAppWindowVisible()
 
@@ -664,14 +830,18 @@ onBeforeUnmount(async () => {
   // 移除事件监听器
   unsubscribeFullscreen?.()
   unsubscribeFullscreen = null
+  window.removeEventListener('gesturestart', onFullPlayGestureStart)
+  window.removeEventListener('gesturechange', onFullPlayGestureChange)
+  window.removeEventListener('gestureend', onFullPlayGestureEnd)
   unbindIdleActivityListeners()
+  fullPlayRootRef.value?.removeEventListener('wheel', onFullPlayWheel)
   window.removeEventListener('resize', debouncedCheckOverflow)
   document.removeEventListener('click', handleClickOutside)
 
-  // 清理所有定时器
   if (idleTimer) clearTimeout(idleTimer)
   if (animatingTimer) clearTimeout(animatingTimer)
   if (blockerTimer !== null) clearTimeout(blockerTimer)
+  if (resizeTimer !== null) clearTimeout(resizeTimer)
   if (bakeBackdropTimer !== null) {
     clearTimeout(bakeBackdropTimer)
     bakeBackdropTimer = null
@@ -680,12 +850,6 @@ onBeforeUnmount(async () => {
     clearTimeout(clearInactiveBackdropTimer)
     clearInactiveBackdropTimer = null
   }
-
-  // 清理背景缓存
-  bgLayerA.value = ''
-  bgLayerB.value = ''
-  bakedBackdropKey.value = ''
-  clearAmbientBackdropCache()
 
   // 组件卸载时确保恢复系统息屏
   if (blockerActive.value) {
@@ -741,13 +905,26 @@ const useBlackText = computed(() => {
 })
 
 // 安卓同款：切歌/改尺寸时把多层打光合并烘焙成一张 ≤720 图，播放中只贴图。
-const bgLayerA = ref('')
-const bgLayerB = ref('')
 const activeLayer = ref<'A' | 'B'>('A')
 const bakedBackdropKey = ref('')
+const bgLayerA = ref('')
+const bgLayerB = ref('')
+// 安卓横屏 PlayerGpuBackdrop 同款：切歌/改尺寸时把多层打光烘焙成 CSS 渐变
+//（stack 光斑组 + Overlay 柔光 + 黑色 Scrim），双层交替淡入实现切歌平滑过渡。
+// baseColor 是渐变下方的纯色兜底层。
+const bgOverlayA = ref('')
+const bgOverlayB = ref('')
+const bgBaseColorA = ref('')
+const bgBaseColorB = ref('')
+// Scrim（整体压黑 + 左右/上下黑渐变 + 径向暗角）是不依赖歌曲色的纯常量层，两层共享。
+const backdropScrim = ref('')
 let bakeBackdropTimer: ReturnType<typeof setTimeout> | null = null
 let clearInactiveBackdropTimer: ReturnType<typeof setTimeout> | null = null
 const fullPlayRootRef = ref<HTMLElement | null>(null)
+watch(fullPlayRootRef, (node, prev) => {
+  prev?.removeEventListener('wheel', onFullPlayWheel)
+  node?.addEventListener('wheel', onFullPlayWheel, { passive: false })
+})
 const keepHeavyContent = ref(false)
 
 const scheduleClearInactiveBackdrop = () => {
@@ -758,12 +935,25 @@ const scheduleClearInactiveBackdrop = () => {
     clearInactiveBackdropTimer = null
     if (activeLayer.value === 'A') bgLayerB.value = ''
     else bgLayerA.value = ''
+    if (activeLayer.value === 'A') bgOverlayB.value = ''
+    else bgOverlayA.value = ''
+    if (activeLayer.value === 'A') bgBaseColorB.value = ''
+    else bgBaseColorA.value = ''
   }, 900)
 }
 
+const isResizing = ref(false)
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
 const handleBackdropResize = () => {
-  if (!keepHeavyContent.value || !isAppWindowVisible()) return
-  scheduleBakeCurrentBackdrop(80)
+  // resize 期间隐藏 ShaderBackground，防止流光层闪帧
+  isResizing.value = true
+  if (resizeTimer !== null) clearTimeout(resizeTimer)
+  resizeTimer = setTimeout(() => {
+    isResizing.value = false
+    resizeTimer = null
+    // 窗口宽高变了，光斑半径(px) 需要按新宽度重算。
+    if (keepHeavyContent.value && isAppWindowVisible()) scheduleBakeCurrentBackdrop(0)
+  }, 150)
 }
 
 const fallbackBackdropColors = {
@@ -780,62 +970,140 @@ const resolveBackdropStageSize = () => {
   return { width, height }
 }
 
+// 安卓 hasArtwork：有真实封面时启用 art 光场（3 层光斑 + 方向雾），主光斑 alpha 系数也随其变化。
+const hasBackdropArtwork = () => {
+  const src = player.value.cover || props.coverImage || ''
+  return !!src && !String(src).includes('Default.jpg')
+}
+
+// ---- 与安卓横屏背景 (PlayerGpuBackdrop 新版 + CoverColorUtils) 对齐的色阶推导 ----
+// 注意：Mac 端 ColorObject 已走过 enhanceColor（src/utils/color/colorExtractor.ts，与安卓
+// enhanceDesktopMainColor 同算法），直接当安卓 vibrant 用，不要再增强。
+const WHITE_RGB = { r: 255, g: 255, b: 255 }
+
+const scaleRgb = (c: { r: number; g: number; b: number }, f: number) => ({
+  r: Math.max(0, Math.min(255, Math.round(c.r * f))),
+  g: Math.max(0, Math.min(255, Math.round(c.g * f))),
+  b: Math.max(0, Math.min(255, Math.round(c.b * f)))
+})
+
+const mixRgb = (
+  a: { r: number; g: number; b: number },
+  b: { r: number; g: number; b: number },
+  t: number
+) => ({
+  r: Math.round(a.r * (1 - t) + b.r * t),
+  g: Math.round(a.g * (1 - t) + b.g * t),
+  b: Math.round(a.b * (1 - t) + b.b * t)
+})
+
+const rgbStr = (c: { r: number; g: number; b: number }) => `rgb(${c.r},${c.g},${c.b})`
+const rgbaStr = (c: { r: number; g: number; b: number }, a: number) => `rgba(${c.r},${c.g},${c.b},${a})`
+
+// 安卓 boostForLightField：先按 lightness 向白色提亮，再按 saturation 把饱和度拉回（0..1 空间，clamp）
+const boostForLightField = (
+  c: { r: number; g: number; b: number },
+  saturation: number,
+  lightness: number
+) => {
+  const r = c.r / 255
+  const g = c.g / 255
+  const b = c.b / 255
+  const safeMax = Math.max(r, g, b, 0.001)
+  const out = (ch: number) => {
+    const lifted = ch + (1 - ch) * Math.max(0, Math.min(1, lightness))
+    const v = lifted + (ch / safeMax - lifted) * saturation
+    return Math.round(Math.max(0, Math.min(1, v)) * 255)
+  }
+  return { r: out(r), g: out(g), b: out(b) }
+}
+
 const bakeCurrentBackdrop = () => {
   const { width, height } = resolveBackdropStageSize()
   const color = player.value.coverDetail.ColorObject
+  // 安卓 CoverColorUtils.extractBackdropColors：vibrant 即增强后主色（Mac ColorObject 已增强过，不重复增强）；
+  // 再推导 lightAccent=main.mix(white,0.80)、secondary/muted=main*0.35、base=main*0.18。
   const main = color || fallbackBackdropColors.main
-  const nextUrl = bakeAmbientBackdropDataUrl(
-    {
-      main,
-      accent: player.value.coverDetail.lightMainColor || main,
-      muted: main,
-      secondary: {
-        r: main.r * 0.35,
-        g: main.g * 0.35,
-        b: main.b * 0.35
-      },
-      base: {
-        r: main.r * 0.18,
-        g: main.g * 0.18,
-        b: main.b * 0.18
-      }
-    },
-    width,
-    height,
-    { darkTheme: true, maxSide: 720 }
-  )
-  if (!nextUrl) return
+  const accent = mixRgb(main, WHITE_RGB, 0.8) // 安卓 lightAccent
+  const dark = scaleRgb(main, 0.35) // 安卓 secondary/muted
+  const deep = scaleRgb(main, 0.18) // 安卓 base
+  const hasArtwork = hasBackdropArtwork()
+  // 安卓 CachedEnvironmentLayer 同款派生色与光斑系数（深色主题 themeScale=1）
+  const brightMain = boostForLightField(main, 0.42, 0.2)
+  const vividMain = boostForLightField(main, 0.64, 0.1)
+  const brightAccent = boostForLightField(accent, 0.36, 0.3)
+  const mutedMix = mixRgb(dark, main, 0.38)
+  const alphaScale = hasArtwork ? 1 : 1.08
+  const maxSide = Math.max(width, height)
+  const px = (factor: number) => Math.round(maxSide * factor)
 
-  const nextKey = `${width}x${height}:${main.r},${main.g},${main.b}:${player.value.coverDetail.lightMainColor || ''}`
+  const nextKey = `${main.r},${main.g},${main.b}:${width}x${height}:${hasArtwork ? 1 : 0}`
   if (nextKey === bakedBackdropKey.value) return
   bakedBackdropKey.value = nextKey
 
-  const cssUrl = `url("${nextUrl}")`
+  // 安卓新版（BACKDROP_USE_BITMAP_CACHE=true）把光斑/方向雾/Overlay/Scrim 整组预光栅化成一张位图，
+  // 每帧只贴图（省电、效果不减）；Mac 用同一策略：整组烤成一条静态 CSS 渐变（浏览器只合成一次）。
+  // Compose 绘制顺序（下→上）：底渐变→右下/左上/左下主光斑→art 三层→方向雾三层；
+  // CSS 列表第一个在最上层，因此整体倒序。
+  const fogLayers = hasArtwork
+    ? [
+        `radial-gradient(circle ${px(0.72)}px at 50% 106%, ${rgbaStr(main, 0.12)} 0%, ${rgbaStr(accent, 0.06)} 44%, rgba(0,0,0,0) 84%)`,
+        `radial-gradient(circle ${px(0.72)}px at 104% 58%, ${rgbaStr(mixRgb(main, WHITE_RGB, 0.12), 0.2)} 0%, ${rgbaStr(main, 0.09)} 46%, rgba(0,0,0,0) 86%)`,
+        `radial-gradient(circle ${px(0.56)}px at -10% -5%, ${rgbaStr(WHITE_RGB, 0.08)} 0%, ${rgbaStr(mixRgb(accent, WHITE_RGB, 0.45), 0.035)} 42%, rgba(0,0,0,0) 82%)`
+      ]
+    : []
+  const artLayers = hasArtwork
+    ? [
+        `radial-gradient(circle ${px(0.76)}px at 52% 98%, ${rgbaStr(mixRgb(main, WHITE_RGB, 0.16), 0.13)} 0%, ${rgbaStr(main, 0.07)} 42%, rgba(0,0,0,0) 76%)`,
+        `radial-gradient(circle ${px(0.86)}px at 82% 70%, ${rgbaStr(main, 0.3)} 0%, ${rgbaStr(dark, 0.18)} 36%, rgba(0,0,0,0) 78%)`,
+        `radial-gradient(circle ${px(0.74)}px at 18% 18%, ${rgbaStr(accent, 0.24)} 0%, ${rgbaStr(mutedMix, 0.16)} 30%, rgba(0,0,0,0) 72%)`
+      ]
+    : []
+  // 主光斑三个椭圆：安卓是 drawCircle 再 y 轴压扁（0.42/0.34/0.12 maxSide），等价于 CSS ellipse
+  const mainLightLayers = [
+    `radial-gradient(ellipse ${px(0.32)}px ${px(0.12)}px at 8% 94%, ${rgbaStr(brightMain, 0.055 * alphaScale)} 0%, ${rgbaStr(accent, 0.032 * alphaScale)} 32%, rgba(0,0,0,0) 72%)`,
+    `radial-gradient(ellipse ${px(0.48)}px ${px(0.34)}px at 16% 14%, ${rgbaStr(brightAccent, 0.92 * alphaScale)} 0%, ${rgbaStr(mixRgb(accent, WHITE_RGB, 0.18), 0.7 * alphaScale)} 28%, rgba(0,0,0,0) 64%)`,
+    `radial-gradient(ellipse ${px(0.56)}px ${px(0.42)}px at 92% 82%, ${rgbaStr(vividMain, 0.94 * alphaScale)} 0%, ${rgbaStr(brightMain, 0.72 * alphaScale)} 28%, rgba(0,0,0,0) 68%)`
+  ]
+  const baseLayer = `linear-gradient(to bottom right, ${rgbStr(dark)} 0%, ${rgbStr(deep)} 100%)`
+  const cssGradient = [...fogLayers, ...artLayers, ...mainLightLayers, baseLayer].join(', ')
+  const cssBase = rgbStr(deep)
+  // Overlay 混合白柔光两层：在安卓 scale(1.1) 组外用 BlendMode.Overlay 绘制 → CSS mix-blend-mode
+  const cssOverlay = [
+    `radial-gradient(circle ${px(0.572)}px at 74% 66%, ${rgbaStr(WHITE_RGB, 0.15)} 0%, rgba(0,0,0,0) 40%)`,
+    `radial-gradient(circle ${px(0.52)}px at 22% 28%, ${rgbaStr(WHITE_RGB, 0.22)} 0%, rgba(0,0,0,0) 35%)`
+  ].join(', ')
+  // Scrim：安卓 DesktopEnvironmentScrim 四层压暗（平涂黑 0.256 用 background-color；径向/纵向/横向渐变
+  // 按 CSS 顶层在前排列）。不依赖歌曲色，A/B 共享的常量层。
+  backdropScrim.value = [
+    `radial-gradient(circle ${Math.round(width * 1.02)}px at 48% 46%, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 66%, rgba(0,0,0,0.3) 100%)`,
+    'linear-gradient(to bottom, rgba(255,255,255,0.012) 0%, rgba(0,0,0,0) 58%, rgba(0,0,0,0) 90%, rgba(0,0,0,0.3) 100%)',
+    'linear-gradient(to right, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0) 34%, rgba(0,0,0,0) 72%, rgba(0,0,0,0.12) 100%)'
+  ].join(', ')
+
   if (!bgLayerA.value && !bgLayerB.value) {
-    bgLayerA.value = cssUrl
+    bgLayerA.value = cssGradient
+    bgOverlayA.value = cssOverlay
+    bgBaseColorA.value = cssBase
     activeLayer.value = 'A'
     return
   }
   if (activeLayer.value === 'A') {
-    bgLayerB.value = cssUrl
+    bgLayerB.value = cssGradient
+    bgOverlayB.value = cssOverlay
+    bgBaseColorB.value = cssBase
     activeLayer.value = 'B'
   } else {
-    bgLayerA.value = cssUrl
+    bgLayerA.value = cssGradient
+    bgOverlayA.value = cssOverlay
+    bgBaseColorA.value = cssBase
     activeLayer.value = 'A'
   }
   scheduleClearInactiveBackdrop()
 }
 
 const scheduleBakeCurrentBackdrop = (delay = 0) => {
-  // 窗口不可见时不烘焙背景，节省 CPU
-  if (!isAppWindowVisible()) {
-    if (bakeBackdropTimer !== null) {
-      clearTimeout(bakeBackdropTimer)
-      bakeBackdropTimer = null
-    }
-    return
-  }
-  
+  if (resizeTimer !== null) clearTimeout(resizeTimer)
   if (bakeBackdropTimer !== null) {
     clearTimeout(bakeBackdropTimer)
     bakeBackdropTimer = null
@@ -860,36 +1128,11 @@ const backdropInputKey = computed(() => {
 watch(
   backdropInputKey,
   () => {
+    // 烘焙是一次性字符串计算（成本极低），暂停首开全屏也要有背景
     if (!keepHeavyContent.value || !isAppWindowVisible()) return
     scheduleBakeCurrentBackdrop(0)
   },
   { immediate: true }
-)
-
-// 监听窗口可见性，隐藏时清理背景缓存释放内存
-watch(
-  () => isAppWindowVisible(),
-  (visible) => {
-    if (!visible && !props.show) {
-      // 窗口隐藏且全屏播放关闭时，清理背景缓存
-      if (bakeBackdropTimer !== null) {
-        clearTimeout(bakeBackdropTimer)
-        bakeBackdropTimer = null
-      }
-      if (clearInactiveBackdropTimer !== null) {
-        clearTimeout(clearInactiveBackdropTimer)
-        clearInactiveBackdropTimer = null
-      }
-      // 延迟清理，给窗口恢复留一些时间
-      setTimeout(() => {
-        if (!isAppWindowVisible()) {
-          bgLayerA.value = ''
-          bgLayerB.value = ''
-          clearAmbientBackdropCache()
-        }
-      }, 5000)
-    }
-  }
 )
 
 // 计算歌词颜色
@@ -1042,6 +1285,7 @@ function releaseFullPlayHeavyResources(options?: { unmountRoot?: boolean }) {
     clearTimeout(settleTimer)
     settleTimer = null
   }
+  if (resizeTimer !== null) clearTimeout(resizeTimer)
   if (bakeBackdropTimer !== null) {
     clearTimeout(bakeBackdropTimer)
     bakeBackdropTimer = null
@@ -1063,6 +1307,11 @@ function releaseFullPlayHeavyResources(options?: { unmountRoot?: boolean }) {
   stopFireworks()
   bgLayerA.value = ''
   bgLayerB.value = ''
+  bgOverlayA.value = ''
+  bgOverlayB.value = ''
+  bgBaseColorA.value = ''
+  bgBaseColorB.value = ''
+  backdropScrim.value = ''
   bakedBackdropKey.value = ''
   keepHeavyContent.value = false
   isDormant.value = true
@@ -1131,11 +1380,6 @@ const onFullPlayWindowState = () => {
     }
     return
   }
-  // 窗口隐藏时立即取消延迟定时器并释放资源
-  if (hideHeavyTimer !== null) {
-    clearTimeout(hideHeavyTimer)
-    hideHeavyTimer = null
-  }
   releaseFullPlayHeavyResources({ unmountRoot: true })
 }
 
@@ -1148,24 +1392,23 @@ watch(
     }
     if (visible) {
       await openFullPlaySlide()
+      window.addEventListener('gesturestart', onFullPlayGestureStart, { passive: false })
+      window.addEventListener('gesturechange', onFullPlayGestureChange, { passive: false })
+      window.addEventListener('gestureend', onFullPlayGestureEnd)
       return
     }
 
     isSlideOpen.value = false
     slideSettled.value = false
+    window.removeEventListener('gesturestart', onFullPlayGestureStart)
+    window.removeEventListener('gesturechange', onFullPlayGestureChange)
+    window.removeEventListener('gestureend', onFullPlayGestureEnd)
     if (settleTimer !== null) {
       clearTimeout(settleTimer)
       settleTimer = null
     }
     const node = fullPlayRootRef.value
     if (node) blockFullPlayPointerEvents(node)
-    
-    // 如果窗口不可见，立即释放而不等延迟
-    if (!isAppWindowVisible()) {
-      releaseFullPlayHeavyResources({ unmountRoot: true })
-      return
-    }
-    
     scheduleHideHeavyContent()
   },
   { immediate: true }
@@ -1178,30 +1421,49 @@ watch(
     v-if="fullPlayMounted"
     ref="fullPlayRootRef"
     class="full-play"
-    @wheel="onFullPlayWheel"
+    @gesturestart="onFullPlayGestureStart"
+    @gesturechange="onFullPlayGestureChange"
+    @gestureend="onFullPlayGestureEnd"
+    @touchstart="onFullPlayTouchStart"
+    @touchmove="onFullPlayTouchMove"
+    @touchend="onFullPlayTouchEnd"
     :class="{
       'use-black-text': useBlackText,
       idle: isIdle,
       'is-open': isSlideOpen,
       settled: slideSettled,
       leaving: !props.show,
-      dormant: isDormant
+      dormant: isDormant,
+      fullscreen: isFullscreen
     }"
   >
-      <!-- 兜底渐变背景：双层交替淡入，由封面取色生成；切歌时颜色平滑过渡 -->
+      <!-- 安卓横屏 PlayerGpuBackdrop（A1 单层贴图）同款：A/B 双层交替淡入光场渐变 + Overlay 柔光 + Scrim 压暗 -->
     <div
       class="bg-fallback bg-fallback-a"
       :class="{ active: activeLayer === 'A' }"
-      :style="{ backgroundImage: bgLayerA || undefined }"
+      :style="{ backgroundImage: bgLayerA || undefined, backgroundColor: bgBaseColorA || undefined }"
     ></div>
     <div
       class="bg-fallback bg-fallback-b"
       :class="{ active: activeLayer === 'B' }"
-      :style="{ backgroundImage: bgLayerB || undefined }"
+      :style="{ backgroundImage: bgLayerB || undefined, backgroundColor: bgBaseColorB || undefined }"
     ></div>
-    <!-- 着色器背景：受"播放背景动画"开关控制 -->
+    <!-- Overlay 混合白柔光：在安卓 scale(1.1) 组外用 BlendMode.Overlay 单独绘制，随 A/B 一起淡入淡出 -->
+    <div
+      class="bg-fallback bg-overlay-a"
+      :class="{ active: activeLayer === 'A' }"
+      :style="{ backgroundImage: bgOverlayA || undefined }"
+    ></div>
+    <div
+      class="bg-fallback bg-overlay-b"
+      :class="{ active: activeLayer === 'B' }"
+      :style="{ backgroundImage: bgOverlayB || undefined }"
+    ></div>
+    <!-- Scrim 常量压暗层：平涂黑 0.256 + 左右/上下黑渐变 + 径向暗角，切歌不变 -->
+    <div class="bg-backdrop-scrim" :style="{ backgroundImage: backdropScrim || undefined }"></div>
+    <!-- 着色器背景：受「播放背景动画」开关控制；暂停/收起全屏时组件内停 rAF，不卸 DOM -->
     <ShaderBackground
-      v-if="keepHeavyContent && playSetting.getBgPlaying"
+      v-if="keepHeavyContent && playSetting.getBgPlaying && !isResizing"
       :cover-image="actualCoverImage"
       :show="props.show && isSlideOpen && slideSettled"
     />
@@ -1495,7 +1757,7 @@ watch(
   left: 90px;
 }
 
-/* 兜底渐变背景：基于封面取色，纯渐变干净可控；双层交替实现切歌平滑过渡 */
+/* 安卓横屏 PlayerGpuBackdrop（A1 单层贴图）同款：封面取色烘焙渐变，双层交替实现切歌平滑过渡 */
 .bg-fallback {
   position: absolute;
   inset: 0;
@@ -1507,13 +1769,29 @@ watch(
   transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
   contain: layout style;
-  transform: scale(1.08);
   overflow: hidden;
+  /* 安卓 scale(1.10, pivot=center) 组：整层略放大避开边缘硬边（Scrim/Overlay 不受影响） */
+  transform: scale(1.1);
+  transform-origin: center center;
 }
 .bg-fallback.active {
   opacity: 1;
 }
-/* Overlay / 柔光已烘焙进位图，播放中不再额外叠 CSS 伪光斑 */
+/* Overlay 混合层：安卓在 scale 组外用 BlendMode.Overlay 画 → 不跟随缩放，用 mix-blend-mode 对齐 */
+.bg-overlay-a,
+.bg-overlay-b {
+  transform: none;
+  mix-blend-mode: overlay;
+}
+/* Scrim 常量压暗层（安卓 DesktopEnvironmentScrim）：平涂黑在 background-color，三层渐变由 JS 烤好 */
+.bg-backdrop-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0.256);
+  background-repeat: no-repeat;
+}
 
 .full-play {
   --height: calc(100dvh - var(--play-bottom-height));
@@ -1527,8 +1805,13 @@ watch(
   min-height: 100vh;
   border-radius: var(--app-window-radius, 22px);
   overflow: hidden; /* 裁掉 bg-fallback 的 blur 光晕外溢到主内容区 */
+  /* 窗口化全屏：窗口已占满整块显示器（borderless），去掉窗口圆角否则四角露出桌面 */
+  &.fullscreen {
+    border-radius: 0;
+  }
   background-clip: padding-box;
   pointer-events: none;
+  overscroll-behavior: none;
   /* 抽屉滑入用 transform 位移,不要动画 top。
      top 每帧都触发布局+整块全屏重绘(内含 WebGL 背景/AMLL 歌词/黑胶),
      在 WKWebView 下必然掉帧;translateY 走 GPU 合成层,不触发布局与重绘。 */
@@ -1574,8 +1857,6 @@ watch(
 
   &.dormant {
     visibility: hidden;
-    content-visibility: hidden;
-    contain: strict;
     .bg-fallback {
       opacity: 0 !important;
       transition-duration: 0s !important;
@@ -1628,7 +1909,7 @@ watch(
     --cd-width-auto: max(200px, min(27vw, 620px, calc(100vh - var(--play-bottom-height) - 230px)));
 
     &.no-lyrics {
-      --cd-width-auto: max(200px, min(24vw, 560px, calc(100vh - var(--play-bottom-height) - 210px)));
+      --cd-width-auto: max(260px, min(32vw, 720px, calc(100vh - var(--play-bottom-height) - 160px)));
     }
 
     .left {
@@ -1927,7 +2208,7 @@ watch(
 
       .cover-wrapper-square {
         width: 100%;
-        max-width: min(480px, 45vh);
+        max-width: min(580px, 55vh);
         aspect-ratio: 1/1;
         border-radius: 24px;
         overflow: hidden;

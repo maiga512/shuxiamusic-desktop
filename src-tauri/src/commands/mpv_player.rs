@@ -37,6 +37,9 @@ static HOT_SET_RATE: AtomicU64 = AtomicU64::new(0);
 static HOT_LOG_STARTED: AtomicU64 = AtomicU64::new(0);
 
 fn ensure_hot_logger() {
+    if !cfg!(debug_assertions) {
+        return;
+    }
     if HOT_LOG_STARTED.swap(1, Ordering::SeqCst) == 1 {
         return;
     }
@@ -484,6 +487,15 @@ fn start_mpv_process(app: AppHandle, runtime: &mut MpvRuntime) -> Result<(), Str
         .arg("--demuxer-readahead-secs=20")
         .arg("--demuxer-max-bytes=32MiB")
         .arg("--demuxer-max-back-bytes=1MiB")
+        // 歌曲"播到一半突然断了、不播了"的根因:在线直链在播放途中偶发 TCP 连接被服务器
+        // 关闭 / 网络瞬断,ffmpeg 的 http 协议默认不重连,直接读失败 -> mpv 发出
+        // end-file(reason=error) -> 前端当成播放错误走换源/自动下一首,听感就是中途掐断。
+        // 仅靠上面的 30 秒缓存只能平滑短暂卡顿,socket 真断了必须让 ffmpeg 自动重连。
+        // 开启 ffmpeg http 重连(IINA / mpv.net 等同款做法),配合 network-timeout 容忍瞬断。
+        .arg("--network-timeout=30")
+        .arg(
+            "--stream-lavf-o=reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=5",
+        )
         // 加大音频输出缓冲:默认 0.2s,前端频谱/WebGL/GC 偶发占用 CPU 时,
         // 音频输出线程会短暂饿死产生爆破音;0.5s 缓冲给足余量,对音乐播放
         // 的响应延迟无感知。
@@ -1599,6 +1611,9 @@ pub fn mpv_shutdown(app: AppHandle) -> Result<MpvSnapshot, String> {
 
 #[tauri::command]
 pub fn mpv_debug_hot_ping(label: Option<String>) -> Result<bool, String> {
+    if !cfg!(debug_assertions) {
+        return Ok(false);
+    }
     ensure_hot_logger();
     let line = format!(
         "{} frontend_ping label={}

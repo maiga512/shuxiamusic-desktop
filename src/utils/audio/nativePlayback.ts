@@ -47,6 +47,7 @@ const mpvApi = () => (window as any).api?.mpv
 let backend: NativeBackend = 'unknown'
 let probePromise: Promise<boolean> | null = null
 let listenersInstalled = false
+let stateTransitioning = false
 let listenerCleanups: Array<() => void> = []
 let currentUrl = ''
 let currentGeneration = 0
@@ -366,7 +367,11 @@ const applyStateToStore = (snapshot: NativeSnapshot, payload?: NativeEventPayloa
   const nextDuration = snapshotDuration(snapshot, payload)
   if (nextDuration > 0) store.setDuration(nextDuration)
   const paused = snapshotPaused(snapshot)
-  store.Audio.isPlay = !paused
+  // During play/pause transitions, the explicit command sets isPlay and the
+  // mpv event can race with it. Skip the auto-sync until the command settles.
+  if (!stateTransitioning) {
+    store.Audio.isPlay = !paused
+  }
   if (paused) {
     if (snapshot.phase === 'ended') return
     publishOnce('pause')
@@ -599,6 +604,7 @@ export const nativePlay = async (): Promise<boolean> => {
   if (!api?.play) return false
   const store = getAudioStore()
   if (!store) return false
+  stateTransitioning = true
   try {
     stopVolumeFade()
     await applyMpvVolumeNow(desiredVolume, true)
@@ -610,6 +616,8 @@ export const nativePlay = async (): Promise<boolean> => {
   } catch (error) {
     store.Audio.isPlay = false
     throw error
+  } finally {
+    stateTransitioning = false
   }
 }
 
@@ -626,6 +634,7 @@ export const nativePause = async (options: { fade?: boolean } = {}): Promise<boo
     isLtInRoom() ||
     !isAppWindowVisible()
   store.Audio.isPlay = false
+  stateTransitioning = true
   try {
     if (!skipTransition) {
       await fadeMpvVolume(0, true)
@@ -640,6 +649,8 @@ export const nativePause = async (options: { fade?: boolean } = {}): Promise<boo
   } catch (error) {
     publishOnce('error')
     throw error
+  } finally {
+    stateTransitioning = false
   }
 }
 

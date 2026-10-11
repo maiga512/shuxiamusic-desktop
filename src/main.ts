@@ -1,4 +1,8 @@
 // 基础样式
+// 全局基础样式：根字号 min(max(1.4vw,15px),18px)、底栏高度变量 --play-bottom-height、
+// 以及 *{box-sizing:border-box} 等重置。与 Electron 对齐，必须最先加载——缺失会导致
+// 页面高度链塌陷(无法滚动)、Dock 变窄、歌单按钮溢出、全屏播放布局错乱。
+import './assets/base.css'
 import 'tdesign-vue-next/es/style/index.css'
 import 'tdesign-vue-next/es/message/style/index.css'
 import 'tdesign-vue-next/es/dialog/style/index.css'
@@ -125,8 +129,8 @@ const createLogtoClient = () => {
 }
 
 const logtoClient = createLogtoClient()
-Request.setLogtoClient(logtoClient)
-config.instance = logtoClient
+Request.setLogtoClient(logtoClient as InstanceType<typeof BrowserLogtoClient>)
+config.instance = logtoClient as InstanceType<typeof BrowserLogtoClient>
 installMessageBehavior()
 
 const AUTO_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
@@ -142,6 +146,13 @@ async function checkForUpdatesInBackground() {
     console.warn('[auto-update] 后台检查失败:', error)
   } finally {
     autoUpdateCheckInFlight = false
+  }
+}
+
+function stopBackgroundUpdateCheck() {
+  if (autoUpdateCheckTimer) {
+    window.clearInterval(autoUpdateCheckTimer)
+    autoUpdateCheckTimer = undefined
   }
 }
 
@@ -246,6 +257,16 @@ document.addEventListener(
 
 app.mount('#app')
 startBackgroundUpdateCheck()
+
+// 窗口隐藏时停止自动更新检查，节省CPU
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopBackgroundUpdateCheck()
+  } else {
+    startBackgroundUpdateCheck()
+  }
+})
+
 if (devStartRoute) {
   router.replace(devStartRoute).catch(() => undefined)
 }

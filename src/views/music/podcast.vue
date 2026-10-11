@@ -18,6 +18,7 @@ import {
   type PodcastHomeBlockSpec
 } from './podcastHomeSpec'
 import { onSyncEvent } from '@renderer/utils/sync/realtimeSyncBus'
+import { isAppWindowVisible } from '@renderer/utils/appWindowState'
 
 interface Category {
   id: number
@@ -579,15 +580,10 @@ const startPodcastQr = async () => {
     podcastQrKey.value = qr.key
     podcastQr.value = await QRCode.toDataURL(qr.qrUrl, { width: 280, margin: 1 })
     loginMessage.value = '打开网易云 App 扫码后确认登录'
-    
-    // 优化：窗口不可见时暂停二维码轮询,节省 CPU 和网络
-    const checkQrStatus = async () => {
+    podcastTimer = window.setInterval(async () => {
       if (!podcastQrKey.value) return
       if (podcastQrChecking) return
-      
-      // 窗口隐藏时跳过本次检查
-      if (document.hidden) return
-      
+      if (!isAppWindowVisible()) return
       podcastQrChecking = true
       try {
         const result = await podcastApi.checkQr(podcastQrKey.value)
@@ -614,9 +610,7 @@ const startPodcastQr = async () => {
       } finally {
         podcastQrChecking = false
       }
-    }
-    
-    podcastTimer = window.setInterval(checkQrStatus, 2500)
+    }, 2500)
   } catch (error: any) {
     loginMessage.value = error?.message || '二维码生成失败'
   } finally {
@@ -672,6 +666,7 @@ const REC_REFRESH_MS = 15 * 60 * 1000
 const startRecommendationTimer = () => {
   if (recommendationTimer != null) return
   recommendationTimer = window.setInterval(() => {
+    if (!isAppWindowVisible()) return
     void loadShelf()
     void loadBlocks()
   }, REC_REFRESH_MS)
@@ -683,12 +678,13 @@ const stopRecommendationTimer = () => {
   }
 }
 
-// 页面可见性变化处理：隐藏时暂停推荐刷新定时器
+// 窗口隐藏时停止定时器，避免后台空转
 const handleVisibilityChange = () => {
   if (document.hidden) {
     stopRecommendationTimer()
+    stopPodcastPoll()
   } else {
-    // 页面重新可见时恢复定时器
+    // 窗口恢复可见时，如果页面是激活状态，重启定时器
     startRecommendationTimer()
   }
 }
@@ -702,10 +698,6 @@ onMounted(async () => {
   // 【旧·已停用，勿再启用】原来的两个 window 监听，和上面的总线做同一件事（多余）
   // window.addEventListener('ceru-nas-sync-events', handleNasSyncEvents)
   // window.addEventListener('ceru-podcast-favorites-updated', handlePodcastFavoritesUpdated)
-  
-  // 监听页面可见性变化，隐藏时暂停定时器
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  
   await refreshLogin()
   await nextTick()
   updateCategoryPageSize()
@@ -723,6 +715,7 @@ onMounted(async () => {
   await loadCategories()
   await Promise.all([loadShelf(), loadBlocks(), loadPodcastFavorites()])
   startRecommendationTimer()
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 // KeepAlive 复活：重启推荐定时器（首次挂载时也会在 onMounted 之后触发一次）。
@@ -740,10 +733,7 @@ onUnmounted(() => {
   // 【旧·已停用】对应上面已注释的 window 监听，无需再解绑
   // window.removeEventListener('ceru-nas-sync-events', handleNasSyncEvents)
   // window.removeEventListener('ceru-podcast-favorites-updated', handlePodcastFavoritesUpdated)
-  
-  // 移除可见性监听
   document.removeEventListener('visibilitychange', handleVisibilityChange)
-  
   stopPodcastSyncBus()
   stopPodcastPoll()
   stopRecommendationTimer()

@@ -1,7 +1,7 @@
 {
   "package.json": {
-    "mtime": 1790341174.976743,
-    "ast_hash": "dea1734abf96f0cce96db20ba47a0a2e",
+    "mtime": 1790839584.9135487,
+    "ast_hash": "92050c83d8408ad1a4f2a874a2522dd9",
     "semantic_hash": ""
   },
   "packages/shared-contract/package.json": {
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "sidecar/services/plugins/index.mjs": {
-    "mtime": 1789969605.0549784,
-    "ast_hash": "7f4e35404b97237ff707cc21894dbf03",
+    "mtime": 1790349471.4495513,
+    "ast_hash": "f399fca5ca4713f029308b2285a027e1",
     "semantic_hash": ""
   },
   "sidecar/services/plugins/pluginWorker.mjs": {
@@ -540,9 +540,9 @@
     "semantic_hash": ""
   },
   "src-tauri/build.rs": {
-    "mtime": 1780240422.2961118,
-    "ast_hash": "48af8f08e39b73562f866d3a50b2e88a",
-    "semantic_hash": "48af8f08e39b73562f866d3a50b2e88a"
+    "mtime": 1791471193.054864,
+    "ast_hash": "89cdb137cd6017f7f688d20801ae7801",
+    "semantic_hash": ""
   },
   "src-tauri/capabilities/default.json": {
     "mtime": 1789558513.807298,
@@ -550,9 +550,9 @@
     "semantic_hash": "0f8ab059b520fe58e2c4a59736800ff9"
   },
   "src-tauri/gen/schemas/acl-manifests.json": {
-    "mtime": 1779983417.6843421,
-    "ast_hash": "cc1d3b1d553d59ead59007968ffcea8f",
-    "semantic_hash": "cc1d3b1d553d59ead59007968ffcea8f"
+    "mtime": 1791423440.9694474,
+    "ast_hash": "f2e409980e6d53ffc74203321b78bed1",
+    "semantic_hash": ""
   },
   "src-tauri/gen/schemas/capabilities.json": {
     "mtime": 1789558647.1562245,
@@ -560,19 +560,19 @@
     "semantic_hash": "6c09a9bc05f6e892a13f9bf42e6fc24a"
   },
   "src-tauri/gen/schemas/desktop-schema.json": {
-    "mtime": 1779983417.6965806,
-    "ast_hash": "9e6826e72cd2d519886b54815476d969",
-    "semantic_hash": "9e6826e72cd2d519886b54815476d969"
+    "mtime": 1791423440.9819999,
+    "ast_hash": "1587761657c8e2ebda0159dfc7d82771",
+    "semantic_hash": ""
   },
   "src-tauri/gen/schemas/macOS-schema.json": {
-    "mtime": 1779983417.6965806,
-    "ast_hash": "9e6826e72cd2d519886b54815476d969",
-    "semantic_hash": "9e6826e72cd2d519886b54815476d969"
+    "mtime": 1791423440.9819999,
+    "ast_hash": "1587761657c8e2ebda0159dfc7d82771",
+    "semantic_hash": ""
   },
   "src-tauri/src/commands/dlna.rs": {
-    "mtime": 1780240422.327806,
-    "ast_hash": "032ce6e3a86d63915501337af089c9e8",
-    "semantic_hash": "032ce6e3a86d63915501337af089c9e8"
+    "mtime": 1791627556.2277238,
+    "ast_hash": "dd15119bdf966aa3087dc6186905afec",
+    "semantic_hash": ""
   },
   "src-tauri/src/commands/download_engine.rs": {
     "mtime": 1780536010.0597858,
@@ -595,8 +595,8 @@
     "semantic_hash": "e0976ceb60165c707a60135643f350e1"
   },
   "src-tauri/src/commands/misc.rs": {
-    "mtime": 1789871817.6053996,
-    "ast_hash": "61c1505449e8a00c74f51ec85761c912",
+    "mtime": 1791097013.5265977,
+    "ast_hash": "a7e34161b1a551c63fb8ca84562ff504",
     "semantic_hash": ""
   },
   "src-tauri/src/commands/mod.rs": {
@@ -605,8 +605,8 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/mpv_player.rs": {
-    "mtime": 1789874708.6501698,
-    "ast_hash": "1dbf1df6dc7c3eb615316bf03e4e89f2",
+    "mtime": 1791558158.5232303,
+    "ast_hash": "8ed30352033385e0580f9f95dc16b74e",
     "semantic_hash": ""
   },
   "src-tauri/src/commands/music_search.rs": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/node_sidecar.rs": {
-    "mtime": 1789735879.9216897,
-    "ast_hash": "bab22d3c0d71da378de5226339055705",
+    "mtime": 1790677078.5193484,
+    "ast_hash": "5503339624c975d2fdfaa6fd45db17e4",
     "semantic_hash": ""
   },
   "src-tauri/src/commands/plugin.rs": {
@@ -630,18 +630,18 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/songlist.rs": {
-    "mtime": 1790054024.7898455,
-    "ast_hash": "a31a09ff1e3011ca2974375a9ab4887c",
+    "mtime": 1790677078.5274863,
+    "ast_hash": "6d93917f34d2e8eb473a7c54bde046f5",
     "semantic_hash": ""
   },
   "src-tauri/src/db.rs": {
-    "mtime": 1790075163.1345565,
-    "ast_hash": "c37333d909f30fb8a9e1ade1b5bc0757",
+    "mtime": 1790677078.539044,
+    "ast_hash": "ef2611d99fe1c5ec52990ef1f0002b89",
     "semantic_hash": ""
   },
   "src-tauri/src/lib.rs": {
-    "mtime": 1789969605.0570252,
-    "ast_hash": "a5ab1a629935cb702de52284ff3b0f48",
+    "mtime": 1791503793.5702853,
+    "ast_hash": "bdaafdd1601f01285cd82068c80b7b69",
     "semantic_hash": ""
   },
   "src-tauri/src/main.rs": {
@@ -655,13 +655,13 @@
     "semantic_hash": ""
   },
   "src-tauri/tauri.conf.json": {
-    "mtime": 1790341136.8999734,
-    "ast_hash": "e2a76a400b5f2224cc6557924d4993f1",
+    "mtime": 1791419307.2153106,
+    "ast_hash": "31f2a410cbdf86b997e0e386978d4f78",
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1790341175.2714367,
-    "ast_hash": "d83123ad361e0b7b7713b1abda306602",
+    "mtime": 1791102577.0921502,
+    "ast_hash": "8e98022b44b560280484f3d1460af19d",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -675,8 +675,8 @@
     "semantic_hash": "5e10f273121793b07d49ba7701baa03f"
   },
   "src/api/nasSync.ts": {
-    "mtime": 1790310345.1220288,
-    "ast_hash": "1b1fddc28db14286cfe25677f6a30e0d",
+    "mtime": 1790497071.6008968,
+    "ast_hash": "f2307fd7f7ca6f663342f1dc326de2a0",
     "semantic_hash": ""
   },
   "src/api/podcast.ts": {
@@ -710,8 +710,8 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1790348140.1799545,
-    "ast_hash": "865d7bf8709d441513d0482b98b338f7",
+    "mtime": 1791517825.9898036,
+    "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
   "src/common/api/config.json": {
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1790348149.309986,
+    "mtime": 1791517837.9302218,
     "ast_hash": "004ec05363c3de7958b1f42a82962240",
     "semantic_hash": ""
   },
@@ -860,7 +860,7 @@
     "semantic_hash": ""
   },
   "src/components/GlobalBackground.vue": {
-    "mtime": 1789298621.0,
+    "mtime": 1791097013.528118,
     "ast_hash": "fbc097b9a438d31a834e7b6bcec07e6c",
     "semantic_hash": "fbc097b9a438d31a834e7b6bcec07e6c"
   },
@@ -930,8 +930,8 @@
     "semantic_hash": "08cb54cea555807fc7a456ccbd54605f"
   },
   "src/components/Music/SongVirtualList.vue": {
-    "mtime": 1790083612.8968778,
-    "ast_hash": "5f438816f5aa98b2d7508c48a5f36146",
+    "mtime": 1791471978.2993321,
+    "ast_hash": "f3ccc75a0454e19ed01fea60b776b424",
     "semantic_hash": ""
   },
   "src/components/Pager/PagerBar.vue": {
@@ -945,8 +945,8 @@
     "semantic_hash": "952d292fe16d56f686ade70eb310dc18"
   },
   "src/components/Play/AudioVisualizer.vue": {
-    "mtime": 1789796965.2840517,
-    "ast_hash": "6f76407850726ba7d2bed0312a402c08",
+    "mtime": 1791097013.5283167,
+    "ast_hash": "7a0285d40b3cf65557bbc43438a57a12",
     "semantic_hash": ""
   },
   "src/components/Play/CommentsOverlay.vue": {
@@ -960,12 +960,12 @@
     "semantic_hash": "86632c1102e096c0cb4793c56cee8c92"
   },
   "src/components/Play/FullPlay.vue": {
-    "mtime": 1789880135.6101806,
-    "ast_hash": "a288c1221fe24818374d8801b998639c",
+    "mtime": 1791504412.3745244,
+    "ast_hash": "844ca539b48d237420868fc4002aa5a0",
     "semantic_hash": ""
   },
   "src/components/Play/GlobalAudio.vue": {
-    "mtime": 1789764005.4727194,
+    "mtime": 1790832508.6747627,
     "ast_hash": "0c0fff6193ac8550fc257638ae194272",
     "semantic_hash": ""
   },
@@ -975,9 +975,9 @@
     "semantic_hash": "ef01044db05b0e9fd340d961651685c2"
   },
   "src/components/Play/Lyric/LyricAdapter.vue": {
-    "mtime": 1789298621.0,
-    "ast_hash": "7d103eea9e3bca8dbfb92c691455fed7",
-    "semantic_hash": "7d103eea9e3bca8dbfb92c691455fed7"
+    "mtime": 1791097013.5288532,
+    "ast_hash": "c1e574d12c2924ea5d0eefab055ecd34",
+    "semantic_hash": ""
   },
   "src/components/Play/LyricCopyOverlay.vue": {
     "mtime": 1789298621.0,
@@ -990,8 +990,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "src/components/Play/PlayMusic.vue": {
-    "mtime": 1790346683.458574,
-    "ast_hash": "a798b8ab10ca1935e2b96b1cd28d0867",
+    "mtime": 1791509905.3082705,
+    "ast_hash": "06e7bd3803fac09f14ec688ce60ae514",
     "semantic_hash": ""
   },
   "src/components/Play/PlaySettings.vue": {
@@ -1000,9 +1000,9 @@
     "semantic_hash": "70e487be99e0aa166ead3711ac43ec8c"
   },
   "src/components/Play/PlaylistActions.vue": {
-    "mtime": 1789298621.0,
-    "ast_hash": "a4225f453b9a40bd0c4cf651bcc6dcc3",
-    "semantic_hash": "a4225f453b9a40bd0c4cf651bcc6dcc3"
+    "mtime": 1791558158.5277925,
+    "ast_hash": "353506d47f6d03cfa2d71e1968640435",
+    "semantic_hash": ""
   },
   "src/components/Play/PlaylistDrawer.vue": {
     "mtime": 1789723982.4857483,
@@ -1010,8 +1010,8 @@
     "semantic_hash": ""
   },
   "src/components/Play/ShaderBackground.vue": {
-    "mtime": 1789724202.6204019,
-    "ast_hash": "6d77a64351125996d42710e8517d8133",
+    "mtime": 1791097013.5295055,
+    "ast_hash": "726fe6fe37f66fb7a39d8c642ec5b5e0",
     "semantic_hash": ""
   },
   "src/components/PluginNoticeDialog.vue": {
@@ -1055,8 +1055,8 @@
     "semantic_hash": "679abd40169fedb6a97ace7b0cbe0051"
   },
   "src/components/Settings/HotkeySettings.vue": {
-    "mtime": 1789819401.465754,
-    "ast_hash": "965b75de6dfa7782ba45f897c990c8c2",
+    "mtime": 1791507953.3063173,
+    "ast_hash": "28b115a1a3e3cec348438130ce1402b5",
     "semantic_hash": ""
   },
   "src/components/Settings/LyricFontSettings.vue": {
@@ -1070,9 +1070,9 @@
     "semantic_hash": ""
   },
   "src/components/Settings/PlaylistSettings.vue": {
-    "mtime": 1789298621.0,
-    "ast_hash": "087a4b4fabf1c3e7129429704f90474e",
-    "semantic_hash": "087a4b4fabf1c3e7129429704f90474e"
+    "mtime": 1791558158.5277443,
+    "ast_hash": "046afd616dd7165140b90afda69cdd0e",
+    "semantic_hash": ""
   },
   "src/components/Settings/UpdateSettings.vue": {
     "mtime": 1789298621.0,
@@ -1080,8 +1080,8 @@
     "semantic_hash": "771e2eb5237c8511ff974c0b7390d979"
   },
   "src/components/Settings/plugins.vue": {
-    "mtime": 1790346278.444012,
-    "ast_hash": "4ed1ca7f6b77d8b7fe05bdaaf9f16f9a",
+    "mtime": 1790375653.3494318,
+    "ast_hash": "077320ef9427b161d30319a286944852",
     "semantic_hash": ""
   },
   "src/components/SettingsSearch.vue": {
@@ -1135,18 +1135,18 @@
     "semantic_hash": "06ceb7d3f6fe05db7895b5c8c54ed941"
   },
   "src/components/Versions.vue": {
-    "mtime": 1790346036.7044501,
+    "mtime": 1790829116.5971403,
     "ast_hash": "43daea2d259d3dd60a8b8283886cdc3c",
     "semantic_hash": ""
   },
   "src/components/layout/HomeLayout.vue": {
-    "mtime": 1790346618.9794478,
-    "ast_hash": "462844f7c6039ba17b215ed449c9ada7",
+    "mtime": 1791505452.2570295,
+    "ast_hash": "f7a3b420913addb06086d03c25009e9b",
     "semantic_hash": ""
   },
   "src/components/layout/Provider.vue": {
-    "mtime": 1790346619.3884752,
-    "ast_hash": "87487e0d38b4aebfe75aae6910028d86",
+    "mtime": 1791558158.5277925,
+    "ast_hash": "93e824befae24c37d4ed5b567741c847",
     "semantic_hash": ""
   },
   "src/components/sImage.vue": {
@@ -1175,8 +1175,8 @@
     "semantic_hash": "cfd0e9011879a65b1131526e8004890f"
   },
   "src/main.ts": {
-    "mtime": 1789724004.173614,
-    "ast_hash": "078fed0d8f113de5a0dd3e54cce34fcb",
+    "mtime": 1791422983.3351634,
+    "ast_hash": "05caafee9333b6167427dfaf075b3536",
     "semantic_hash": ""
   },
   "src/router/index.ts": {
@@ -1190,9 +1190,9 @@
     "semantic_hash": "bd2bc4e3aca4a5d4c92b5961cc04b259"
   },
   "src/services/autoUpdateService.ts": {
-    "mtime": 1789298621.0,
-    "ast_hash": "f88bfe32cf6e7b24ade0de70b59d06b6",
-    "semantic_hash": "f88bfe32cf6e7b24ade0de70b59d06b6"
+    "mtime": 1791558158.5156503,
+    "ast_hash": "4da28c75e6a738874ed30d584b919894",
+    "semantic_hash": ""
   },
   "src/services/listenTogetherInvite.ts": {
     "mtime": 1789298621.0,
@@ -1215,8 +1215,8 @@
     "semantic_hash": "456dde882325c16437901de90785673d"
   },
   "src/services/nasSyncPoller.ts": {
-    "mtime": 1790346491.2342787,
-    "ast_hash": "f53940b613c529fc70408f87d5fcf702",
+    "mtime": 1791099237.8665304,
+    "ast_hash": "60bf28197fd0ce6d82253cbf225254b2",
     "semantic_hash": ""
   },
   "src/store/AudioEffects.ts": {
@@ -1240,12 +1240,12 @@
     "semantic_hash": "a5c530a675c1f1103e637bb851d8c11d"
   },
   "src/store/GlobalPlayStatus.ts": {
-    "mtime": 1790346666.9224427,
-    "ast_hash": "f3edb7c8940aae1fa15dfbb13636f753",
+    "mtime": 1791509786.6854992,
+    "ast_hash": "c81a56b0403c928b1170ede04e1f22ed",
     "semantic_hash": ""
   },
   "src/store/ListenTogether.ts": {
-    "mtime": 1789743303.0831892,
+    "mtime": 1791097013.532703,
     "ast_hash": "6a51f464aba3385d497d4c1a94940afb",
     "semantic_hash": ""
   },
@@ -1255,8 +1255,8 @@
     "semantic_hash": "1298a3a0523b80e93c2a6332fd50d7b3"
   },
   "src/store/LocalUserDetail.ts": {
-    "mtime": 1789871881.218925,
-    "ast_hash": "5b4064034f0cce1217a484ddd774f08a",
+    "mtime": 1790497071.608798,
+    "ast_hash": "54edf71d8e2f4836e406a4ede898e7a5",
     "semantic_hash": ""
   },
   "src/store/LyricExtras.ts": {
@@ -1315,8 +1315,8 @@
     "semantic_hash": "f9669e77adf43d12d32ceb588e79831a"
   },
   "src/tauri-bridge.ts": {
-    "mtime": 1790347992.5806406,
-    "ast_hash": "39cd9fd905d9a096ad251555525e59a0",
+    "mtime": 1791468417.1865337,
+    "ast_hash": "7e260896e167c8e4d3bdb1eb7172fc23",
     "semantic_hash": ""
   },
   "src/types/Sources.ts": {
@@ -1340,7 +1340,7 @@
     "semantic_hash": "8ab26676379d3b67d58e06b6a7078382"
   },
   "src/utils/appWindowState.ts": {
-    "mtime": 1789298621.0,
+    "mtime": 1790867135.975806,
     "ast_hash": "38f50ff09d9badf8d50dbaa056a6c321",
     "semantic_hash": "38f50ff09d9badf8d50dbaa056a6c321"
   },
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "src/utils/audio/audioManager.ts": {
-    "mtime": 1789739372.8904996,
-    "ast_hash": "9c15c2c336230b6a8f9dd81a8df46e0e",
+    "mtime": 1790419431.6862903,
+    "ast_hash": "1737c51f0116ca6d4a153a58f11a5ee3",
     "semantic_hash": ""
   },
   "src/utils/audio/candidateIdentity.ts": {
@@ -1360,13 +1360,13 @@
     "semantic_hash": ""
   },
   "src/utils/audio/coverResolver.ts": {
-    "mtime": 1789718832.9806242,
+    "mtime": 1791097013.5338671,
     "ast_hash": "74afd85f77e1d7f25bc97b13d16dbff9",
     "semantic_hash": ""
   },
   "src/utils/audio/crossfade.ts": {
-    "mtime": 1790087817.1101892,
-    "ast_hash": "3b4e8a17cc874b246a8b74a707cde178",
+    "mtime": 1791097013.5342133,
+    "ast_hash": "882dedc52dbc12eaabf549fded17ea3f",
     "semantic_hash": ""
   },
   "src/utils/audio/download.ts": {
@@ -1375,13 +1375,13 @@
     "semantic_hash": "cb220f8d29b9e670e8de6c5746186999"
   },
   "src/utils/audio/globaPlayList.ts": {
-    "mtime": 1790341175.2719855,
-    "ast_hash": "e771f26dd5cc47a2872608a64bcfd1ec",
+    "mtime": 1791517550.332241,
+    "ast_hash": "b53ab92a37d6637fe85fecbd0ca7418c",
     "semantic_hash": ""
   },
   "src/utils/audio/globalControls.ts": {
-    "mtime": 1789743568.29677,
-    "ast_hash": "bdf4cdc2480459c448c918aec3b81b4c",
+    "mtime": 1791504056.8691251,
+    "ast_hash": "19a34ab693c3df8df04540f339c71296",
     "semantic_hash": ""
   },
   "src/utils/audio/heartbeat.ts": {
@@ -1390,7 +1390,7 @@
     "semantic_hash": "1ff1c910897c9920098877d94ce836b6"
   },
   "src/utils/audio/mediaGateway.ts": {
-    "mtime": 1789751265.8078625,
+    "mtime": 1791097013.5351079,
     "ast_hash": "4551503bbff2a8122520a6af843ba804",
     "semantic_hash": ""
   },
@@ -1405,8 +1405,8 @@
     "semantic_hash": ""
   },
   "src/utils/audio/useSmtc.ts": {
-    "mtime": 1790041199.4875612,
-    "ast_hash": "62652c9528f10c3dfff6ddec9dbb0b2b",
+    "mtime": 1791509236.935511,
+    "ast_hash": "e05bbee369e2977b5655a981ff4d8da9",
     "semantic_hash": ""
   },
   "src/utils/audio/volume.ts": {
@@ -1420,13 +1420,13 @@
     "semantic_hash": "0ca4f01c0d58efdac48814f24630bcea"
   },
   "src/utils/cache/sessionCache.ts": {
-    "mtime": 1789662460.7745469,
+    "mtime": 1791097013.53533,
     "ast_hash": "13d22d453be51751290c4f931509c31f",
     "semantic_hash": ""
   },
   "src/utils/color/colorExtractor.ts": {
-    "mtime": 1789694180.168591,
-    "ast_hash": "35171d734b975be23775f67da3270324",
+    "mtime": 1791097013.5358577,
+    "ast_hash": "909ccbfc1ee5a6cabe1d7f39dc2fbece",
     "semantic_hash": ""
   },
   "src/utils/color/contrastColor.ts": {
@@ -1440,8 +1440,8 @@
     "semantic_hash": "345cd15e00b516b2a25b8d79c632a1c1"
   },
   "src/utils/hotkeys/recording.ts": {
-    "mtime": 1789819501.168342,
-    "ast_hash": "a83be29684526c2812709ddec4c322fb",
+    "mtime": 1791097013.5363746,
+    "ast_hash": "ae38a823548124a25fbf81f2cbf72ece",
     "semantic_hash": ""
   },
   "src/utils/idleSleep.ts": {
@@ -1500,9 +1500,9 @@
     "semantic_hash": ""
   },
   "src/utils/nsfwCheck.ts": {
-    "mtime": 1789298621.0,
-    "ast_hash": "30c8f8c96d1b3003a96acbc49b1400d3",
-    "semantic_hash": "30c8f8c96d1b3003a96acbc49b1400d3"
+    "mtime": 1790417348.6714046,
+    "ast_hash": "529549a15b74cb615d49254766a70638",
+    "semantic_hash": ""
   },
   "src/utils/playlist/bridgedPlaylist.ts": {
     "mtime": 1789373347.0,
@@ -1535,9 +1535,9 @@
     "semantic_hash": "6bd2027bd7b23ef2925b1facd417274d"
   },
   "src/utils/playlist/playlistExportImport.ts": {
-    "mtime": 1789298621.0,
-    "ast_hash": "226a9e86bc3166215263e68b95f2b203",
-    "semantic_hash": "226a9e86bc3166215263e68b95f2b203"
+    "mtime": 1791558158.5282295,
+    "ast_hash": "888e854f0fb45fb28b62704f3cbeb03c",
+    "semantic_hash": ""
   },
   "src/utils/playlist/playlistManager.ts": {
     "mtime": 1789873870.879797,
@@ -1550,8 +1550,8 @@
     "semantic_hash": ""
   },
   "src/utils/playlist/pluginSync.ts": {
-    "mtime": 1790172384.246359,
-    "ast_hash": "fe9494f3423567ad10a10fae174217c1",
+    "mtime": 1791472382.3037868,
+    "ast_hash": "b2c37804f49f57a9979fe0b7b89645a6",
     "semantic_hash": ""
   },
   "src/utils/playlist/sharePlaylistLocalHelper.ts": {
@@ -1610,13 +1610,13 @@
     "semantic_hash": ""
   },
   "src/views/download/index.vue": {
-    "mtime": 1790084064.8856583,
-    "ast_hash": "17057c1d6e4d4239bcbb4507fa6be977",
+    "mtime": 1790420962.5685096,
+    "ast_hash": "e744437a37d197a2ece98c1d0569010a",
     "semantic_hash": ""
   },
   "src/views/home/index.vue": {
-    "mtime": 1790083954.47879,
-    "ast_hash": "749738b082298e2b3089dc522318b181",
+    "mtime": 1790348997.551059,
+    "ast_hash": "49dafe37aad90fca91350e257abe4c35",
     "semantic_hash": ""
   },
   "src/views/music/LocalTagEditorPage.vue": {
@@ -1630,23 +1630,23 @@
     "semantic_hash": "a68086aad5e34253f417e13a5370bc6b"
   },
   "src/views/music/find.vue": {
-    "mtime": 1790084064.8636498,
-    "ast_hash": "4e66eb870e56364ca3ee294e08e76e5e",
+    "mtime": 1791558158.5278263,
+    "ast_hash": "1f83ea10e27381421b818ae93c111917",
     "semantic_hash": ""
   },
   "src/views/music/list.vue": {
-    "mtime": 1790346551.5027006,
-    "ast_hash": "1399132c74e0b8b3ceabf1308e21d3a5",
+    "mtime": 1791473445.845896,
+    "ast_hash": "3a3e239240154e01b26e57e4756bb48b",
     "semantic_hash": ""
   },
   "src/views/music/local.vue": {
-    "mtime": 1789697122.1435397,
-    "ast_hash": "17591736d2b6c7e5a9d8ba7d9b77017f",
+    "mtime": 1790420938.0429816,
+    "ast_hash": "fcc894cf88dcdf363c14e353fe8d5fe5",
     "semantic_hash": ""
   },
   "src/views/music/podcast.vue": {
-    "mtime": 1790310116.255495,
-    "ast_hash": "45d8905f6368972c35f6ed3d62da63cb",
+    "mtime": 1791097013.5366795,
+    "ast_hash": "e3d3df5ccd1c3b65cb83ffd9f452319f",
     "semantic_hash": ""
   },
   "src/views/music/podcastHomeSpec.ts": {
@@ -1655,8 +1655,8 @@
     "semantic_hash": "a6f60e37e7ffd82138bf6f7099fb5b60"
   },
   "src/views/music/radio.vue": {
-    "mtime": 1790084064.881819,
-    "ast_hash": "815a440ff90d92e6f33d47b997feb2c9",
+    "mtime": 1790497071.608731,
+    "ast_hash": "6eb601a5bd6b13e4ef4151ae27c0b630",
     "semantic_hash": ""
   },
   "src/views/music/recent.vue": {
@@ -1675,8 +1675,8 @@
     "semantic_hash": ""
   },
   "src/views/music/songlist.vue": {
-    "mtime": 1790346666.9223094,
-    "ast_hash": "18037d23d83404fb95f8d962a009def5",
+    "mtime": 1791558158.515662,
+    "ast_hash": "50a7e5765fc8baed06ed0dfa254fb65d",
     "semantic_hash": ""
   },
   "src/views/settings/index.vue": {
@@ -1690,8 +1690,8 @@
     "semantic_hash": ""
   },
   "src/views/settings/sections/AboutSection.vue": {
-    "mtime": 1790340644.7398267,
-    "ast_hash": "d10383de4a8313aced125cc25aa02064",
+    "mtime": 1791097013.5369115,
+    "ast_hash": "bcf23f77c7192f31783769831083f6fb",
     "semantic_hash": ""
   },
   "src/views/settings/sections/AppearanceSection.vue": {
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1790346666.8366454,
-    "ast_hash": "7852456fe468d4e46994f35327da8ead",
+    "mtime": 1791102577.0925434,
+    "ast_hash": "123e5adb23c7d150fc90b84b9b4e9ef7",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1750,7 +1750,7 @@
     "semantic_hash": "c877b390ec6bc9819845afaa91ace2c4"
   },
   "vite.config.ts": {
-    "mtime": 1789704416.2766805,
+    "mtime": 1790832508.6766279,
     "ast_hash": "e58d29988bed74a8add7d5c4d4e88167",
     "semantic_hash": ""
   },
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1790266479.5088978,
-    "ast_hash": "3fa38e112f17fa921d58dd5daf46903d",
+    "mtime": 1791517954.7877576,
+    "ast_hash": "a2617d3b18b6ea6d2d56570f7c037680",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1790266918.4216566,
-    "ast_hash": "20d2dd9bde7e82f2edb17ce2551ea1ea",
+    "mtime": 1791517989.068082,
+    "ast_hash": "1c35b04f8401da74085efcea8cc5a19d",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1790172344.2941074,
-    "ast_hash": "d918ae1effe1e16661f061c5834e0379",
+    "mtime": 1791516116.46915,
+    "ast_hash": "537eb9c143dcad13d368dab6f2f32222",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -1850,53 +1850,53 @@
     "semantic_hash": ""
   },
   "src-tauri/icons/1024x1024.png": {
-    "mtime": 1780229525.0441585,
-    "ast_hash": "d8e918cba4b687625ac553e180342fb1",
+    "mtime": 1790353126.113317,
+    "ast_hash": "52af3dbaa441774bc19c5cf64e6fb8ae",
     "semantic_hash": ""
   },
   "src-tauri/icons/128x128.png": {
-    "mtime": 1780229525.0318432,
-    "ast_hash": "bfec3a3f9d90dbfda84b58666de19611",
+    "mtime": 1790353126.059628,
+    "ast_hash": "b2f3c2b6c65721317e05b836cb63c08b",
     "semantic_hash": ""
   },
   "src-tauri/icons/128x128@2x.png": {
-    "mtime": 1779939476.368448,
-    "ast_hash": "bb141a88efa01b2206b3f40c44171f65",
+    "mtime": 1790353126.0729985,
+    "ast_hash": "d8e09c34c85fd0860f3bd7c0a7048c27",
     "semantic_hash": ""
   },
   "src-tauri/icons/16x16.png": {
-    "mtime": 1780229525.0141437,
-    "ast_hash": "66e88d73866601d0bc0c9fd274c4ffc0",
+    "mtime": 1790353126.0122623,
+    "ast_hash": "df24d23414a1a1391797d87478fa2737",
     "semantic_hash": ""
   },
   "src-tauri/icons/24x24.png": {
-    "mtime": 1780229525.0178316,
-    "ast_hash": "f4e46472e20394fd445c0a1dab78b11e",
+    "mtime": 1790353126.0212598,
+    "ast_hash": "fb570eca02507f11b88919c3e3ebd411",
     "semantic_hash": ""
   },
   "src-tauri/icons/256x256.png": {
-    "mtime": 1780229525.0369515,
-    "ast_hash": "8df7e605b1c90bd53d18c9e7add69760",
+    "mtime": 1790353126.0866635,
+    "ast_hash": "d8e09c34c85fd0860f3bd7c0a7048c27",
     "semantic_hash": ""
   },
   "src-tauri/icons/32x32.png": {
-    "mtime": 1780229525.0213065,
-    "ast_hash": "d82b33fe0630586a213913cb410d28a3",
+    "mtime": 1790353126.0307622,
+    "ast_hash": "99ba307cbd89a88c62f5e9c0e251062b",
     "semantic_hash": ""
   },
   "src-tauri/icons/48x48.png": {
-    "mtime": 1780229525.0247521,
-    "ast_hash": "fbac6dec287015a764a8ddf69a1d4b8d",
+    "mtime": 1790353126.0396407,
+    "ast_hash": "0933393d46a478cca656c1f59bbf329a",
     "semantic_hash": ""
   },
   "src-tauri/icons/512x512.png": {
-    "mtime": 1780229525.0406425,
-    "ast_hash": "3ffab360f19cce16e96d8c1e01b31bc3",
+    "mtime": 1790353126.1021636,
+    "ast_hash": "bd6ba04e68d1a2766a778546a02f2d33",
     "semantic_hash": ""
   },
   "src-tauri/icons/64x64.png": {
-    "mtime": 1780229525.0280612,
-    "ast_hash": "9c11b2f52975615048a11f9db45bc4ed",
+    "mtime": 1790353126.0485027,
+    "ast_hash": "3dfd389b7bfd0653bda4867be86e4afe",
     "semantic_hash": ""
   },
   "src/assets/icon_font/iconfont.svg": {
@@ -2655,8 +2655,8 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/cover_proxy.rs": {
-    "mtime": 1790347925.8907094,
-    "ast_hash": "e07c98147cd7d3ab7d73626db3a8d6c5",
+    "mtime": 1790677078.4121444,
+    "ast_hash": "04ea0bcf65c0dfc09ea5f1794aa51d84",
     "semantic_hash": ""
   },
   "sidecar/services/plugins/converter-event-driven.mjs": {
@@ -2685,13 +2685,13 @@
     "semantic_hash": ""
   },
   "scripts/prepare-mpv-runtime.mjs": {
-    "mtime": 1789747261.2092276,
-    "ast_hash": "d1d7ae97d4d5fc1b83650d5bcfb48e1a",
+    "mtime": 1791558158.527768,
+    "ast_hash": "820e421c474d6570476950e02e44d699",
     "semantic_hash": ""
   },
   "scripts/prepare-sidecar-runtime.mjs": {
-    "mtime": 1789735815.9882965,
-    "ast_hash": "f0b7bed9a1f48b2060ad43628ef4b8a7",
+    "mtime": 1791107255.0106044,
+    "ast_hash": "0fdf7703beca34fd0b54f0b25c0d5a3c",
     "semantic_hash": ""
   },
   "sidecar/esm-node-path-hooks.mjs": {
@@ -2725,13 +2725,13 @@
     "semantic_hash": ""
   },
   "src/utils/audio/nativePlayback.ts": {
-    "mtime": 1789825603.5651877,
-    "ast_hash": "8b2892e936c6a34eae21043e3c65b4f8",
+    "mtime": 1791419394.9160414,
+    "ast_hash": "abde5fcb543e6f122234f78599b98abb",
     "semantic_hash": ""
   },
   "src/utils/color/bakedAmbientBackdrop.ts": {
-    "mtime": 1789879842.7990105,
-    "ast_hash": "057693c9c92d769a726d1ad82a15f95b",
+    "mtime": 1791422278.2127495,
+    "ast_hash": "b7f422193dda4364e383a8c5973f2405",
     "semantic_hash": ""
   },
   "src/utils/coverThumb.ts": {
@@ -2760,13 +2760,13 @@
     "semantic_hash": ""
   },
   "src-tauri/src/hotkeys.rs": {
-    "mtime": 1789819332.8717244,
-    "ast_hash": "560570ce15b7ad823a6bc9bfae925e77",
+    "mtime": 1791508855.1453133,
+    "ast_hash": "5adf1b5183dd6386f49b8c58fc1c80d9",
     "semantic_hash": ""
   },
   "src-tauri/src/now_playing.rs": {
-    "mtime": 1789886411.2794645,
-    "ast_hash": "9683e3b45efde39c4f66b3c9cbb39e2a",
+    "mtime": 1791513839.0137434,
+    "ast_hash": "893de9b8d8e7232b74e6b2695446a514",
     "semantic_hash": ""
   },
   "nas-sync-server/package.json": {
@@ -2790,8 +2790,8 @@
     "semantic_hash": ""
   },
   "nas-sync-server/src/database.ts": {
-    "mtime": 1790309914.162497,
-    "ast_hash": "65f62ef9c43c14e27eec579038eaffa7",
+    "mtime": 1790497071.594413,
+    "ast_hash": "43c0f513cc87add35163e6dad4228ad0",
     "semantic_hash": ""
   },
   "nas-sync-server/src/http.test.ts": {
@@ -2800,8 +2800,8 @@
     "semantic_hash": ""
   },
   "nas-sync-server/src/http.ts": {
-    "mtime": 1790309929.0449045,
-    "ast_hash": "3b28175140105b963ff94956e21f30a4",
+    "mtime": 1790839584.913038,
+    "ast_hash": "2dcfea0b2d47ac5776d354f7df697006",
     "semantic_hash": ""
   },
   "nas-sync-server/src/index.ts": {
@@ -2882,6 +2882,1321 @@
   "public/about_author_reward_qr.jpg": {
     "mtime": 1790339927.4815457,
     "ast_hash": "bec831f4e85978985129b26ec81e8171",
+    "semantic_hash": ""
+  },
+  ".ceru-run/package.json": {
+    "mtime": 1790854091.7470498,
+    "ast_hash": "5f0a96f60bf4d47eb5874f5c8b456c1a",
+    "semantic_hash": ""
+  },
+  "analyze-perf.py": {
+    "mtime": 1790839584.9113715,
+    "ast_hash": "a140e2c38d129addce47530e884b8360",
+    "semantic_hash": ""
+  },
+  "analyze-webview-memory.sh": {
+    "mtime": 1790839584.9116101,
+    "ast_hash": "2d530f25b401f1329ab1ed68ced8f504",
+    "semantic_hash": ""
+  },
+  "electron-old/.eslintrc.backup.json": {
+    "mtime": 1789298618.0,
+    "ast_hash": "1b9d68666c198d49be08abe4c9f14ec9",
+    "semantic_hash": ""
+  },
+  "electron-old/electron.vite.config.ts": {
+    "mtime": 1789539846.0,
+    "ast_hash": "f6ad37499b1ac1aea29fc043bd22e9e0",
+    "semantic_hash": ""
+  },
+  "electron-old/eslint.config.mjs": {
+    "mtime": 1789298619.0,
+    "ast_hash": "5c722d4b78329b77d2a3af8a01e84956",
+    "semantic_hash": ""
+  },
+  "electron-old/index.js": {
+    "mtime": 1789465711.0,
+    "ast_hash": "5b18f8b49fc5678e61d774aedf7440cd",
+    "semantic_hash": ""
+  },
+  "electron-old/jest.config.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9093568c7c88ecb8cf8206a97bb023a9",
+    "semantic_hash": ""
+  },
+  "electron-old/package.json": {
+    "mtime": 1789541291.0,
+    "ast_hash": "5f0a96f60bf4d47eb5874f5c8b456c1a",
+    "semantic_hash": ""
+  },
+  "electron-old/test-init-queue.js": {
+    "mtime": 1789298621.0,
+    "ast_hash": "333b1ea595ba7305fcad5105114aeab7",
+    "semantic_hash": ""
+  },
+  "electron-old/tsconfig.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "23a507ecd05fc9db99e9f64b17881b30",
+    "semantic_hash": ""
+  },
+  "electron-old/tsconfig.node.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "9323bcc239614a67c1da9a613e2d85eb",
+    "semantic_hash": ""
+  },
+  "electron-old/tsconfig.web.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "dd5cc26c3e30debac98adabc1018960a",
+    "semantic_hash": ""
+  },
+  "electron-reference/.eslintrc.backup.json": {
+    "mtime": 1789298618.0,
+    "ast_hash": "1b9d68666c198d49be08abe4c9f14ec9",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/.vitepress/config.mts": {
+    "mtime": 1789298618.0,
+    "ast_hash": "d79ade41b803fad8b32c0352bbc4a2a2",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/.vitepress/theme/HeroLogo.vue": {
+    "mtime": 1789298618.0,
+    "ast_hash": "542c85dd852924cbd839ab3797639925",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/.vitepress/theme/MyLayout.vue": {
+    "mtime": 1789298618.0,
+    "ast_hash": "75e73915f541d4872b673125a8194372",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/.vitepress/theme/dark.ts": {
+    "mtime": 1789298618.0,
+    "ast_hash": "0e4794bb3afc04f01b0e76b3c1977456",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/.vitepress/theme/index.ts": {
+    "mtime": 1789298618.0,
+    "ast_hash": "969ef439f73b11e382bbcfd5e39bb5dc",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/plugin-notice-test.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3c7243a119d04315d48532105badb990",
+    "semantic_hash": ""
+  },
+  "electron-reference/electron.vite.config.ts": {
+    "mtime": 1789539846.0,
+    "ast_hash": "f6ad37499b1ac1aea29fc043bd22e9e0",
+    "semantic_hash": ""
+  },
+  "electron-reference/eslint.config.mjs": {
+    "mtime": 1789298619.0,
+    "ast_hash": "5c722d4b78329b77d2a3af8a01e84956",
+    "semantic_hash": ""
+  },
+  "electron-reference/index.js": {
+    "mtime": 1789465711.0,
+    "ast_hash": "5b18f8b49fc5678e61d774aedf7440cd",
+    "semantic_hash": ""
+  },
+  "electron-reference/jest.config.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9093568c7c88ecb8cf8206a97bb023a9",
+    "semantic_hash": ""
+  },
+  "electron-reference/package.json": {
+    "mtime": 1789541291.0,
+    "ast_hash": "5f0a96f60bf4d47eb5874f5c8b456c1a",
+    "semantic_hash": ""
+  },
+  "electron-reference/packages/shared-contract/package.json": {
+    "mtime": 1789298619.0,
+    "ast_hash": "2020351ce94da5a99709fc38a7090b0d",
+    "semantic_hash": ""
+  },
+  "electron-reference/packages/shared-contract/src/index.ts": {
+    "mtime": 1789361298.0,
+    "ast_hash": "487c2280709c90f52c1ae03b5add9ebc",
+    "semantic_hash": ""
+  },
+  "electron-reference/plugins/ceru-nas-sync-service.js": {
+    "mtime": 1789352955.0,
+    "ast_hash": "fcb6504831afcd7b3d2f3df1a978b91d",
+    "semantic_hash": ""
+  },
+  "electron-reference/plugins/feiniu-service.js": {
+    "mtime": 1789438309.0,
+    "ast_hash": "6cfe9606feca683459124f2b54b6a3d0",
+    "semantic_hash": ""
+  },
+  "electron-reference/plugins/navidrome-service.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "7f6e1381a1058010aad3e65b0d97df37",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/auth-test.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a05af519ea69b91880efbabd34aa57bb",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/check-build-config.mjs": {
+    "mtime": 1789454459.0,
+    "ast_hash": "d361d0e24c16a7966089448a59baf69c",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/check-feiniu-plugin.mjs": {
+    "mtime": 1789309559.0,
+    "ast_hash": "aaa93b24df987a3f95f59046239e2954",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/cleanup-windows-aumid.ps1": {
+    "mtime": 1789298619.0,
+    "ast_hash": "e36eb9b52edc2ebc137d3813b577712f",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/genAst.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "1b35db9afa4d83850bf09dbbdef64b6c",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/launch-second-instance.mjs": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ce2a8347544e297df8f58ca5270e627e",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/preview-release-notes.sh": {
+    "mtime": 1789298619.0,
+    "ast_hash": "e4083eec7ffee8a1a376f6d95cd8d5ed",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/test-alist.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "c078a36f4170b8dfe0029493ba6ea3ba",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/verify-android-migration.mjs": {
+    "mtime": 1789298619.0,
+    "ast_hash": "efc92ca5b4d7cbd18eff58a19a876441",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/verify-mac-signature.mjs": {
+    "mtime": 1789454502.0,
+    "ast_hash": "ce27946fa2962f834576346985617943",
+    "semantic_hash": ""
+  },
+  "electron-reference/scripts/verify-package.mjs": {
+    "mtime": 1789362496.0,
+    "ast_hash": "c5c1f23a970fd1eb589221b75651f48d",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/api/config.json": {
+    "mtime": 1789298619.0,
+    "ast_hash": "6e72f4318ac30201baf59178dc264c74",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/api/resources.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0a3e3930b572e71f47b7fd8be65d3095",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/index.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d6a142d746a5a3579872cfb354218700",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/config.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3632dcf678545139dd5105b6785cb627",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/hotkeys.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "8d2c76520a54e00e7b6ea7174a3e6a23",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/localSongs.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "fbaf4f938a4ca0883a962a6271e3c255",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/permissions.ts": {
+    "mtime": 1789371605.0,
+    "ast_hash": "4d7a29d8c104c0d8f4f5c9406a4b3ba6",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/playList.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "bb254baa93cfb6c4b8e5e7925f647055",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/types/songList.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "aad99b31e8fc847d9303d272f692aff6",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/common.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ae045336a23c7b6135dc78e2d9d2faaa",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/format.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9cc8c6ff8f0e99a19c5ef6be07b0e1bb",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/lyricUtils/kg.js": {
+    "mtime": 1789298619.0,
+    "ast_hash": "604b884211fdde522e84b6f865e2e54f",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/lyricUtils/util.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "8432de49e786014179903024f2f15f76",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/nodejs.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9f1c9dbacb7c883c6eef33f40a412d2c",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/quality.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d66d9e74003e667175f86e05553ed0f4",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/common/utils/renderer.ts": {
+    "mtime": 1789298619.0,
+    "ast_hash": "04fb64a3c40ffeaf76cc8ba86d791c12",
+    "semantic_hash": ""
+  },
+  "electron-reference/test-init-queue.js": {
+    "mtime": 1789298621.0,
+    "ast_hash": "333b1ea595ba7305fcad5105114aeab7",
+    "semantic_hash": ""
+  },
+  "electron-reference/tsconfig.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "23a507ecd05fc9db99e9f64b17881b30",
+    "semantic_hash": ""
+  },
+  "electron-reference/tsconfig.node.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "9323bcc239614a67c1da9a613e2d85eb",
+    "semantic_hash": ""
+  },
+  "electron-reference/tsconfig.web.json": {
+    "mtime": 1789298621.0,
+    "ast_hash": "dd5cc26c3e30debac98adabc1018960a",
+    "semantic_hash": ""
+  },
+  "install-new-build.sh": {
+    "mtime": 1790831886.7809794,
+    "ast_hash": "236bf7d0900de46a1364987d8ffbd0c5",
+    "semantic_hash": ""
+  },
+  "monitor-live-app.sh": {
+    "mtime": 1790839584.9123225,
+    "ast_hash": "07207ccdd064da88554502d25e4fd7c5",
+    "semantic_hash": ""
+  },
+  "perf-monitor.sh": {
+    "mtime": 1790839584.9137757,
+    "ast_hash": "54098ee3041f247aebf80adb4cfdeae5",
+    "semantic_hash": ""
+  },
+  "perf-real-test.sh": {
+    "mtime": 1790839584.9141853,
+    "ast_hash": "51de29edd00fdaf6081b1faefd8260d2",
+    "semantic_hash": ""
+  },
+  "perf-simple.sh": {
+    "mtime": 1790839584.915712,
+    "ast_hash": "7354e6dfdb288ee163527e1f42753079",
+    "semantic_hash": ""
+  },
+  "perf-test-suite.sh": {
+    "mtime": 1790839584.9161923,
+    "ast_hash": "ffe5bc92532172f23c3ca2b668b7e320",
+    "semantic_hash": ""
+  },
+  "scripts/ci/collect-macos.sh": {
+    "mtime": 1790729123.1087358,
+    "ast_hash": "b0245d949c51be7e5f298a90d61ab7f9",
+    "semantic_hash": ""
+  },
+  "scripts/ci/collect-windows.sh": {
+    "mtime": 1790729122.8239603,
+    "ast_hash": "ee1bf8da66cd6e3acbb31c26de0ffe07",
+    "semantic_hash": ""
+  },
+  "scripts/ci/make-latest-json.py": {
+    "mtime": 1790729142.5665433,
+    "ast_hash": "53626bb19e2f88b13feb9d4ca2f7bbc4",
+    "semantic_hash": ""
+  },
+  "sidecar/services/plugins/converter-musicfree.mjs": {
+    "mtime": 1790349393.3159552,
+    "ast_hash": "575f94029f2548a3efa441b40d83905b",
+    "semantic_hash": ""
+  },
+  "src/utils/plugin/converter-musicfree.ts": {
+    "mtime": 1790349528.4299152,
+    "ast_hash": "9ac6aa5e0d679fb31a9626578e6d44e8",
+    "semantic_hash": ""
+  },
+  "test-performance.sh": {
+    "mtime": 1790831320.9445236,
+    "ast_hash": "8bd9b8408fc79eae53304f4fa2f15864",
+    "semantic_hash": ""
+  },
+  "trace-localhost-process.sh": {
+    "mtime": 1790839584.9320505,
+    "ast_hash": "d728e2899f3f88e350acdf9fd4b69265",
+    "semantic_hash": ""
+  },
+  ".github/workflows/desktop-release.yml": {
+    "mtime": 1790839584.9057455,
+    "ast_hash": "19f37b2aa725ebe47ceb3a859f5b7ce2",
+    "semantic_hash": ""
+  },
+  "COMPLETE_PERFORMANCE_FIX.md": {
+    "mtime": 1790839584.9063675,
+    "ast_hash": "4db59ade674eb3c92d5040a216192953",
+    "semantic_hash": ""
+  },
+  "COMPLETE_PERFORMANCE_FIX_V2.md": {
+    "mtime": 1790839584.9068215,
+    "ast_hash": "ff9f1320a5718d9ec02bcbb2a65cf28f",
+    "semantic_hash": ""
+  },
+  "COMPREHENSIVE_LAZY_LOADING_AUDIT.md": {
+    "mtime": 1790839584.907305,
+    "ast_hash": "8b905e77777845d3707a6b32d7c0eab8",
+    "semantic_hash": ""
+  },
+  "CPU_OPTIMIZATION_PLAN.md": {
+    "mtime": 1790839584.9076946,
+    "ast_hash": "f4f9f408d7d77c22c82603e7780f5fb5",
+    "semantic_hash": ""
+  },
+  "FINAL_OPTIMIZATION_SUMMARY.md": {
+    "mtime": 1790839584.9081533,
+    "ast_hash": "eb66195e77e2a5beaca580c50be316fc",
+    "semantic_hash": ""
+  },
+  "IDLE_CPU_TEST.md": {
+    "mtime": 1790839584.908586,
+    "ast_hash": "47c852d974b90318db8c99f2390ee8d4",
+    "semantic_hash": ""
+  },
+  "MACOS_NOTARIZATION_GUIDE.md": {
+    "mtime": 1790839584.9088433,
+    "ast_hash": "0a7c5c776d3ff806717a014f85c7695f",
+    "semantic_hash": ""
+  },
+  "OPTIMIZATION_VERIFICATION.md": {
+    "mtime": 1790839584.9092357,
+    "ast_hash": "e5056b6608c532bbd8665477d8c88a85",
+    "semantic_hash": ""
+  },
+  "PERFORMANCE_ANALYSIS.md": {
+    "mtime": 1790839584.9095347,
+    "ast_hash": "04308ecf1bf6d48e5fefc47771601c28",
+    "semantic_hash": ""
+  },
+  "PERFORMANCE_FIX_SUMMARY.md": {
+    "mtime": 1790839584.9100976,
+    "ast_hash": "8f9cec7ef3bcb748398aabace4791b47",
+    "semantic_hash": ""
+  },
+  "PERFORMANCE_OPTIMIZATION_PLAN.md": {
+    "mtime": 1790839584.9106019,
+    "ast_hash": "b565c3d6805a7147448709c84acbc7a0",
+    "semantic_hash": ""
+  },
+  "PERFORMANCE_TEST_PLAN.md": {
+    "mtime": 1790831499.4232564,
+    "ast_hash": "38b841c76d88088dc062a5db2bb6e30e",
+    "semantic_hash": ""
+  },
+  "PERF_TEST_GUIDE.md": {
+    "mtime": 1790839584.9109895,
+    "ast_hash": "a7486bec9f8b1faf4f9c24dc55364575",
+    "semantic_hash": ""
+  },
+  "SCROLL_FIX_TEST.md": {
+    "mtime": 1790834593.5906837,
+    "ast_hash": "4f917e9610f0014f13e3434bdaf2d819",
+    "semantic_hash": ""
+  },
+  "electron-old/.prettierrc.yaml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "ecd98e739c40f4f40a3dc47a859614f8",
+    "semantic_hash": ""
+  },
+  "electron-old/AGENTS.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "c4b24eeca493112565e0807deda0cf18",
+    "semantic_hash": ""
+  },
+  "electron-old/BUILDING.md": {
+    "mtime": 1789454511.0,
+    "ast_hash": "87b7dfda80d54738d08ffb6962fb0a0a",
+    "semantic_hash": ""
+  },
+  "electron-old/CHANGELOG.md": {
+    "mtime": 1789451446.0,
+    "ast_hash": "3b6888ac38745abfb42a54af29b39264",
+    "semantic_hash": ""
+  },
+  "electron-old/CLAUDE.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "923c6b02d68ce3863f7447752754589b",
+    "semantic_hash": ""
+  },
+  "electron-old/EULA.txt": {
+    "mtime": 1789298618.0,
+    "ast_hash": "3cbd8b2a4890f8eff8d72d43a0030d4f",
+    "semantic_hash": ""
+  },
+  "electron-old/README.md": {
+    "mtime": 1789542037.0,
+    "ast_hash": "c31973c0089e0eb203823c50110bfc2e",
+    "semantic_hash": ""
+  },
+  "electron-old/contributor-merge-checklist.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "6b95b32cfe5d291ee685ee8c79751371",
+    "semantic_hash": ""
+  },
+  "electron-old/electron-builder.yml": {
+    "mtime": 1789465882.0,
+    "ast_hash": "a6cd813f965b24a25a22736226d68625",
+    "semantic_hash": ""
+  },
+  "electron-old/playlist-converter.html": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d933658fdd9218b82471d1b114fd28e7",
+    "semantic_hash": ""
+  },
+  "electron-old/qodana.yaml": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a072a675cb73db1534c352186d093ed4",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/FUNDING.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "0453d5a0f43ebf2df2ac3cb624cfb978",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/ISSUE_TEMPLATE/bug_report_zh.yaml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "23c45f072b0bc705a5ad1d9cdea7b3cb",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/ISSUE_TEMPLATE/config.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "b7ae852e8a2ded633b23ec9712e1f1a7",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/ISSUE_TEMPLATE/feture_request_zh.yaml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "02ce509c6cdc12366ad043024375ff89",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/android.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "fb04c7a1a008d192944c7f3196690818",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/auto-sync-release.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "aba97a047ac8e31a0da2c3a9a74fcbf4",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/main.yml": {
+    "mtime": 1789374729.0,
+    "ast_hash": "f3755818e67ecdded84adea6012fdfbf",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/manual-build-release.yml": {
+    "mtime": 1789374730.0,
+    "ast_hash": "30e70bdc07b5cb51d147039e49d1ce6c",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/sync-releases-to-webdav.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "f8dc6f4bf332d7db46abdb34e5cb4f2a",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/upload-build-to-latest-release.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "9b0927dc5ff6dda73b702494a5c83707",
+    "semantic_hash": ""
+  },
+  "electron-reference/.github/workflows/uploadpan.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "514bb03faf383fd8c9ec127260ebd9e4",
+    "semantic_hash": ""
+  },
+  "electron-reference/.prettierrc.yaml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "ecd98e739c40f4f40a3dc47a859614f8",
+    "semantic_hash": ""
+  },
+  "electron-reference/.workflow/branch-pipeline.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "a37070bc442f30f6c44c8ed5dd56f67b",
+    "semantic_hash": ""
+  },
+  "electron-reference/.workflow/main copy.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "5cb200fa703dec0408444b52a066e56b",
+    "semantic_hash": ""
+  },
+  "electron-reference/.workflow/master-pipeline.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "123dd7a8e2f70dfaf24c5bf77ec95df7",
+    "semantic_hash": ""
+  },
+  "electron-reference/.workflow/pipeline-20260203.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "8c9e75ec40a03799012433fd73a53859",
+    "semantic_hash": ""
+  },
+  "electron-reference/.workflow/pr-pipeline.yml": {
+    "mtime": 1789298618.0,
+    "ast_hash": "a810e58c23b163e976b9b15e27b5a398",
+    "semantic_hash": ""
+  },
+  "electron-reference/AGENTS.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "c4b24eeca493112565e0807deda0cf18",
+    "semantic_hash": ""
+  },
+  "electron-reference/BUILDING.md": {
+    "mtime": 1789454511.0,
+    "ast_hash": "87b7dfda80d54738d08ffb6962fb0a0a",
+    "semantic_hash": ""
+  },
+  "electron-reference/CHANGELOG.md": {
+    "mtime": 1789451446.0,
+    "ast_hash": "3b6888ac38745abfb42a54af29b39264",
+    "semantic_hash": ""
+  },
+  "electron-reference/CLAUDE.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "923c6b02d68ce3863f7447752754589b",
+    "semantic_hash": ""
+  },
+  "electron-reference/EULA.txt": {
+    "mtime": 1789298618.0,
+    "ast_hash": "3cbd8b2a4890f8eff8d72d43a0030d4f",
+    "semantic_hash": ""
+  },
+  "electron-reference/README.md": {
+    "mtime": 1789542037.0,
+    "ast_hash": "c31973c0089e0eb203823c50110bfc2e",
+    "semantic_hash": ""
+  },
+  "electron-reference/contributor-merge-checklist.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "6b95b32cfe5d291ee685ee8c79751371",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/AGENTS.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "be7c57be4f98970c224eb5a86eb43000",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/MIGRATION_LOCAL_COVER.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "8a53f9e5005d52fe88de22ca78a5fed2",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/PERF_CHECKLIST.md": {
+    "mtime": 1789298618.0,
+    "ast_hash": "a3aaa1040b90e98ebcc6f931fc5e450d",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/SYNC_ARCHITECTURE_DESIGN.md": {
+    "mtime": 1789905162.0,
+    "ast_hash": "04fbf8653ea50204239ade814d41683a",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/CeruMusicPluginDev.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "40c3ba78549ec0eabe74b44882f937eb",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/CeruMusicPluginHost.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "346a889fec6f9c051638d3482feacd01",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/analyze.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/api.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "413a880380d372535190f7c827761a7b",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/faq.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "714401300c0fa947f5e28a2ea18d5482",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/index.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "36acbdc65c9952c22d45940fee5fd9be",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/listen-together-api.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "da089d17bec809c6deb5a541608a4e82",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/release.md": {
+    "mtime": 1789362508.0,
+    "ast_hash": "c1b7db61254ecae9df9c253bb778c6d9",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/source/qa.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d958c3d4bf6dcec8bef893f8dee8860a",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/source/qq_group.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ee8a659a4f62221458e5c753167e9906",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/sponsorship.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "27fa1e9c6006e6ea230fc68404aa30d9",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/update.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "fc5bcdeaf0118fb77bc4824165752356",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/updateLog.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3f04bfdde36ac69719037b6043a6865a",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/appearance.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "f78e5bf69758d297e00784cbddb75ffe",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/audio-effects.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "be269bc59acb1fa039744aa33bf28194",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/download.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ea701b5fc763164198788be113eb9ea7",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/hotkeys.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a0b2dd52ecca20c30060536e769849dd",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/listen-together.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "cee1df274e10315e891abbef56986a2c",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/local-music.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3eef88542f37ff97fa50215a7fdea100",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/playList.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "852836ee83b9c73aa48577bfb2c835f2",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/recognize-and-share.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "6ab860c908ffe555f298545806eee386",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/scheme-url.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "489992b65bf71cb8d4641c988b88d8f5",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/search-and-play.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "b114fca58151be12bf1a47de4b5ce083",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/storage.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0c19def8e771dd3befe81abb5ffa7547",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/index.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "61340648ae2e706daf2cd664e18c8b75",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/playlist-import-export.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3934cbcaaf1ba1e178b3b16bfd34b64a",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/plugin-notice-usage.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "f454e4ff615b7ad2dd1d7e4d9f5b9ab7",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/songlist-api.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "4eb985ded0d3ae1fd3284918a513e581",
+    "semantic_hash": ""
+  },
+  "electron-reference/electron-builder.yml": {
+    "mtime": 1789465882.0,
+    "ast_hash": "a6cd813f965b24a25a22736226d68625",
+    "semantic_hash": ""
+  },
+  "electron-reference/playlist-converter.html": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d933658fdd9218b82471d1b114fd28e7",
+    "semantic_hash": ""
+  },
+  "electron-reference/qodana.yaml": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a072a675cb73db1534c352186d093ed4",
+    "semantic_hash": ""
+  },
+  "electron-reference/src/main/AGENTS.md": {
+    "mtime": 1789298619.0,
+    "ast_hash": "69c8b45cbd68f34a520d030b0ea1b5c8",
+    "semantic_hash": ""
+  },
+  "\u516d\u72b6\u6001\u529f\u8017\u6d4b\u8bd5\u6307\u5357.md": {
+    "mtime": 1790831883.8595827,
+    "ast_hash": "d64789a37bd4e4d2d1929fcc92c75959",
+    "semantic_hash": ""
+  },
+  "\u624b\u52a8\u6d4b\u8bd5\u8bf4\u660e.md": {
+    "mtime": 1790832183.6274211,
+    "ast_hash": "62d1f43a4bf40fab88aecf2c2040a909",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/cmpl.png": {
+    "mtime": 1790854091.7999852,
+    "ast_hash": "de08bdb0465637b8cf559d0e2a25c743",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/default-cover.png": {
+    "mtime": 1790854091.779813,
+    "ast_hash": "0e5cd785365adfcf2ab0970fb7d21551",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icon.png": {
+    "mtime": 1790854091.7885916,
+    "ast_hash": "a2cf889708d9c4959c6808b4584848e4",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/1024x1024.png": {
+    "mtime": 1790854091.7626927,
+    "ast_hash": "d8e918cba4b687625ac553e180342fb1",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/128x128.png": {
+    "mtime": 1790854091.7686653,
+    "ast_hash": "bfec3a3f9d90dbfda84b58666de19611",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/16x16.png": {
+    "mtime": 1790854091.7606275,
+    "ast_hash": "66e88d73866601d0bc0c9fd274c4ffc0",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/24x24.png": {
+    "mtime": 1790854091.7716978,
+    "ast_hash": "f4e46472e20394fd445c0a1dab78b11e",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/256x256.png": {
+    "mtime": 1790854091.7592614,
+    "ast_hash": "8df7e605b1c90bd53d18c9e7add69760",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/32x32.png": {
+    "mtime": 1790854091.7733266,
+    "ast_hash": "d82b33fe0630586a213913cb410d28a3",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/48x48.png": {
+    "mtime": 1790854091.769979,
+    "ast_hash": "fbac6dec287015a764a8ddf69a1d4b8d",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/512x512.png": {
+    "mtime": 1790854091.7765193,
+    "ast_hash": "3ffab360f19cce16e96d8c1e01b31bc3",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/icons/64x64.png": {
+    "mtime": 1790854091.7748528,
+    "ast_hash": "9c11b2f52975615048a11f9db45bc4ed",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/logo.png": {
+    "mtime": 1790854091.8078408,
+    "ast_hash": "9d725ad7607407c5bfa8e7c409ff1cd5",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/logo.svg": {
+    "mtime": 1790854091.8428426,
+    "ast_hash": "0d29df72709da2add10b4626e59e2c61",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/logo_2026.svg": {
+    "mtime": 1790854091.8041518,
+    "ast_hash": "5197374e5fcb6e69614dbb7b8cbf1bbf",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/next-dark.png": {
+    "mtime": 1790854091.8263714,
+    "ast_hash": "ea8d7c80f39fd1fb30a851572d7cb04e",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/next-light.png": {
+    "mtime": 1790854091.8189948,
+    "ast_hash": "b1cde4bc63efb93fe6ae550bf1dee64a",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/pause-dark.png": {
+    "mtime": 1790854091.8164034,
+    "ast_hash": "8cd7c1a840dd0e8fe8966a99051db483",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/pause-light.png": {
+    "mtime": 1790854091.8355048,
+    "ast_hash": "c58753648fab433f8d2c743a1833aad8",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/play-dark.png": {
+    "mtime": 1790854091.8238888,
+    "ast_hash": "1e05bb3a99cf01b4f84b9b9a97b3354d",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/play-light.png": {
+    "mtime": 1790854091.8310218,
+    "ast_hash": "15733022289b30b5ef54853914f45b10",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/prev-dark.png": {
+    "mtime": 1790854091.8283813,
+    "ast_hash": "22f16a6aa38589a7092feb9328ffa8e5",
+    "semantic_hash": ""
+  },
+  ".ceru-run/resources/thumbar/prev-light.png": {
+    "mtime": 1790854091.8384888,
+    "ast_hash": "beef29754a6397e6105b309616e4dad4",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/head.jpg": {
+    "mtime": 1789298618.0,
+    "ast_hash": "b353c78d462119b55bc2dffe8e3433a4",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827175023917.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "3447d36d99dc4545749464387ab7c2a2",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827175109430.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "54b8c79fa40f01a1c76f36946daedcb1",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827175356006.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "40f79589abb9fe5638c74bab44e4a7fb",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827175547444.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "5773eadc1b048427e1fdbe1df8c04e5d",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827181535681.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "13438b5a434758e765c092009e42f5cd",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827181604432.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "6e74279d16e43550d6c784c725cd5819",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20250827181634134.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "6e74279d16e43550d6c784c725cd5819",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20251003173109619.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "a09dc6547aa2abf3099dfcaf4db7328d",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20251003173141699.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "ff5163d99c5a02d597c5b54a7454709e",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20251003173654569.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "771fb51d85ed542390a4a39748c0bf3f",
+    "semantic_hash": ""
+  },
+  "electron-reference/assets/image-20260102767362357.jpg": {
+    "mtime": 1789298618.0,
+    "ast_hash": "246caaa134815a20cc9c62f2a1235800",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/3f50d3b838287b4bf1523d0f955fdf37.png": {
+    "mtime": 1789298618.0,
+    "ast_hash": "3f50d3b838287b4bf1523d0f955fdf37",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/head.jpg": {
+    "mtime": 1789298618.0,
+    "ast_hash": "b353c78d462119b55bc2dffe8e3433a4",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250813180317221.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d9ddfdb907ad27cc641f1561d074ab96",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250813180856660.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "81e88e0ba546c637731dfa8fc22bce35",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250813180944752.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "fba59133cc988579ffe9b8709fce0e3e",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826214921963.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ba11e297438bbdd12973a085aa94c8c6",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826215101522.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "7b8911c7675a73771079062cfd13651a",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826215206862.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d5461caedc8e81a8d5a973780c867550",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826215251525.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0b62b543a4843b2d8f8ef45a17806bd5",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826221438856.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "2d04d9424a52d2a35837f6b2e94e48ec",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250826221517247.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "e1023a3be5dc00325fa32c105c118973",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827175023917.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3447d36d99dc4545749464387ab7c2a2",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827175109430.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "54b8c79fa40f01a1c76f36946daedcb1",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827175356006.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "40f79589abb9fe5638c74bab44e4a7fb",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827175547444.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "5773eadc1b048427e1fdbe1df8c04e5d",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827181535681.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "13438b5a434758e765c092009e42f5cd",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827181604432.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "6e74279d16e43550d6c784c725cd5819",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20250827181634134.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "6e74279d16e43550d6c784c725cd5819",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20251003173109619.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a09dc6547aa2abf3099dfcaf4db7328d",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20251003173141699.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ff5163d99c5a02d597c5b54a7454709e",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20251003173654569.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "771fb51d85ed542390a4a39748c0bf3f",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/image-20260102767362357.jpg": {
+    "mtime": 1789298619.0,
+    "ast_hash": "246caaa134815a20cc9c62f2a1235800",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/assets/logo.svg": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0d29df72709da2add10b4626e59e2c61",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/assets/PixPin_2026-05-04_16-33-26.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "89ef8e798e3dfdbe935f91c7ebd11aea",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/assets/image-20250921130607735.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "36399182f98c891dec377c6dfc2ecd0d",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/assets/image-20250926225425123.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "bba3ffdca448f10945c732577be51209",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916132204465.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "804b5b7d4b3c0417943aa609be0b9b44",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916132248046.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "804b5b7d4b3c0417943aa609be0b9b44",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916133531421.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "88f54062f8d4470ad694877dcf4989a1",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916134406714.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "deb11e833e351ade9f1ee4ce1f8fc70f",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916134511291.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "e07ece49ab63609ff8f8f431a254a37f",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916134615679.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a9fe256800f2fee7f6d16ecc521d5893",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/guide/used/assets/image-20250916134820742.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "117baa5b215e8bf8abf003cf76367eef",
+    "semantic_hash": ""
+  },
+  "electron-reference/docs/public/logo.svg": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0d29df72709da2add10b4626e59e2c61",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/cmpl.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "de08bdb0465637b8cf559d0e2a25c743",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/default-cover.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0e5cd785365adfcf2ab0970fb7d21551",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icon.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "a2cf889708d9c4959c6808b4584848e4",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/1024x1024.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d8e918cba4b687625ac553e180342fb1",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/128x128.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "bfec3a3f9d90dbfda84b58666de19611",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/16x16.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "66e88d73866601d0bc0c9fd274c4ffc0",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/24x24.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "f4e46472e20394fd445c0a1dab78b11e",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/256x256.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "8df7e605b1c90bd53d18c9e7add69760",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/32x32.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "d82b33fe0630586a213913cb410d28a3",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/48x48.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "fbac6dec287015a764a8ddf69a1d4b8d",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/512x512.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "3ffab360f19cce16e96d8c1e01b31bc3",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/icons/64x64.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9c11b2f52975615048a11f9db45bc4ed",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/logo.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "9d725ad7607407c5bfa8e7c409ff1cd5",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/logo.svg": {
+    "mtime": 1789298619.0,
+    "ast_hash": "0d29df72709da2add10b4626e59e2c61",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/logo_2026.svg": {
+    "mtime": 1789298619.0,
+    "ast_hash": "5197374e5fcb6e69614dbb7b8cbf1bbf",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/next-dark.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "ea8d7c80f39fd1fb30a851572d7cb04e",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/next-light.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "b1cde4bc63efb93fe6ae550bf1dee64a",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/pause-dark.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "8cd7c1a840dd0e8fe8966a99051db483",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/pause-light.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "c58753648fab433f8d2c743a1833aad8",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/play-dark.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "1e05bb3a99cf01b4f84b9b9a97b3354d",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/play-light.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "15733022289b30b5ef54853914f45b10",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/prev-dark.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "22f16a6aa38589a7092feb9328ffa8e5",
+    "semantic_hash": ""
+  },
+  "electron-reference/resources/thumbar/prev-light.png": {
+    "mtime": 1789298619.0,
+    "ast_hash": "beef29754a6397e6105b309616e4dad4",
+    "semantic_hash": ""
+  },
+  "public/app-icon-square.png": {
+    "mtime": 1790839584.9171443,
+    "ast_hash": "269a0c036e026d8352ff01c4dcddc85d",
+    "semantic_hash": ""
+  },
+  "docs/PERFORMANCE_OPTIMIZATION_REPORT.md": {
+    "mtime": 1791090327.5419853,
+    "ast_hash": "d4129875b543f91c5d0dad75365a5ef0",
+    "semantic_hash": ""
+  },
+  "pnpm-workspace.yaml": {
+    "mtime": 1791087859.8630118,
+    "ast_hash": "c19f245857a0e3f200ea63a7dc6c5f59",
+    "semantic_hash": ""
+  },
+  "src-tauri/src/windowed_fs.rs": {
+    "mtime": 1791468187.3485947,
+    "ast_hash": "286b4c375c507228c838796643d3cfa8",
+    "semantic_hash": ""
+  },
+  ".ceru-run/perf/sample.sh": {
+    "mtime": 1791560200.0225756,
+    "ast_hash": "6ef72500791c433ebe0ee0be75ca8906",
+    "semantic_hash": ""
+  },
+  ".ceru-run/perf/sample_cont.sh": {
+    "mtime": 1791560296.367815,
+    "ast_hash": "7f327aa3d8184568e30f4e079983801c",
+    "semantic_hash": ""
+  },
+  ".ceru-run/perf/pivot.txt": {
+    "mtime": 1791560910.4104128,
+    "ast_hash": "c469d88a90dad91e76b7dca0ac6b63f1",
+    "semantic_hash": ""
+  },
+  ".ceru-run/perf/post_webkit.txt": {
+    "mtime": 1791559793.060095,
+    "ast_hash": "59857e42be68a62f47bd33c5b849f4b6",
+    "semantic_hash": ""
+  },
+  ".ceru-run/perf/pre_webkit.txt": {
+    "mtime": 1791559296.4084053,
+    "ast_hash": "c702c8def0d388cd1a1a42d1145e35eb",
     "semantic_hash": ""
   }
 }

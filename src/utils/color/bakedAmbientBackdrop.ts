@@ -14,9 +14,8 @@ export type AmbientBackdropColors = {
   base?: AmbientRgb | null
 }
 
-const CACHE_MAX_SIDE = 320  // 从 480 降低到 320，减少图片尺寸
+const CACHE_MAX_SIDE = 480
 const bakeCache = new Map<string, string>()
-const BAKE_CACHE_MAX = 3  // 只保留最近 3 个背景缓存
 
 const clampByte = (value: number) => Math.max(0, Math.min(255, Math.round(value)))
 
@@ -232,69 +231,13 @@ export function bakeAmbientBackdropDataUrl(
     [1, 'rgba(0,0,0,0)']
   ])
 
-  fillRadial(ctx, bitmapWidth * 0.18, bitmapHeight * 0.18, maxSide * 0.74, maxSide * 0.74, [
-    [0, rgba(accent, 0.24 * artAlpha)],
-    [0.3, rgba(mix(muted, main, 0.38), 0.16 * artAlpha)],
-    [0.72, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
 
-  fillRadial(ctx, bitmapWidth * 0.82, bitmapHeight * 0.7, maxSide * 0.86, maxSide * 0.86, [
-    [0, rgba(main, 0.3 * artAlpha)],
-    [0.36, rgba(secondary, 0.18 * artAlpha)],
-    [0.78, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-
-  fillRadial(ctx, bitmapWidth * 0.52, bitmapHeight * 0.98, maxSide * 0.76, maxSide * 0.76, [
-    [0, rgba(mix(main, { r: 255, g: 255, b: 255 }, 0.16), 0.13 * artAlpha)],
-    [0.42, rgba(main, 0.07 * artAlpha)],
-    [0.76, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-
-  // 方向雾
-  fillRadial(ctx, -bitmapWidth * 0.1, -bitmapHeight * 0.05, maxSide * 0.56, maxSide * 0.56, [
-    [0, rgba({ r: 255, g: 255, b: 255 }, 0.08 * artAlpha)],
-    [0.42, rgba(mix(accent, { r: 255, g: 255, b: 255 }, 0.45), 0.035 * artAlpha)],
-    [0.82, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-  fillRadial(ctx, bitmapWidth * 1.04, bitmapHeight * 0.58, maxSide * 0.72, maxSide * 0.72, [
-    [0, rgba(mix(main, { r: 255, g: 255, b: 255 }, 0.12), 0.2 * artAlpha)],
-    [0.46, rgba(main, 0.09 * artAlpha)],
-    [0.86, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-  fillRadial(ctx, bitmapWidth * 0.5, bitmapHeight * 1.06, maxSide * 0.72, maxSide * 0.72, [
-    [0, rgba(main, 0.12 * artAlpha)],
-    [0.44, rgba(accent, 0.06 * artAlpha)],
-    [0.84, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
 
   ctx.restore()
 
-  // Overlay 柔光：对应安卓 BlendMode.Overlay
-  ctx.save()
-  ctx.globalCompositeOperation = 'overlay'
-  const overlayRadius = maxSide * 0.52
-  fillRadial(ctx, bitmapWidth * 0.22, bitmapHeight * 0.28, overlayRadius, overlayRadius, [
-    [0, rgba({ r: 255, g: 255, b: 255 }, 0.22 * themeScale)],
-    [0.35, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-  fillRadial(ctx, bitmapWidth * 0.74, bitmapHeight * 0.66, overlayRadius * 1.1, overlayRadius * 1.1, [
-    [0, rgba({ r: 255, g: 255, b: 255 }, 0.15 * themeScale)],
-    [0.4, 'rgba(0,0,0,0)'],
-    [1, 'rgba(0,0,0,0)']
-  ])
-  ctx.restore()
-
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85)  // 降低质量从 0.92 到 0.85
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
   bakeCache.set(key, dataUrl)
-  // 严格限制缓存大小
-  while (bakeCache.size > BAKE_CACHE_MAX) {
+  if (bakeCache.size > 4) {
     const oldest = bakeCache.keys().next().value
     if (oldest) bakeCache.delete(oldest)
   }

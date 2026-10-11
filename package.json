@@ -1,7 +1,7 @@
 {
   "name": "ceru-tauri",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "树夏Music 桌面音乐播放器，基于 Tauri、Rust、Vue 3 和 Node sidecar 构建。",
   "keywords": [
     "tauri",

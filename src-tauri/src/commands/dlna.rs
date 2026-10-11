@@ -29,6 +29,7 @@ pub struct DlnaState {
     services: Mutex<Option<DeviceServices>>,
     device_base_url: Mutex<Option<String>>,
     local_server_port: Mutex<u16>,
+    server_started: AtomicBool,
     current_local_file: Mutex<String>,
     current_proxy_url: Mutex<String>,
 }
@@ -42,6 +43,7 @@ impl DlnaState {
             services: Mutex::new(None),
             device_base_url: Mutex::new(None),
             local_server_port: Mutex::new(0),
+            server_started: AtomicBool::new(false),
             current_local_file: Mutex::new(String::new()),
             current_proxy_url: Mutex::new(String::new()),
         }
@@ -52,26 +54,64 @@ impl DlnaState {
 
 pub fn init(app: &AppHandle) {
     app.manage(DlnaState::new());
-    let handle = app.clone();
-    thread::spawn(move || start_local_server(handle));
+    // 本地 HTTP 服务器改为按需启动（仅投屏本地文件 / 本地代理时才绑定 0.0.0.0），
+    // 空闲时不监听，减少局域网端口暴露。见 ensure_local_server()。
 }
 
 // ==================== Local HTTP Server ====================
 
-fn start_local_server(app: AppHandle) {
+/// 按需启动本地 HTTP 服务器，返回监听端口。幂等：已启动则直接返回端口。
+/// 仅在投屏需要本地取文件 / 本地代理时调用，避免空闲时常开 0.0.0.0 监听。
+fn ensure_local_server(app: &AppHandle) -> Result<u16, String> {
+    let state = app.state::<DlnaState>();
+
+    // 已启动：直接返回端口
+    {
+        let port = *state.local_server_port.lock().unwrap();
+        if port != 0 {
+            return Ok(port);
+        }
+    }
+
+    // 抢占启动权；拿不到说明另一线程正在启动，等端口就绪
+    if state
+        .server_started
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
+        for _ in 0..100 {
+            let port = *state.local_server_port.lock().unwrap();
+            if port != 0 {
+                return Ok(port);
+            }
+            thread::sleep(Duration::from_millis(20));
+        }
+        return Err("本地 HTTP 服务器启动超时".into());
+    }
+
     let listener = match TcpListener::bind("0.0.0.0:0") {
         Ok(l) => l,
         Err(e) => {
-            eprintln!("[DLNA] Failed to bind local server: {}", e);
-            return;
+            state.server_started.store(false, Ordering::SeqCst);
+            return Err(format!("本地 HTTP 服务器绑定失败: {}", e));
         }
     };
-    let port = listener.local_addr().unwrap().port();
-    if let Some(state) = app.try_state::<DlnaState>() {
-        *state.local_server_port.lock().unwrap() = port;
-    }
+    let port = match listener.local_addr() {
+        Ok(addr) => addr.port(),
+        Err(e) => {
+            state.server_started.store(false, Ordering::SeqCst);
+            return Err(format!("读取本地服务器端口失败: {}", e));
+        }
+    };
+    *state.local_server_port.lock().unwrap() = port;
     println!("[DLNA] Local HTTP server started on port {}", port);
 
+    let handle = app.clone();
+    thread::spawn(move || run_local_server(listener, handle));
+    Ok(port)
+}
+
+fn run_local_server(listener: TcpListener, app: AppHandle) {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
@@ -620,26 +660,17 @@ pub async fn dlna_play(
             .unwrap_or(url);
         *state.current_local_file.lock().unwrap() = file_path;
         *state.current_proxy_url.lock().unwrap() = String::new();
-        let port = *state.local_server_port.lock().unwrap();
-        if port == 0 {
-            return Err("本地 HTTP 服务器未启动".into());
-        }
+        let port = ensure_local_server(&app)?;
         format!("http://{}:{}/audio.mp3", get_local_ip(), port)
     } else if !url.starts_with("http://") && !url.starts_with("https://") {
         *state.current_local_file.lock().unwrap() = url;
         *state.current_proxy_url.lock().unwrap() = String::new();
-        let port = *state.local_server_port.lock().unwrap();
-        if port == 0 {
-            return Err("本地 HTTP 服务器未启动".into());
-        }
+        let port = ensure_local_server(&app)?;
         format!("http://{}:{}/audio.mp3", get_local_ip(), port)
     } else if url.contains("127.0.0.1") || url.contains("localhost") {
         *state.current_local_file.lock().unwrap() = String::new();
         *state.current_proxy_url.lock().unwrap() = url;
-        let port = *state.local_server_port.lock().unwrap();
-        if port == 0 {
-            return Err("本地 HTTP 服务器未启动".into());
-        }
+        let port = ensure_local_server(&app)?;
         format!("http://{}:{}/audio.mp3", get_local_ip(), port)
     } else {
         *state.current_local_file.lock().unwrap() = String::new();

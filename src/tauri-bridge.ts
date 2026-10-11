@@ -130,14 +130,10 @@ const appWindow = getCurrentWindow()
 let ceruIpcStatsFlusherStarted = false
 function ensureCeruIpcStatsFlusher() {
   if (ceruIpcStatsFlusherStarted) return
-  
-  // 【CPU 优化】只在开发模式或明确启用时运行
-  const enableStats = import.meta.env.DEV || (typeof localStorage !== 'undefined' && localStorage.getItem('enable-ipc-stats') === 'true')
-  if (!enableStats) {
-    console.log('[tauri-bridge] IPC 统计已禁用（生产模式），减少 CPU 占用')
-    return
-  }
-  
+  const enableStats =
+    import.meta.env.DEV ||
+    (typeof localStorage !== 'undefined' && localStorage.getItem('enable-ipc-stats') === 'true')
+  if (!enableStats) return
   ceruIpcStatsFlusherStarted = true
   window.setInterval(() => {
     try {
@@ -265,18 +261,20 @@ async function applyWindowProgressBar(progress: number, options?: { paused?: boo
 }
 
 async function getWindowStatePayload(): Promise<AppWindowStatePayload> {
-  const [focused, minimized, visible, fullscreen] = await Promise.all([
+  const [focused, minimized, visible, nativeFullscreen, windowedFullscreen] = await Promise.all([
     appWindow.isFocused().catch(() => typeof document.hasFocus === 'function' ? document.hasFocus() : true),
     appWindow.isMinimized().catch(() => false),
     appWindow.isVisible().catch(() => !document.hidden),
     appWindow.isFullscreen().catch(() => false),
+    // 窗口化全屏（网易云式）不进原生全屏 Space，native isFullscreen 恒为 false，需问 Rust 端状态
+    safeInvoke<boolean>('windowed_fullscreen_get', undefined, false),
   ])
   return {
     visible: Boolean(visible),
     focused: Boolean(focused),
     minimized: Boolean(minimized),
     hidden: document.hidden || !visible,
-    fullscreen: Boolean(fullscreen),
+    fullscreen: Boolean(nativeFullscreen || windowedFullscreen),
   }
 }
 
@@ -411,18 +409,7 @@ const FEINIU_AUTO_IMPORT_VERSION = 2
 const FEINIU_API_PATH = '/music/api/v1/'
 const coverProxyUrlCache = new Map<string, string>()
 const coverProxyUrlPending = new Map<string, Promise<string>>()
-const COVER_PROXY_URL_CACHE_MAX = 50  // 从 128 降低到 50
-
-// 监听激进内存清理事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('memory:aggressive-cleanup', () => {
-    const coverCount = coverProxyUrlCache.size
-    const pendingCount = coverProxyUrlPending.size
-    coverProxyUrlCache.clear()
-    coverProxyUrlPending.clear()
-    console.log(`[tauri-bridge] 激进清理: 清空 ${coverCount} 个封面代理缓存, ${pendingCount} 个待处理`)
-  })
-}
+const COVER_PROXY_URL_CACHE_MAX = 128
 
 const rememberCoverProxyUrl = (key: string, value: string) => {
   if (coverProxyUrlCache.has(key)) coverProxyUrlCache.delete(key)
@@ -3666,16 +3653,7 @@ function normalizeMusicCacheInfo(input: any) {
 }
 
 const downloadTaskCache = new Map<string, any>()
-const DOWNLOAD_TASK_CACHE_MAX = 80  // 从 200 降低到 80
-
-// 监听激进内存清理事件（下载任务缓存）
-if (typeof window !== 'undefined') {
-  window.addEventListener('memory:aggressive-cleanup', () => {
-    const count = downloadTaskCache.size
-    downloadTaskCache.clear()
-    console.log(`[tauri-bridge] 激进清理: 清空 ${count} 个下载任务缓存`)
-  })
-}
+const DOWNLOAD_TASK_CACHE_MAX = 200
 
 const rememberDownloadTask = (id: string, task: any) => {
   if (downloadTaskCache.has(id)) downloadTaskCache.delete(id)
@@ -3861,15 +3839,15 @@ export function createTauriBridge() {
     maximize: () => { appWindow.toggleMaximize().then(emitWindowStateChanged).catch(console.warn) },
     close: () => { appWindow.close().catch(console.warn) },
     show: () => { appWindow.show().then(emitWindowStateChanged).catch(console.warn) },
-    toggleFullscreen: async () => {
+    toggleFullscreen: async (enter?: boolean) => {
       try {
-        const fullscreen = await appWindow.isFullscreen()
-        // macOS simple fullscreen 使用当前桌面空间，不保留系统栏占用的安全区域。
-        // 其他平台仍使用标准 fullscreen API。
-        if (typeof (appWindow as any).setSimpleFullscreen === 'function') {
-          await (appWindow as any).setSimpleFullscreen(!fullscreen)
-        } else {
-          await appWindow.setFullscreen(!fullscreen)
+        // 网易云式窗口化全屏（对齐 Electron 参考实现 enterWindowedFullScreen）：
+        // macOS 不进原生全屏独立 Space，而是窗口直接占满整块显示器并提高窗口层级，
+        // 真正盖住顶部菜单栏/状态栏；退出时 Rust 端快照完整还原窗口。
+        const current = await safeInvoke<boolean>('windowed_fullscreen_get', undefined, false)
+        const target = typeof enter === 'boolean' ? enter : !current
+        if (target !== current) {
+          await safeInvoke('windowed_fullscreen_set', { enter: target })
         }
         await emitWindowStateChanged()
       } catch (error) {

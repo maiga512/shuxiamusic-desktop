@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, toRaw, watch } from 'vue'
+import { invoke as tauriInvoke } from '@tauri-apps/api/core'
 import { MessagePlugin } from 'tdesign-vue-next'
 import type { HotkeyAction, HotkeyConfig, HotkeyStatus } from '@common/types/hotkeys'
 import { defaultHotkeyConfig } from '@common/types/hotkeys'
@@ -128,9 +129,12 @@ const recording = ref<{
 let recorder: ReturnType<typeof createHotkeyRecorder> | null = null
 
 const setRecordingNative = (recording: boolean) => {
-  const invoke = (window as any)?.__TAURI__?.core?.invoke
-  if (typeof invoke !== 'function') return
-  void invoke('hotkeys_set_recording', { recording }).catch(() => {})
+  // release 包里 window.__TAURI__ 不存在（未开 withGlobalTauri），统一走 @tauri-apps/api/core
+  try {
+    void tauriInvoke('hotkeys_set_recording', { recording }).catch(() => {})
+  } catch {
+    // ignore
+  }
 }
 
 const beginRecord = (action: HotkeyAction) => {
@@ -233,7 +237,7 @@ const recordCanSave = computed(() => {
       <div class="setting-item" style="margin-top: 0">
         <div class="item-info">
           <div class="item-title">启用全局快捷键</div>
-          <div class="item-desc">关闭后将不会注册自定义组合键；键盘 F7/F8/F9 媒体键默认始终可用</div>
+          <div class="item-desc">关闭后将不会注册自定义组合键；系统多媒体键（播放/暂停、上一首、下一首）由操作系统原生接管，始终可用</div>
         </div>
         <t-switch v-model="enabled" :loading="saving" @change="save" />
       </div>
@@ -315,7 +319,7 @@ const recordCanSave = computed(() => {
           <div>按 Backspace/Delete 清空</div>
         </div>
         <div class="tips">
-          <div>键盘 F7/F8/F9 媒体键可直接录入</div>
+          <div>支持录入任意按键或组合键（含 F1–F12、多媒体键）</div>
         </div>
       </div>
       <template #footer>

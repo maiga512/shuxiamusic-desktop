@@ -31,6 +31,8 @@ export const downloadState = reactive({
 export class AutoUpdateService {
   private static instance: AutoUpdateService
   private isListening = false
+  private lastErrorMessage = ''
+  private lastErrorAt = 0
 
   constructor() {
     // 构造函数中自动开始监听
@@ -233,6 +235,12 @@ export class AutoUpdateService {
   private showUpdateErrorNotification(
     error: string | { code?: string; message?: string; raw?: string } | null | undefined
   ) {
+    // 30s dedup: same error only shows once to avoid repeated popups
+    const now = Date.now()
+    const errorKey = typeof error === 'string' ? error : (error?.message || error?.raw || 'unknown')
+    if (errorKey === this.lastErrorMessage && now - this.lastErrorAt < 30000) return
+    this.lastErrorMessage = errorKey
+    this.lastErrorAt = now
     if (!error) {
       NotifyPlugin.error({
         title: '更新失败',

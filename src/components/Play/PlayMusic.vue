@@ -73,7 +73,7 @@ import { isNativePlaybackActive, nativeCurrentTime, nativeSeek, nativeSetMuted, 
 import { calculateBestQuality, normalizeQualityType } from '@common/utils/quality'
 import { getDeclaredQualityFormats, getPreferredPlaybackQuality } from '@renderer/utils/audio/qualityAvailability'
 import { isAppWindowVisible } from '@renderer/utils/appWindowState'
-import { suppressIdleSleep, releaseIdleSleep, isPageIdle } from '@renderer/utils/idleSleep'
+import { suppressIdleSleep, releaseIdleSleep } from '@renderer/utils/idleSleep'
 
 const dlnaStore = useDlnaStore()
 const controlAudio = ControlAudioStore()
@@ -101,36 +101,55 @@ watch(
 
 let dlnaSyncInterval: any = null
 
+// 启动 DLNA 同步定时器
+const startDlnaSync = () => {
+  if (dlnaSyncInterval) return
+  dlnaSyncInterval = setInterval(async () => {
+    if (!isAppWindowVisible()) return
+    if (Audio.value.isPlay) {
+      const position = await dlnaStore.getPosition()
+      if (position && typeof position === 'number') {
+        // Only sync if the difference is more than 2 seconds to avoid jitter
+        if (Math.abs(Audio.value.currentTime - position) > 2) {
+          if (isNativePlaybackActive()) {
+            void nativeSeek(position)
+          } else if (Audio.value.audio) {
+            Audio.value.audio.currentTime = position
+          }
+        }
+      }
+    }
+  }, 1000)
+}
+
+// 停止 DLNA 同步定时器
+const stopDlnaSync = () => {
+  if (dlnaSyncInterval) {
+    clearInterval(dlnaSyncInterval)
+    dlnaSyncInterval = null
+  }
+}
+
+// 监听 DLNA 设备连接状态
 watch(
   () => dlnaStore.currentDevice,
   (device) => {
     if (device) {
-      if (!dlnaSyncInterval) {
-        dlnaSyncInterval = setInterval(async () => {
-          // 窗口隐藏或页面闲置时跳过同步，节省 CPU 和网络
-          if (!isAppWindowVisible() || isPageIdle()) {
-            return
-          }
-          if (Audio.value.isPlay) {
-            const position = await dlnaStore.getPosition()
-            if (position && typeof position === 'number') {
-              // Only sync if the difference is more than 2 seconds to avoid jitter
-              if (Math.abs(Audio.value.currentTime - position) > 2) {
-                if (isNativePlaybackActive()) {
-                  void nativeSeek(position)
-                } else if (Audio.value.audio) {
-                  Audio.value.audio.currentTime = position
-                }
-              }
-            }
-          }
-        }, 1000)
-      }
+      startDlnaSync()
     } else {
-      if (dlnaSyncInterval) {
-        clearInterval(dlnaSyncInterval)
-        dlnaSyncInterval = null
-      }
+      stopDlnaSync()
+    }
+  }
+)
+
+// 监听窗口可见性，隐藏时停止 DLNA 同步节省 CPU
+watch(
+  () => document.hidden,
+  (hidden) => {
+    if (hidden && dlnaSyncInterval) {
+      stopDlnaSync()
+    } else if (!hidden && dlnaStore.currentDevice) {
+      startDlnaSync()
     }
   }
 )
@@ -215,12 +234,16 @@ const refreshLikeState = async () => {
       likeState.value = false
       return
     }
-    const currentSong = list.value.find(
-      (song) =>
-        String(song.songmid) === String(userInfo.value.lastPlaySongId) &&
-        (!userInfo.value.lastPlaySongSource || song.source === userInfo.value.lastPlaySongSource)
-    )
-    const favoriteSong = currentSong ? normalizeFavoriteSong(toRaw(currentSong) as any) : null
+    // 喜欢状态按「收藏锚点」（用户选中的歌、切源前）判定：自动换源后
+    // 正在播的只是另一音源的播放实例，星号不跟随播放源漂移。
+    const anchorSong: any =
+      globalPlayStatus.player.favoriteAnchor ||
+      list.value.find(
+        (song) =>
+          String(song.songmid) === String(userInfo.value.lastPlaySongId) &&
+          (!userInfo.value.lastPlaySongSource || song.source === userInfo.value.lastPlaySongSource)
+      )
+    const favoriteSong = anchorSong ? normalizeFavoriteSong(toRaw(anchorSong) as any) : null
     const favoriteSongId = favoriteSong?.songmid || String(userInfo.value.lastPlaySongId)
     const hasRes = await songListAPI.hasSong(cachedFavoritesId, favoriteSongId, favoriteSong?.source || userInfo.value.lastPlaySongSource || undefined)
     likeState.value = !!(hasRes.success && hasRes.data)
@@ -910,15 +933,18 @@ const onToggleLike = async () => {
       meta: { semantic: 'favorites' }
     }
 
+    // 收藏操作针对「收藏锚点」（用户选中的歌、切源前）：实际用哪个音源播，
+    // 收藏记录始终是用户选中的那首歌的样貌；锚点缺失时退回当前播放歌。
+    const anchorRaw: any = globalPlayStatus.player.favoriteAnchor
+      ? toRaw(globalPlayStatus.player.favoriteAnchor)
+      : toRaw(currentSong)
+    const favoriteSong = normalizeFavoriteSong(cloneDeep(anchorRaw) as any)
+    if (!favoriteSong) throw new Error('歌曲缺少可同步的唯一标识')
     // 每次点击都以本地数据库为准，避免异步刷新中的旧内存状态把新增误判成取消。
-    const normalizedCurrentSong = normalizeFavoriteSong(cloneDeep(toRaw(currentSong)) as any)
-    if (!normalizedCurrentSong) throw new Error('歌曲缺少可同步的唯一标识')
-    const storedState = await songListAPI.hasSong(favoritesId!, normalizedCurrentSong.songmid, normalizedCurrentSong.source)
+    const storedState = await songListAPI.hasSong(favoritesId!, favoriteSong.songmid, favoriteSong.source)
     const isCurrentlyLiked = Boolean(storedState.success && storedState.data)
     likeState.value = isCurrentlyLiked
     if (isCurrentlyLiked) {
-      const favoriteSong = normalizeFavoriteSong(cloneDeep(toRaw(currentSong)) as any)
-      if (!favoriteSong) throw new Error('歌曲缺少可同步的唯一标识')
       const removeRes = await songListAPI.removeSong(
         favoritesId!,
         favoriteSong.songmid,
@@ -947,8 +973,6 @@ const onToggleLike = async () => {
         MessagePlugin.error(removeRes.error || '取消喜欢失败')
       }
     } else {
-      const favoriteSong = normalizeFavoriteSong(cloneDeep(toRaw(currentSong)) as any)
-      if (!favoriteSong) throw new Error('歌曲缺少可同步的唯一标识')
       const addRes = await songListAPI.addSongs(favoritesId!, [favoriteSong])
       const storedRes = await songListAPI.hasSong(favoritesId!, favoriteSong.songmid, favoriteSong.source)
       if (addRes.success && storedRes.success && storedRes.data) {

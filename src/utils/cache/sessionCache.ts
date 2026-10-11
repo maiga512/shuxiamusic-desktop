@@ -3,7 +3,7 @@ type CacheEntry<T> = {
   expiresAt: number
 }
 
-const MAX_SESSION_CACHE_ITEMS = 40  // 从 80 降低到 40，减少会话缓存
+const MAX_SESSION_CACHE_ITEMS = 80
 const entries = new Map<string, CacheEntry<unknown>>()
 
 const pruneExpired = (now = Date.now()) => {

@@ -16,16 +16,19 @@ export interface ImageAnalysisResult {
 }
 
 const analysisCache = new Map<string, ImageAnalysisResult>()
-const MAX_ANALYSIS_CACHE = 20  // 从 48 降低到 20，减少内存占用
+const MAX_ANALYSIS_CACHE = 48
 
-// 监听激进内存清理事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('memory:aggressive-cleanup', () => {
-    const count = analysisCache.size
-    analysisCache.clear()
-    console.log(`[colorExtractor] 激进清理: 清空 ${count} 个图片分析缓存`)
-  })
-}
+// 颜色提取缓存（按 URL 和颜色数量）
+const extractColorsCache = new Map<string, Color[]>()
+const MAX_EXTRACT_COLORS_CACHE = 100
+
+// 主色调缓存
+const dominantColorCache = new Map<string, Color>()
+const MAX_DOMINANT_COLOR_CACHE = 100
+
+// 次要颜色缓存
+const secondaryColorsCache = new Map<string, Color[]>()
+const MAX_SECONDARY_COLORS_CACHE = 100
 
 function cacheAnalysis(imageSrc: string, result: ImageAnalysisResult) {
   if (!imageSrc) return result
@@ -191,6 +194,16 @@ export async function analyzeImageColors(imageSrc: string): Promise<ImageAnalysi
 }
 
 export async function extractColors(imageSrc: string, colorCount: number = 6): Promise<Color[]> {
+  // 检查缓存
+  const cacheKey = `${imageSrc}:${colorCount}`
+  const cached = extractColorsCache.get(cacheKey)
+  if (cached) {
+    // LRU: 删除后重新插入，保持最近使用
+    extractColorsCache.delete(cacheKey)
+    extractColorsCache.set(cacheKey, cached)
+    return cached
+  }
+
   try {
     // 尝试提取主要颜色
     const dominantColor = await extractDominantColor(imageSrc)
@@ -209,6 +222,14 @@ export async function extractColors(imageSrc: string, colorCount: number = 6): P
       }
     }
 
+    // 存入缓存（LRU）
+    extractColorsCache.set(cacheKey, colors)
+    // 清理旧缓存
+    while (extractColorsCache.size > MAX_EXTRACT_COLORS_CACHE) {
+      const oldest = extractColorsCache.keys().next().value
+      if (oldest === undefined) break
+      extractColorsCache.delete(oldest)
+    }
     return colors
   } catch (error) {
     console.error('提取多个颜色失败:', error)
@@ -234,6 +255,15 @@ export async function extractSecondaryColors(
   imageSrc: string,
   colorCount: number
 ): Promise<Color[]> {
+  // 检查缓存
+  const cacheKey = `${imageSrc}:${colorCount}`
+  const cached = secondaryColorsCache.get(cacheKey)
+  if (cached) {
+    secondaryColorsCache.delete(cacheKey)
+    secondaryColorsCache.set(cacheKey, cached)
+    return cached
+  }
+
   return new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'Anonymous'
@@ -310,6 +340,14 @@ export async function extractSecondaryColors(
               b: sortedColors[i].b
             })
           }
+        }
+
+        // 存入缓存
+        secondaryColorsCache.set(cacheKey, secondaryColors)
+        while (secondaryColorsCache.size > MAX_SECONDARY_COLORS_CACHE) {
+          const oldest = secondaryColorsCache.keys().next().value
+          if (oldest === undefined) break
+          secondaryColorsCache.delete(oldest)
         }
 
         resolve(secondaryColors)
@@ -440,6 +478,14 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
  * @returns 返回RGB颜色对象
  */
 export async function extractDominantColor(imageSrc: string): Promise<Color> {
+  // 检查缓存
+  const cached = dominantColorCache.get(imageSrc)
+  if (cached) {
+    dominantColorCache.delete(imageSrc)
+    dominantColorCache.set(imageSrc, cached)
+    return cached
+  }
+
   return new Promise((resolve, reject) => {
     // 处理相对路径
     let actualSrc = imageSrc
@@ -528,6 +574,14 @@ export async function extractDominantColor(imageSrc: string): Promise<Color> {
 
         // 5. 增强颜色的饱和度和亮度，使其更加鲜明
         const enhancedColor = enhanceColor(dominantColor)
+
+        // 存入缓存
+        dominantColorCache.set(imageSrc, enhancedColor)
+        while (dominantColorCache.size > MAX_DOMINANT_COLOR_CACHE) {
+          const oldest = dominantColorCache.keys().next().value
+          if (oldest === undefined) break
+          dominantColorCache.delete(oldest)
+        }
 
         // 返回增强后的主要颜色
         resolve(enhancedColor)

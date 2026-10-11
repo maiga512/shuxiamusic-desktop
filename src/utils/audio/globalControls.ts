@@ -6,8 +6,8 @@ let smtcTimer: any = null
 let globalKeyDownHandler: ((e: KeyboardEvent) => void) | null = null
 let removeMusicCtrlListener: (() => void) | null = null
 
-function dispatch(name: string, val?: any) {
-  window.dispatchEvent(new CustomEvent('global-music-control', { detail: { name, val } }))
+function dispatch(name: string, val?: any, source?: string) {
+  window.dispatchEvent(new CustomEvent('global-music-control', { detail: { name, val, source } }))
 }
 
 export function installGlobalMusicControls() {
@@ -21,10 +21,12 @@ export function installGlobalMusicControls() {
     const el = controlAudio.Audio.audio
     if (!el) return
     mediaSessionController.init(el, {
-      play: () => dispatch('play'),
-      pause: () => dispatch('pause'),
-      playPrevious: () => dispatch('playPrev'),
-      playNext: () => dispatch('playNext')
+      // source='media' 标记：系统媒体键可能同时经 Rust MPRemoteCommandCenter 和
+      // WKWebView Media Session 两条链路投递，onGlobalCtrl 里对同指令做 250ms 去重。
+      play: () => dispatch('play', undefined, 'media'),
+      pause: () => dispatch('pause', undefined, 'media'),
+      playPrevious: () => dispatch('playPrev', undefined, 'media'),
+      playNext: () => dispatch('playNext', undefined, 'media')
     })
     // 初始同步状态
     mediaSessionController.updatePlaybackState(
@@ -33,14 +35,26 @@ export function installGlobalMusicControls() {
   }
   // 尝试立即初始化一次
   tryInitSmtc()
-  // 【CPU 优化】改为事件驱动，不再 150ms 轮询
-  // 若 audio 元素稍后可用，监听 play 事件触发一次初始化
-  const smtcInitHandler = () => {
+  // 若 URL 变化或 audio 初始化稍后完成，由组件/Store 负责赋值；这里轮询几次兜底初始化
+  let smtcTries = 0
+  if (smtcTimer) clearInterval(smtcTimer)
+  smtcTimer = setInterval(() => {
+    if (smtcTries > 20) {
+      if (smtcTimer) {
+        clearInterval(smtcTimer)
+        smtcTimer = null
+      }
+      return
+    }
+    smtcTries++
     if (controlAudio.Audio.audio) {
       tryInitSmtc()
+      if (smtcTimer) {
+        clearInterval(smtcTimer)
+        smtcTimer = null
+      }
     }
-  }
-  window.addEventListener('global-music-control', smtcInitHandler, { once: true })
+  }, 150)
 
   let keyThrottle = false
   const throttle = (cb: () => void, delay: number) => {

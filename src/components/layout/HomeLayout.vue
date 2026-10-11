@@ -252,7 +252,7 @@ const steps = ref<GuideStep[]>([
   {
     element: '.home-container',
     title: '欢迎使用 树夏Music',
-    body: '这是一个基于 Electron 框架的开源音乐播放器应用。你可以自由选择合规插件进行播放歌曲，亦或是使用内置的本地播放器进行播放。下面即将开始新手教程请确认是否开始。',
+    body: '这是一个基于 Tauri 框架的开源音乐播放器应用。你可以自由选择合规插件进行播放歌曲，亦或是使用内置的本地播放器进行播放。下面即将开始新手教程请确认是否开始。',
     mode: 'dialog'
   },
   {
@@ -557,13 +557,15 @@ function checkGuide() {
   }
 
   .sidebar-content {
-    padding: 0.6rem 1rem 1rem;
+    padding: 2.2rem 1rem 1rem;
 
     .logo-section {
       -webkit-app-region: drag;
       display: flex;
       align-items: center;
-      margin-bottom: 0.9rem;
+      justify-content: center;
+      text-align: center;
+      margin-bottom: 1.5rem;
 
       .app-title {
         font-weight: 500;

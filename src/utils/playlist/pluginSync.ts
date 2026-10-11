@@ -782,6 +782,17 @@ const applyMusicSourcePlugin = async (remote: NasSyncedPlugin, localItems: Local
   notifyPluginsUpdated()
 }
 
+// 配置没有实质变化就不要写盘。写一次配置会顺带把插件 worker 拉起来跑一次
+// onConfigUpdate，而这个插件根本没实现该钩子；更糟的是写盘之后本地指纹仍然和
+// 云端不一致，下一轮同步又写一次，形成"每几十秒保存并重载插件"的死循环。
+const samePluginConfig = (left: Record<string, unknown>, right: Record<string, unknown>) => {
+  try {
+    return JSON.stringify(left ?? {}) === JSON.stringify(right ?? {})
+  } catch {
+    return false
+  }
+}
+
 const applyCapabilityPlugin = async (remote: NasSyncedPlugin, localItems: LocalSyncedPlugin[]) => {
   const role = String(remote.role || remote.identityKey.replace(/^capability:/, ''))
   if (role !== 'feiniu' && role !== 'navidrome' && role !== 'nas-sync') return
@@ -799,7 +810,9 @@ const applyCapabilityPlugin = async (remote: NasSyncedPlugin, localItems: LocalS
       delete next.password
       delete next.accessCode
       delete next.serverUrl
-      await window.api.plugins.saveConfig(existing.localPluginId, next)
+      if (!samePluginConfig(currentConfig, next)) {
+        await window.api.plugins.saveConfig(existing.localPluginId, next)
+      }
     }
     return
   }
@@ -810,14 +823,18 @@ const applyCapabilityPlugin = async (remote: NasSyncedPlugin, localItems: LocalS
   if (role === 'nas-sync' && (currentConfig.accessToken || currentConfig.serverUrl)) {
     const next = {...currentConfig}
     if (canonical.pairCode) next.pairCode = canonical.pairCode
-    await window.api.plugins.saveConfig(existing.localPluginId, next)
+    if (!samePluginConfig(currentConfig, next)) {
+      await window.api.plugins.saveConfig(existing.localPluginId, next)
+    }
     return
   }
   const merged = {
     ...currentConfig,
     ...canonical
   }
-  await window.api.plugins.saveConfig(existing.localPluginId, merged)
+  if (!samePluginConfig(currentConfig, merged)) {
+    await window.api.plugins.saveConfig(existing.localPluginId, merged)
+  }
   if (role === 'feiniu') {
     await window.api.plugins.testConnection(existing.localPluginId).catch(() => null)
   }

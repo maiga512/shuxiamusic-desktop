@@ -735,8 +735,11 @@ const vObserveCover = {
   updated(el: HTMLElement, binding: any) {
     if (!coverObserver) return
     const song = binding.value
+    // 只有绑定的歌曲真的换了才重新观察。unobserve + observe 会让
+    // IntersectionObserver 立刻回调一次，任何一次无关的 patch（悬停、
+    // 高亮当前行）都会把这一屏的封面解析重新跑一遍，列表就会一直闪。
+    if (elementSongMap.get(el) === song) return
     elementSongMap.set(el, song)
-    // 重新观察以触发可能的加载
     coverObserver.unobserve(el)
     coverObserver.observe(el)
   },
@@ -751,9 +754,30 @@ const vObserveCover = {
   }
 }
 
+// 静默刷新会整体替换 songs 数组。内容其实没变时不能掐掉在飞的封面请求，
+// 否则可见行会从头再解析一轮封面，行内 <img :key="song.img"> 重建，
+// 看起来就是"列表一直在动、像在刷新"。用轻量签名判断内容是否真的变了。
+const songsSignature = (list: Song[]) => {
+  const len = list?.length ?? 0
+  if (len === 0) return '0'
+  const head = list[0] as any
+  const tail = list[len - 1] as any
+  return [
+    len,
+    head?.source ?? '',
+    head?.songmid ?? '',
+    tail?.source ?? '',
+    tail?.songmid ?? ''
+  ].join(':')
+}
+let lastSongsSignature = songsSignature(props.songs)
+
 watch(
   () => props.songs,
-  () => {
+  (list) => {
+    const signature = songsSignature(list)
+    if (signature === lastSongsSignature) return
+    lastSongsSignature = signature
     for (const [, ctrl] of coverControllers) ctrl.abort()
     coverControllers.clear()
   },

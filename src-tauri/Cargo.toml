@@ -1,6 +1,9 @@
 [package]
 name = "ceru-tauri"
-version = "0.1.0"
+# 应用对外版本号以根目录 package.json 为唯一来源（tauri.conf.json version 指向
+# ../package.json）。此处仅为 Cargo 必填项，不参与关于页/安装包版本展示，保持与
+# package.json 一致即可，无需每次手动维护。
+version = "1.0.4"
 description = "树夏Music - Tauri Edition"
 authors = ["树夏Music Team"]
 edition = "2021"
@@ -49,4 +52,6 @@ opt-level = 3
 lto = "thin"
 codegen-units = 1
 strip = true
-panic = "abort"
+# 保持 unwind：全屏手势等 AppKit 回调里任何一处意外 panic 都只损失当前
+# 动作，而不是让整个播放器进程 abort。
+panic = "unwind"
