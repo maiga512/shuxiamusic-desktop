@@ -240,10 +240,10 @@
                     {{ getLocalQualityLabel(song) }}
                   </span>
                   <span
-                    v-if="song.source && !(hideLocalSource && song.source === 'local')"
+                    v-if="displaySource(song) && !(hideLocalSource && displaySource(song) === 'local')"
                     class="source-tag"
                   >
-                    {{ song.source }}
+                    {{ displaySource(song) }}
                   </span>
                   {{ song.singer }}
                   <span v-if="getPublishDateDisplay(song)" class="publish-date">
@@ -1208,9 +1208,17 @@ const favoriteOverrideTimers = new Map<string, ReturnType<typeof setTimeout>>()
 let favoritesLoadVersion = 0
 const contrastTextColor = 'var(--song-list-btn-color)'
 const favoriteSongKey = (song: Song) => {
-  const normalized = normalizeFavoriteSong(song as any)
+  // 换源后的队列项带 _originalIdentity（原收藏身份，如 QQ）；收藏判定锚定原曲，
+  // 否则 QQ 收藏的歌换源到酷我后，心形会因 source:songmid 变了而丢失收藏态。
+  const identity = (song as any)?._originalIdentity || song
+  const normalized = normalizeFavoriteSong(identity as any)
   return normalized ? normalized.source + ':' + normalized.songmid : ''
 }
+
+// 展示音源锚定原曲：换源后的队列项带 _originalIdentity，前台仍显示原收藏音源（如 QQ），
+// 不暴露后台实际换到的播放音源（如酷我），保证前台只呈现一个身份。
+const displaySource = (song: Song) =>
+  (song as any)?._originalIdentity?.source || (song as any)?.source
 
 const loadFavorites = async () => {
   const loadVersion = favoritesLoadVersion
@@ -1273,7 +1281,10 @@ const onToggleLike = async (song: Song) => {
   favoriteLocalOverrides.set(favoriteKey, !previousLiked)
   let localChangeConfirmed = false
   try {
-    const favoriteSong = normalizeFavoriteSong(toRaw(song) as any)
+    // 收藏记录锚定原曲（换源项的 _originalIdentity），这样 QQ 收藏的歌即便正在用
+    // 酷我音源播放，取消/添加喜欢操作的仍是原来的 QQ 收藏记录。
+    const rawSong = toRaw(song) as any
+    const favoriteSong = normalizeFavoriteSong((rawSong?._originalIdentity || rawSong) as any)
     if (!favoriteSong) throw new Error('歌曲缺少可同步的唯一标识')
     const id = await ensureFavoritesId()
     if (!id) return

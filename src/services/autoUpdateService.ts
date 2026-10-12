@@ -33,6 +33,13 @@ export class AutoUpdateService {
   private isListening = false
   private lastErrorMessage = ''
   private lastErrorAt = 0
+  // 跟踪当前这次“检查更新”是手动触发还是后台静默触发。
+  // 后台检查全程静默：不提示“已是最新”、检查阶段的报错也不弹窗。
+  // 默认按静默处理，只有手动点“检查更新”时才临时置为非静默，用完即复位，
+  // 避免任何非手动来源的检查结果误弹“已是最新”。
+  private checkInFlight = false
+  private checkIsSilent = true
+  private checkToken = 0
 
   constructor() {
     // 构造函数中自动开始监听
@@ -58,11 +65,18 @@ export class AutoUpdateService {
     })
 
     window.api.autoUpdater.onUpdateAvailable((updateInfo: UpdateInfo) => {
+      // 有新版无论手动/后台都照常走（下载 + 后续提示）。
+      this.checkInFlight = false
+      this.checkIsSilent = true
       void this.showUpdateAvailableDialog(updateInfo)
     })
 
     window.api.autoUpdater.onUpdateNotAvailable(() => {
-      this.showNoUpdateNotification()
+      // 只有手动检查才提示“已是最新”；后台/其它来源静默。
+      const silent = this.checkIsSilent
+      this.checkInFlight = false
+      this.checkIsSilent = true
+      if (!silent) this.showNoUpdateNotification()
     })
 
     window.api.autoUpdater.onDownloadStarted((updateInfo: UpdateInfo) => {
@@ -81,6 +95,14 @@ export class AutoUpdateService {
 
     window.api.autoUpdater.onError(
       (error: string | { code?: string; message: string; raw?: string }) => {
+        // 后台静默检查阶段的报错不弹窗，只记日志；下载等其它阶段的报错照常提示。
+        const duringSilentCheck = this.checkInFlight && this.checkIsSilent
+        this.checkInFlight = false
+        this.checkIsSilent = true
+        if (duringSilentCheck) {
+          console.warn('[auto-update] 后台检查出错(静默):', error)
+          return
+        }
         this.showUpdateErrorNotification(error)
       }
     )
@@ -99,10 +121,26 @@ export class AutoUpdateService {
   }
 
   // 检查更新
-  async checkForUpdates() {
+  // options.silent = true 表示后台自动检查：全程静默（不提示“已是最新”、检查报错不弹窗）。
+  async checkForUpdates(options?: { silent?: boolean }) {
+    const silent = options?.silent === true
+    // 后台检查不打断正在进行的检查（可能是用户刚点的手动检查）。
+    if (silent && this.checkInFlight) return
+    const token = ++this.checkToken
+    this.checkInFlight = true
+    this.checkIsSilent = silent
+    // 兜底：万一没有收到任何结果事件，60s 后清掉在途标记，避免误伤后续的下载报错。
+    window.setTimeout(() => {
+      if (this.checkToken === token) this.checkInFlight = false
+    }, 60000)
     try {
       await window.api.autoUpdater.checkForUpdates()
     } catch (error) {
+      if (this.checkToken === token) this.checkInFlight = false
+      if (silent) {
+        console.warn('[auto-update] 后台检查失败:', error)
+        return
+      }
       console.error('检查更新失败:', error)
       NotifyPlugin.error({
         title: '更新检查失败',

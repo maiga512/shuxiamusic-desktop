@@ -4087,6 +4087,7 @@ export function createTauriBridge() {
       }) =>
         invoke('mpv_set_audio_filters', { request }),
       getState: () => invoke('mpv_get_state'),
+      reloadAudioOutput: () => invoke('mpv_reload_audio_output'),
       shutdown: () => invoke('mpv_shutdown'),
       onState: (cb: (payload: any) => void) => onTauriEvent('mpv://state', cb),
       onProgress: (cb: (payload: any) => void) => onTauriEvent('mpv://progress', cb),

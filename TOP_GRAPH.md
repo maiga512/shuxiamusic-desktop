@@ -117,6 +117,18 @@ surround with cached float IR, `@bal` pan, `@loud` `dynaudnorm`). Surround is
 dry + wet convolution, not `aecho`. Microphone permission is requested once after
 app ready so device labels and recognize features do not wait for first play.
 
+macOS CoreAudio AO silent-death recovery: after a default-output-device switch,
+Bluetooth connect/disconnect, `coreaudiod` restart, or sleep/wake, MPV's audio
+output can go silent while decoding and the clock keep advancing. The frontend
+`nativePlayback.ts` listens to `navigator.mediaDevices` `devicechange` (debounced
+800ms) and the existing `ceru-wake` event, then calls the `mpv_reload_audio_output`
+command, which cycles `aid` (`no` -> restore) in `mpv_player.rs` to tear down and
+rebuild the whole audio chain (AO included) without reopening the network stream.
+The reload is single-flight with a 1.5s cooldown and fails soft — an AO rebuild
+error never surfaces as a playback error, so it does not trigger source switch or
+auto-next. It does not cover a default-device change that neither adds nor removes
+a device (no `devicechange` signal reaches the WebView).
+
 At application exit, `src-tauri/src/lib.rs` routes `RunEvent::ExitRequested` and `Exit` to `mpv_shutdown`. The Tauri adapter takes the Rust-owned MPV `Child` out of the runtime state, releases the runtime lock, then calls `kill + wait` directly; exit does not depend on an MPV IPC `quit` response. `closeToTray` still hides the main window and intentionally leaves playback alive.
 
 `--input-media-keys=no`. After MPV owns audio, WebKit Media Session cannot catch
@@ -214,6 +226,20 @@ survives automatic source switching and unliking always targets the picked ident
 on unliking (`evictUnlikedFromPlayback`) keeps using the current playback
 instance, so the currently playing (possibly fallback) song still advances correctly.
 
+The anchor also survives restart and reaches list views through a persisted
+per-item field. When a source fallback replaces a queue entry
+(`replaceCurrentSongInList`), `stampOriginalIdentity` copies the user's original
+(favorited) identity onto the new instance as `_originalIdentity`, which is
+serialized with the queue in `localStorage`. On restart `playSong` seeds the
+anchor from `(song._originalIdentity || song)`, so a QQ song that fell back to
+Kuwo still restores its QQ star. The queue list heart (`SongVirtualList.favoriteSongKey`
+/ `isLiked` / `onToggleLike`) also resolves against `_originalIdentity` when present,
+so the fallback instance keeps the original favorite key and like/unlike edits the
+original record. The queue list source badge also uses `displaySource` =
+`_originalIdentity?.source || source`, so a QQ song playing via a Kuwo fallback still
+shows the QQ tag. The front end therefore always shows one stable identity; the
+cross-source swap is a playback-only concern.
+
 Every resolved URL must pass `isPlayableUrl` before it is cached or handed to
 `mpv_load`. Aggregation APIs return CDN root addresses such as
 `https://aqqmusic.tc.qq.com/` when no real direct link is available; `mpv
@@ -237,6 +263,16 @@ current source
 
 Electron asks the configured plugin first and returns a usable URL immediately.
 Do not pre-race all providers on the happy path.
+
+**HARD CONSTRAINT — never parallelize source URL resolution.** The music source
+APIs enforce a per-day request quota; exceeding it blocks the whole source for
+the rest of the day and tanks real success rate. Source URL resolution
+(`getSongRealUrl` / plugin `musicUrl` / candidate `search`) MUST stay sequential
+and request-frugal. Never race providers, never fan out concurrent resolve
+requests, and never propose parallel racing as a performance idea. Raise success
+rate only by spending FEWER source requests (positive/negative caching,
+remembered working source, local-file priority, faster dead-link detection),
+never by sending more.
 
 ### 4. Podcast And Radio
 

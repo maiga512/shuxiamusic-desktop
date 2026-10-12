@@ -107,6 +107,11 @@ pub struct MpvSnapshot {
     pub playback_rate: f64,
     pub generation: u64,
     pub paused: bool,
+    // 真实缓冲/空转信号：paused 只反映用户显式暂停,无法区分"用户暂停"与"正在
+    // 缓冲"。前端失速看门狗必须靠这两个字段把"在线缓冲中"与"死链不出声"分开,
+    // 否则会把正常缓冲误判成死链。
+    pub paused_for_cache: bool,
+    pub core_idle: bool,
     pub last_error: Option<String>,
     pub last_action: Option<String>,
     pub updated_at_ms: u64,
@@ -126,6 +131,8 @@ impl Default for MpvSnapshot {
             playback_rate: 1.0,
             generation: 0,
             paused: true,
+            paused_for_cache: false,
+            core_idle: false,
             last_error: None,
             last_action: None,
             updated_at_ms: now_ms(),
@@ -1025,6 +1032,28 @@ fn ipc_property_f64(path: &str, name: &str) -> Option<f64> {
         .filter(|value| value.is_finite())
 }
 
+fn ipc_property_value(path: &str, name: &str) -> Option<Value> {
+    let response = command(path, vec![json!("get_property"), json!(name)]).ok()?;
+    response.get("data").cloned().filter(|value| !value.is_null())
+}
+
+// 强制 mpv 重建音频输出(AO)。macOS 上 CoreAudio AO 在系统默认输出设备切换、
+// 蓝牙连接/断开、coreaudiod 重启或睡眠唤醒后会"静默死亡":解码和时钟继续推进,
+// 但没有声音,只有彻底重建 AO 才能恢复。实测(mpv 0.41):把 audio-device 设成
+// 当前同值是 no-op(mpv 对相同选项值去重,不会 reinit);而把 aid 先设为 "no"
+// 再还原,会可靠地拆掉并重建整条音频链(含 AO),且不会重开网络流——demuxer/
+// 缓存和播放位置都保留,只有一瞬间的音频断点。这正是从"死 AO"恢复所需。
+fn reload_audio_output(path: &str) -> Result<(), String> {
+    let restore = match ipc_property_value(path, "aid") {
+        // 有选中的音轨时 aid 返回音轨号(如 1);空闲/无音轨时返回 false。
+        Some(value) if value != Value::Bool(false) => value,
+        _ => return Ok(()),
+    };
+    set_property(path, "aid", json!("no"))?;
+    set_property(path, "aid", restore)?;
+    Ok(())
+}
+
 fn refresh_time_pos(path: &str) {
     if path.is_empty() {
         return;
@@ -1058,7 +1087,10 @@ fn start_event_listener(app: AppHandle, ipc_path: String, listener_generation: u
             }
         };
 
-        for (index, property) in ["duration", "pause", "idle-active"].iter().enumerate() {
+        for (index, property) in ["duration", "pause", "idle-active", "paused-for-cache", "core-idle"]
+            .iter()
+            .enumerate()
+        {
             let payload = json!({
                 "command": ["observe_property", index + 1, property],
                 "request_id": index + 1,
@@ -1181,6 +1213,14 @@ fn handle_property_change(app: &AppHandle, payload: &Value) {
                 state.phase = MpvPhase::Idle;
                 state_changed = true;
             }
+        }
+        "paused-for-cache" => {
+            state.paused_for_cache = data.as_bool().unwrap_or(false);
+            state_changed = true;
+        }
+        "core-idle" => {
+            state.core_idle = data.as_bool().unwrap_or(false);
+            state_changed = true;
         }
         _ => {}
     });
@@ -1567,6 +1607,20 @@ pub fn mpv_set_audio_filters(
         state.last_error = None;
     });
     emit_state_event(&app, "set_audio_filters");
+    Ok(snapshot)
+}
+
+#[tauri::command]
+pub fn mpv_reload_audio_output(app: AppHandle) -> Result<MpvSnapshot, String> {
+    let path = get_runtime_ipc_path(app.clone())?;
+    // 失败软处理:AO 重建失败不应冒充"播放错误"去触发前端换源/自动下一首,
+    // 只记录动作、把错误交给调用方静默处理。
+    reload_audio_output(&path)?;
+    refresh_time_pos(&path);
+    let snapshot = update_state(|state| {
+        state.last_action = Some("reload_audio_output".to_string());
+        state.last_error = None;
+    });
     Ok(snapshot)
 }
 

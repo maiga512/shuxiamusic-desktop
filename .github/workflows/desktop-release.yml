@@ -5,6 +5,10 @@ name: Desktop Release
 # - 桌面读固定标签 desktop-latest 的 latest.json
 # 因此本工作流发布时必须 make_latest=false，绝不能抢走“最新 Release”指针，
 # 否则安卓的 AppUpdateManager 会拉到桌面 Release 而更新失败。
+#
+# 双平台发布：桌面同时发到 Gitee 的 songsong2020/shuxiamusic-desktop-release（公开，
+# 固定标签 desktop-latest）。tauri.conf.json 的更新器端点顺序为 [Gitee, GitHub]，
+# 国内优先命中 Gitee，连不上自动回退 GitHub。Gitee 发布需要 Secret: GITEE_RELEASE_TOKEN。
 
 on:
   workflow_dispatch:
@@ -30,6 +34,9 @@ env:
   RELEASE_REPOSITORY: maiga512/shuxiamusic-release
   # 更新器端点固定读这个标签，保持与 tauri.conf.json 一致
   RELEASE_TAG: desktop-latest
+  # Gitee 桌面发布仓库（公开）。更新器端点顺序 [Gitee, GitHub]，国内优先命中 Gitee。
+  GITEE_REPOSITORY: songsong2020/shuxiamusic-desktop-release
+  GITEE_RELEASE_TAG: desktop-latest
 
 jobs:
   prepare:
@@ -228,12 +235,17 @@ jobs:
           NOTES: ${{ needs.prepare.outputs.notes }}
           RELEASE_TAG: ${{ env.RELEASE_TAG }}
           RELEASE_REPOSITORY: ${{ env.RELEASE_REPOSITORY }}
+          GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
+          GITEE_RELEASE_TAG: ${{ env.GITEE_RELEASE_TAG }}
         run: |
           mkdir -p release-assets
           find incoming -type f -exec cp {} release-assets/ \;
           echo "已汇总产物:"; ls -la release-assets
           python3 scripts/ci/make-latest-json.py
-          echo "生成的 latest.json:"; cat release-assets/latest.json
+          echo "生成的 latest.json (GitHub):"; cat release-assets/latest.json
+          if [ -f release-assets-gitee/latest.json ]; then
+            echo "生成的 latest.json (Gitee):"; cat release-assets-gitee/latest.json
+          fi
       - name: 校验发布令牌对目标仓库的权限（只打印身份和权限等级，不打印令牌）
         shell: bash
         env:
@@ -266,3 +278,17 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+
+      # Gitee 侧与 GitHub 并行发布：更新器端点顺序 [Gitee, GitHub]，国内优先命中 Gitee。
+      # 未配置 GITEE_RELEASE_TOKEN 时脚本自动跳过（不报错）；万一 Gitee 上传失败也不拖垮
+      # 已完成的 GitHub 发布（continue-on-error），更新器会自动回退 GitHub。
+      - name: 发布到 Gitee desktop-latest（可选，缺令牌自动跳过）
+        continue-on-error: true
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
+          GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
+          GITEE_RELEASE_TAG: ${{ env.GITEE_RELEASE_TAG }}
+          GITEE_TARGET_BRANCH: master
+          VERSION: ${{ needs.prepare.outputs.version }}
+          NOTES: ${{ needs.prepare.outputs.notes }}
+        run: python3 scripts/ci/publish-gitee.py

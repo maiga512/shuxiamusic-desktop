@@ -141,7 +141,9 @@ async function checkForUpdatesInBackground() {
   if (autoUpdateCheckInFlight) return
   autoUpdateCheckInFlight = true
   try {
-    await window.api?.autoUpdater?.checkForUpdates?.()
+    // 走更新服务并标记为静默：后台检查不提示“已是最新”、检查报错也不弹窗。
+    const { autoUpdateService } = await import('./services/autoUpdateService')
+    await autoUpdateService.checkForUpdates({ silent: true })
   } catch (error) {
     console.warn('[auto-update] 后台检查失败:', error)
   } finally {

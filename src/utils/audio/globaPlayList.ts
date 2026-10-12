@@ -59,6 +59,9 @@ let currentPlaybackErrorHandler: ((e: Event) => void) | null = null
 let currentPlaybackPlayingHandler: ((e: Event) => void) | null = null
 let pendingPlaybackErrorRequestId = 0
 let currentPlayRequestId: number = 0
+// 单飞守卫：同一次 playSong（以 requestId 标识）内，多个失败信号（起播拒绝 /
+// mpv error / 加载异常 / 失速看门狗）只允许跑一轮恢复，杜绝并发自愈互相竞速。
+let recoveryInFlightRequestId = 0
 
 const AUTO_NEXT_DELAY_MS = 0
 // 对齐安卓/落雪：播放失败后的自动跳歌延迟 5s，避免整列表烂源时瞬间刷一整轮请求
@@ -111,9 +114,11 @@ function _isThrottled(): boolean {
   return pluginId != null && (_throttledPlugins.has(pluginId) || _disabledPlugins.has(pluginId))
 }
 
-// ==================== 音源硬失败拉黑（对齐安卓 PlaybackFallbackResolver.blockProvider） ====================
-// 鉴权失败 / 额度耗尽 / 被封禁这类"确定性失败"再重试也没用，还会放大插件请求。
-// 命中后拉黑该源 120s，期间换源循环直接跳过。
+// ==================== 单曲级硬失败跳过（结合落雪：不整源拉黑） ====================
+// 落雪换源只在"本次这首歌的回退链"里跳过已试过的源，从不跨歌把整个源封死。
+// 这里对齐该思路：鉴权/版权/额度这类确定性失败，往往是「这首歌在这个源上没有」，
+// 而不是「这个源废了」。所以按 源+歌曲 维度短暂记忆（120s），只跳过"这首歌的这个源"，
+// 该源上的其它歌曲照常可用——避免一首版权歌把整个音源一竿子打死。
 const HARD_SOURCE_BLOCK_MS = 120_000
 const _hardBlockedSources = new Map<string, number>()
 
@@ -126,16 +131,23 @@ function _isHardFailure(err: unknown): boolean {
   return HARD_FAILURE_PATTERN.test(text)
 }
 
-function _blockSource(source: string) {
-  if (!source) return
-  _hardBlockedSources.set(source, Date.now() + HARD_SOURCE_BLOCK_MS)
+// 维度 = 源 + 歌曲身份：只记"这首歌在这个源上确定性失败"，不牵连该源的其它歌曲。
+function _getHardBlockKey(source: string, song: SongList): string {
+  return `${source}::${_getSongIdentity(song)}`
 }
 
-function _isSourceHardBlocked(source: string): boolean {
-  const until = _hardBlockedSources.get(source)
+function _blockSource(source: string, song: SongList) {
+  if (!source) return
+  _hardBlockedSources.set(_getHardBlockKey(source, song), Date.now() + HARD_SOURCE_BLOCK_MS)
+}
+
+function _isSourceHardBlocked(source: string, song: SongList): boolean {
+  if (!source) return false
+  const key = _getHardBlockKey(source, song)
+  const until = _hardBlockedSources.get(key)
   if (until == null) return false
   if (Date.now() >= until) {
-    _hardBlockedSources.delete(source)
+    _hardBlockedSources.delete(key)
     return false
   }
   return true
@@ -205,16 +217,24 @@ const isLocalStreamProxyUrl = (url: string): boolean =>
 const isRemoteCleartextHttpUrl = (url: string): boolean =>
   /^http:\/\//i.test(url) && !/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\//i.test(url)
 
-const applyPlayableUrl = async (url: string): Promise<string> => {
+const applyPlayableUrl = async (url: string, startAtOverride?: number): Promise<string> => {
   // mpv loadfile 对任何字符串都返回 success，坏地址（例如只带 host 的 CDN
   // 根地址）会变成"加载成功但没声音"。在这里判死，让上层继续降级/换源。
   if (!isPlayableUrl(url)) {
     throw new Error(`不可播放的地址: ${url}`)
   }
   await ensureNativePlayback()
+  // 续播位置优先级：显式续播点（中途换源/刷新时的当前进度）> 历史恢复点 > 0。
+  // 中途链接失效走自愈时，若还从 0 重放，用户听感就是"又从头开始"。
+  const startTime =
+    typeof startAtOverride === 'number' && startAtOverride > 0
+      ? startAtOverride
+      : pendingRestorePosition > 0
+        ? pendingRestorePosition
+        : 0
   const loaded = await nativeLoad(url, {
     autoplay: false,
-    startTime: pendingRestorePosition > 0 ? pendingRestorePosition : 0,
+    startTime,
     volume: Audio.value.volume,
     headers: (songInfo.value as any)?.__nativeMedia?.headers,
     referrer: (songInfo.value as any)?.__nativeMedia?.referrer || (songInfo.value as any)?.__nativeMedia?.referer,
@@ -332,8 +352,8 @@ const tryUrlSequential = async (
     return null
   }
 
-  // 1. 当前源（被硬失败拉黑的源直接跳过，对齐安卓 blockProvider 120s）
-  if (!options.skipCurrent && !_isSourceHardBlocked(String(song.source || ''))) {
+  // 1. 当前源（只跳过"这首歌在这个源上"已确定失败的组合，不跳过整个源）
+  if (!options.skipCurrent && !_isSourceHardBlocked(String(song.source || ''), song)) {
     try {
       const url = await getSongRealUrl(toRaw(song))
       if (isAllowedUrl(url)) {
@@ -343,10 +363,10 @@ const tryUrlSequential = async (
       if (url && typeof url === 'string') {
         options.failedUrls?.add(url)
         await _invalidateCachedUrl(song)
-        if (_isHardFailure(url)) _blockSource(String(song.source || ''))
+        if (_isHardFailure(url)) _blockSource(String(song.source || ''), song)
       }
     } catch (err) {
-      if (_isHardFailure(err)) _blockSource(String(song.source || ''))
+      if (_isHardFailure(err)) _blockSource(String(song.source || ''), song)
     }
   }
 
@@ -382,7 +402,7 @@ const tryUrlSequential = async (
   const quality = _getQuality(song)
   for (const item of candidates) {
     if (_isThrottled()) return null
-    if (_isSourceHardBlocked(String(item.source || ''))) continue
+    if (_isSourceHardBlocked(String(item.source || ''), item)) continue
     if (!isSameSongCandidate(item, song)) continue
     try {
       const url = await getSongRealUrl(toRaw(item))
@@ -394,10 +414,10 @@ const tryUrlSequential = async (
       if (url && typeof url === 'string') {
         options.failedUrls?.add(url)
         await _invalidateCachedUrl(item, quality)
-        if (_isHardFailure(url)) _blockSource(String(item.source || ''))
+        if (_isHardFailure(url)) _blockSource(String(item.source || ''), item)
       }
     } catch (err) {
-      if (_isHardFailure(err)) _blockSource(String(item.source || ''))
+      if (_isHardFailure(err)) _blockSource(String(item.source || ''), item)
     }
   }
 
@@ -422,11 +442,30 @@ const setCurrentTime = controlAudio.setCurrentTime
 /*  下一首，避免死循环。                                               */
 /* ------------------------------------------------------------------ */
 type MpvState = {
+  // Rust 端 MpvSnapshot 用 serde(rename_all = "camelCase") 序列化，invoke 回来的
+  // 键是驼峰（backendReady/currentTime/...）。历史上这里只读了下划线键，导致
+  // backend_ready 永远 undefined、看门狗第一道 guard 直接 return——整套失速自愈
+  // 从未真正触发。这里同时兼容两种命名，哪种有值用哪种。
   backend_ready?: boolean
+  backendReady?: boolean
   url?: string | null
   paused?: boolean
   current_time?: number
+  currentTime?: number
+  // 在线缓冲信号：缓冲中 current_time 不前进属正常，不能判成死链。
+  paused_for_cache?: boolean
+  pausedForCache?: boolean
+  core_idle?: boolean
+  coreIdle?: boolean
 }
+
+const mpvBackendReady = (s: MpvState | null | undefined): boolean =>
+  s?.backendReady === true || s?.backend_ready === true
+const mpvCurrentTime = (s: MpvState | null | undefined): number =>
+  Number(s?.currentTime ?? s?.current_time ?? 0)
+// mpv 正在缓冲/空转（而非用户暂停）：此时音频不推进是正常现象。
+const mpvBuffering = (s: MpvState | null | undefined): boolean =>
+  s?.pausedForCache === true || s?.paused_for_cache === true || s?.coreIdle === true || s?.core_idle === true
 const STALL_GRACE_MS = 6000 // 起播后留足缓冲时间再采样
 const STALL_SAMPLE_GAP_MS = 1500 // 两次采样间隔
 const STALL_MIN_PROGRESS = 0.3 // 间隔内真实进度推进不足视为失速
@@ -471,8 +510,10 @@ const runStallCheck = async (song: SongList, url: string, songKey: string) => {
   if (songPlaybackKey(songInfo.value as any) !== songKey) return
   try {
     const s1 = (await invoke('mpv_get_state')) as MpvState
-    if (!s1 || s1.backend_ready !== true || s1.paused === true) return
-    const t1 = Number(s1.current_time || 0)
+    if (!s1 || !mpvBackendReady(s1) || s1.paused === true) return
+    // 正在缓冲：进度本就不前进，不能判死链，交给下一次自然起播或 end-file。
+    if (mpvBuffering(s1)) return
+    const t1 = mpvCurrentTime(s1)
     await new Promise((resolve) => setTimeout(resolve, STALL_SAMPLE_GAP_MS))
     // 等待后重新确认仍是同一首、同一链接、仍在播。
     if (!Audio.value.isPlay) return
@@ -480,7 +521,9 @@ const runStallCheck = async (song: SongList, url: string, songKey: string) => {
     if (songPlaybackKey(songInfo.value as any) !== songKey) return
     const s2 = (await invoke('mpv_get_state')) as MpvState
     if (!s2 || s2.paused === true) return
-    const t2 = Number(s2.current_time || 0)
+    // 第二次采样若在缓冲，同样不判死链。
+    if (mpvBuffering(s2)) return
+    const t2 = mpvCurrentTime(s2)
     if (t2 - t1 >= STALL_MIN_PROGRESS) {
       // 进度正常推进：清掉本首的「已恢复」标记，允许将来再次自愈。
       if (stallRecoveredKey === songKey) stallRecoveredKey = null
@@ -533,7 +576,27 @@ const applyCurrentSongInfo = (song: SongList) => {
   userInfo.value.lastPlaySongSource = currentSong.source
 }
 
+// 原始身份锚点：自动换源会把队列项整体换成另一音源的播放实例（QQ→酷我），
+// 这里把"用户选中/收藏的那首歌"的身份盖在新项上（_originalIdentity），
+// 随 list 一起持久化。重启后 playSong 读它恢复收藏锚点；列表心形也按它判定，
+// 收藏状态与展示身份不随音源漂移。多次换源时保留最早的原始身份。
+const stampOriginalIdentity = (previousSong: SongList, nextSong: SongList) => {
+  const origin = (previousSong as any)._originalIdentity || {
+    source: previousSong.source,
+    songmid: (previousSong as any).songmid,
+    hash: (previousSong as any).hash,
+    name: previousSong.name,
+    singer: previousSong.singer,
+    albumName: (previousSong as any).albumName,
+    albumId: (previousSong as any).albumId,
+    img: (previousSong as any).img
+  }
+  ;(nextSong as any)._originalIdentity = origin
+}
+
 const replaceCurrentSongInList = (previousSong: SongList, nextSong: SongList) => {
+  // 换源替换前先把原始身份盖到新项上，收藏判定/展示始终锚定原曲。
+  stampOriginalIdentity(previousSong, nextSong)
   const previousIdentity = _getSongIdentity(previousSong)
   const index = list.value.findIndex(
     (item) => _getSongIdentity(item) === previousIdentity && item.source === previousSong.source
@@ -821,6 +884,78 @@ const playSong = async (
 
   const failedUrls = new Set<string>()
   let urlToPlay = ''
+
+  // ==================== 统一的有界恢复仲裁器 ====================
+  // 历史上自愈散在多处（起播 catch、mpv error 处理器、加载 catch、外层 catch、
+  // 失速看门狗），各自手写"刷新当前源 → 搜候选 → 逐个试 → 起播"，彼此竞速、
+  // 还夹带重复/死代码。这里收口成唯一入口：所有失败信号都调用它。
+  //  - 单飞：同一次 playSong（requestId）内多个失败信号只跑一轮恢复，杜绝并发竞速。
+  //  - 有界：每轮最多 MAX_RECOVERY_ATTEMPTS 条 URL（当前源刷新 + 候选逐个），
+  //    每条失败即加入 failedUrls，tryUrlSequential 下一轮自动跳过，天然收敛。
+  //  - 复用既有策略：tryUrlSequential 内部已含硬失败拉黑、插件限流、播客禁换源。
+  const MAX_RECOVERY_ATTEMPTS = 4
+  const recoverPlayback = async (reason: string, resumeAt?: number): Promise<void> => {
+    if (currentPlayRequestId !== requestId) return
+    if (_isThrottled()) return
+    if (recoveryInFlightRequestId === requestId) return
+    recoveryInFlightRequestId = requestId
+    try {
+      let attempt = 0
+      while (attempt < MAX_RECOVERY_ATTEMPTS) {
+        if (currentPlayRequestId !== requestId) return
+        // 第一轮允许重试当前源（相当于刷新直链）；之后只走候选源。
+        const result = await tryUrlSequential(song, {
+          failedUrls,
+          skipCurrent: attempt > 0
+        })
+        attempt++
+        if (currentPlayRequestId !== requestId) return
+        if (!result) break
+        failedUrls.add(result.url)
+        if (result.song.source !== song.source) {
+          replaceCurrentSongInList(song, result.song)
+          applyCurrentSongInfo(result.song)
+          song = result.song
+          MessagePlugin.success(`已自动切换到 ${result.song.source} 源播放`)
+          mediaSessionController.updateMetadata(
+            {
+              title: song.name,
+              artist: song.singer,
+              album: song.albumName || '未知专辑',
+              artworkUrl: song.img || defaultCoverImg
+            },
+            song
+          )
+        }
+        try {
+          await applyPlayableUrl(result.url, resumeAt)
+        } catch {
+          continue // 这条 URL 加载失败，换下一个候选
+        }
+        if (currentPlayRequestId !== requestId) return
+        broadcastChangeSongIfNeeded(result.url)
+        if (options.shouldAutoStart && !options.shouldAutoStart()) {
+          mediaSessionController.updatePlaybackState('paused')
+          return
+        }
+        try {
+          const started = start()
+          if (started && typeof (started as any).then === 'function') await started
+          userInfo.value.wasPlaying = true
+          mediaSessionController.updatePlaybackState('playing')
+          armStallWatchdog(song, result.url)
+          return // 恢复成功
+        } catch {
+          continue // 起播失败，换下一个候选
+        }
+      }
+      if (currentPlayRequestId !== requestId) return
+      tryAutoNext(reason)
+    } finally {
+      if (recoveryInFlightRequestId === requestId) recoveryInFlightRequestId = 0
+    }
+  }
+
   try {
     // 清理之前的监听器
     if (Audio.value.audio) {
@@ -863,7 +998,9 @@ const playSong = async (
     // 不，UI 应该立即响应。
     // 收藏锚点 = 用户选中的这首歌。后续自动换源只会再次调 applyCurrentSongInfo 换播放实例，
     // 锚点保持不变：底栏星号与收藏增删始终跟随这里选中的身份，不随音源漂移。
-    globalPlayStatus.setFavoriteAnchor(song)
+    // 启动恢复时队列项可能是换源后的实例（带 _originalIdentity），用它把锚点还原到原曲，
+    // 否则重启后收藏状态会漂到实际播放的那个音源。
+    globalPlayStatus.setFavoriteAnchor((song as any)._originalIdentity || song)
     applyCurrentSongInfo(song)
     // 进度条立即归零，不等 URL 获取完成
     setCurrentTime(0)
@@ -943,66 +1080,10 @@ const playSong = async (
         broadcastChangeSongIfNeeded(urlToPlay)
       } catch (e) {
         if (currentPlayRequestId !== requestId) return
-        // 原源 URL 获取成功但播放/加载失败
+        // 原源 URL 获取成功但加载/就绪失败 → 走统一恢复仲裁器。
         console.warn('Audio ready failed, trying auto switch...', e)
         failedUrls.add(urlToPlay)
-        // 分步自愈：刷新当前源 URL 一次，不行再试候选
-        let refreshed = false
-        try {
-          const newUrl = await getSongRealUrl(toRaw(song))
-          if (newUrl && typeof newUrl === 'string' && !newUrl.includes('error') && newUrl !== urlToPlay && !failedUrls.has(newUrl) && (await verifyPlayableUrl(newUrl))) {
-            refreshed = true
-            const playableNewUrl = await applyPlayableUrl(newUrl)
-            if (Audio.value.audio && !isNativePlaybackActive()) {
-              await waitForAudioReady(Audio.value.audio)
-              if (currentPlayRequestId !== requestId) return
-              broadcastChangeSongIfNeeded(playableNewUrl)
-            } else if (isNativePlaybackActive()) {
-              if (currentPlayRequestId !== requestId) return
-              broadcastChangeSongIfNeeded(playableNewUrl)
-            }
-          }
-        } catch {}
-        if (!refreshed) {
-          // 官方播客不走音乐候选换源
-          if (isPodcastProgram(song)) throw e
-          // 候选顺序回退
-          try {
-            const candidates = await getCandidateSongs(song, userInfo.value, { lightweight: true, silent: true })
-            if (currentPlayRequestId !== requestId) return
-            let switched = false
-            for (const item of candidates) {
-              if (currentPlayRequestId !== requestId) return
-              if (!isSameSongCandidate(item, song)) continue
-              try {
-                const url = await getSongRealUrl(toRaw(item))
-                if (url && typeof url === 'string' && !url.includes('error') && url !== urlToPlay && !failedUrls.has(url) && (await verifyPlayableUrl(url))) {
-                  switched = true
-                  const playableCandidateUrl = await applyPlayableUrl(url)
-                  if (Audio.value.audio && !isNativePlaybackActive()) {
-                    await waitForAudioReady(Audio.value.audio)
-                  }
-                  if (currentPlayRequestId !== requestId) return
-                  replaceCurrentSongInList(song, item)
-                  applyCurrentSongInfo(item)
-                  broadcastChangeSongIfNeeded(playableCandidateUrl)
-                  MessagePlugin.success(`已自动切换到 ${item.source} 源播放`)
-                  mediaSessionController.updateMetadata({
-                    title: item.name,
-                    artist: item.singer,
-                    album: item.albumName || '未知专辑',
-                    artworkUrl: item.img || defaultCoverImg
-                  }, item)
-                  break
-                }
-              } catch {}
-            }
-            if (!switched) throw e
-          } catch (switchError) {
-            if (currentPlayRequestId !== requestId) return
-            throw switchError
-          }
-        }
+        await recoverPlayback('加载失败')
       }
     } else {
       isLoadingSong.value = false
@@ -1036,49 +1117,17 @@ const playSong = async (
         .then(() => markPlaybackTiming('play-resolved'))
         .catch(() => {})
     }
-    playbackStart
-      .catch(async () => {
-        if (currentPlayRequestId !== requestId) return
-        failedUrls.add(urlToPlay)
-        const fallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
-        if (currentPlayRequestId !== requestId) return
-          if (fallback && fallback.url !== urlToPlay) {
-            if (fallback.song.source !== song.source) {
-              replaceCurrentSongInList(song, fallback.song)
-              applyCurrentSongInfo(fallback.song)
-              MessagePlugin.success(`已自动切换到 ${fallback.song.source} 源播放`)
-            }
-            await applyPlayableUrl(fallback.url)
-            start().catch(async () => {
-              if (currentPlayRequestId !== requestId) return
-              failedUrls.add(fallback.url)
-              const nextFallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
-            if (currentPlayRequestId !== requestId) return
-            if (nextFallback && nextFallback.url !== fallback.url) {
-              if (nextFallback.song.source !== song.source) {
-                replaceCurrentSongInList(song, nextFallback.song)
-                applyCurrentSongInfo(nextFallback.song)
-                MessagePlugin.success(`已自动切换到 ${nextFallback.song.source} 源播放`)
-              }
-              await applyPlayableUrl(nextFallback.url)
-              start().catch(() => {
-                if (currentPlayRequestId !== requestId) return
-                tryAutoNext('所有源均无法播放')
-              })
-              return
-            }
-            tryAutoNext('所有源均无法播放')
-          })
-          return
-        }
-        tryAutoNext('所有源均无法播放')
-      })
+    playbackStart.catch(() => {
+      if (currentPlayRequestId !== requestId) return
+      failedUrls.add(urlToPlay)
+      void recoverPlayback('起播失败')
+    })
     // 起播后布防失速看门狗：mpv 自称 playing 却不推进真实进度时自愈/切下一首。
     armStallWatchdog(song, urlToPlay)
-    // 启动后预加载下一首到副槽（无感过渡准备），失败静默忽略
-    if (!isNativePlaybackActive()) {
-      void prefetchNextTrack()
-    }
+    // 启动后预取下一首：<audio> 模式写副槽做无感过渡；mpv 模式没有双槽，
+    // 但同样需要把下一首直链提前解析好写进内存缓存，否则每次推进都要现场
+    // 重解析一次在线直链，解析慢/失败就表现为"下一首迟迟不来"。
+    void prefetchNextTrack()
 
     // 只有在确定是当前请求时，才挂载错误监听
     currentPlaybackPlayingHandler = () => {
@@ -1114,112 +1163,13 @@ const playSong = async (
         currentPlaybackErrorHandler = null
         if (Audio.value.audio?.src) failedUrls.add(Audio.value.audio.src)
         if (urlToPlay) failedUrls.add(urlToPlay)
+        // 中途链接失效：记住当前进度，刷新/换链后从断点续播而不是从 0 重放。
+        const resumeAt = Math.max(0, Number(Audio.value.currentTime) || 0)
 
         if (_isThrottled()) return
 
-        // Stage 1: 刷新当前 URL（可能只是临时 CDN 抖动）
-        try {
-          const refreshedUrl = await getSongRealUrl(toRaw(song))
-          if (currentPlayRequestId !== requestId) return
-          if (refreshedUrl && typeof refreshedUrl === 'string' && !refreshedUrl.includes('error') && !failedUrls.has(refreshedUrl) && (await verifyPlayableUrl(refreshedUrl))) {
-            const playableRefreshedUrl = await applyPlayableUrl(refreshedUrl)
-            if (isNativePlaybackActive() || (Audio.value.audio && Audio.value.audio.src !== playableRefreshedUrl)) {
-              if (Audio.value.audio && !isNativePlaybackActive()) {
-                await waitForAudioReady(Audio.value.audio)
-              }
-              if (currentPlayRequestId !== requestId) return
-              if (options.shouldAutoStart && !options.shouldAutoStart()) {
-                mediaSessionController.updatePlaybackState('paused')
-                return
-              }
-              start().catch(async () => {
-                if (currentPlayRequestId !== requestId) return
-                failedUrls.add(refreshedUrl)
-                const fallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
-                if (currentPlayRequestId !== requestId) return
-                if (fallback && fallback.url !== refreshedUrl) {
-                  if (fallback.song.source !== song.source) {
-                    replaceCurrentSongInList(song, fallback.song)
-                    applyCurrentSongInfo(fallback.song)
-                    MessagePlugin.success(`已自动切换到 ${fallback.song.source} 源播放`)
-                  }
-                  await applyPlayableUrl(fallback.url)
-                  start().catch(() => {
-                    if (currentPlayRequestId !== requestId) return
-                    tryAutoNext('所有自动换源尝试均失败')
-                  })
-                  return
-                }
-                tryAutoNext('所有自动换源尝试均失败')
-              })
-              return
-            }
-          }
-        } catch {}
-        if (currentPlayRequestId !== requestId) return
-
-        // Stage 2: 候选顺序回退
-        if (_isThrottled()) return
-        try {
-          const candidates = await getCandidateSongs(song, userInfo.value)
-          if (currentPlayRequestId !== requestId) return
-          if (_isThrottled()) return
-
-          for (const item of candidates) {
-            if (currentPlayRequestId !== requestId) return
-            if (!isSameSongCandidate(item, song)) continue
-            try {
-              const url = await getSongRealUrl(toRaw(item))
-              if (url && typeof url === 'string' && !url.includes('error') && !failedUrls.has(url) && (await verifyPlayableUrl(url))) {
-                if (!isNativePlaybackActive() && Audio.value.audio && Audio.value.audio.src === url) {
-                  isLoadingSong.value = false
-                  tryAutoNext('所有自动换源尝试均失败')
-                  return
-                }
-                const playableCandidateUrl = await applyPlayableUrl(url)
-                if (Audio.value.audio && !isNativePlaybackActive()) {
-                  await waitForAudioReady(Audio.value.audio)
-                }
-                if (currentPlayRequestId !== requestId) return
-                replaceCurrentSongInList(song, item)
-                applyCurrentSongInfo(item)
-                MessagePlugin.success(`已自动切换到 ${item.source} 源播放`)
-                if (options.shouldAutoStart && !options.shouldAutoStart()) {
-                  mediaSessionController.updatePlaybackState('paused')
-                  return
-                }
-                start().catch(async () => {
-                    if (currentPlayRequestId !== requestId) return
-                    failedUrls.add(playableCandidateUrl)
-                    const fallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
-                    if (currentPlayRequestId !== requestId) return
-                    if (fallback && fallback.url !== url) {
-                      if (fallback.song.source !== song.source) {
-                        replaceCurrentSongInList(song, fallback.song)
-                        applyCurrentSongInfo(fallback.song)
-                        MessagePlugin.success(`已自动切换到 ${fallback.song.source} 源播放`)
-                      }
-                      await applyPlayableUrl(fallback.url)
-                      start().catch(() => {
-                        if (currentPlayRequestId !== requestId) return
-                        tryAutoNext('所有自动换源尝试均失败')
-                      })
-                      return
-                    }
-                    tryAutoNext('所有自动换源尝试均失败')
-                  })
-                return // 成功
-              }
-            } catch {}
-          }
-          // 所有候选都失败
-          isLoadingSong.value = false
-          tryAutoNext('所有自动换源尝试均失败')
-        } catch (e) {
-          if (currentPlayRequestId !== requestId) return
-          isLoadingSong.value = false
-          tryAutoNext('候选搜索失败')
-        }
+        // 统一恢复：带断点续播位置进入有界恢复仲裁器（刷新当前源 → 候选逐个）。
+        void recoverPlayback('播放错误', resumeAt)
     }
     if (Audio.value.audio && !isNativePlaybackActive()) {
       Audio.value.audio.addEventListener('error', currentPlaybackErrorHandler, { once: true })
@@ -1233,28 +1183,8 @@ const playSong = async (
     // mpv load/play 失败也必须进入同一条换源链；此前启动首首失败会直接落到暂停，
     // 因为 URL 加载异常发生在 start() 之前，绕过了后面的 play().catch。
     if (urlToPlay) failedUrls.add(urlToPlay)
-    try {
-      const fallback = await tryUrlSequential(song, { failedUrls, skipCurrent: true })
-      if (currentPlayRequestId !== requestId) return
-      if (fallback && fallback.url !== urlToPlay) {
-        if (fallback.song.source !== song.source) {
-          replaceCurrentSongInList(song, fallback.song)
-          applyCurrentSongInfo(fallback.song)
-          song = fallback.song
-        }
-        await applyPlayableUrl(fallback.url)
-        if (currentPlayRequestId !== requestId) return
-        const fallbackStart = start()
-        if (fallbackStart && typeof (fallbackStart as any).then === 'function') {
-          await fallbackStart
-        }
-        userInfo.value.wasPlaying = true
-        mediaSessionController.updatePlaybackState('playing')
-        return
-      }
-    } catch {}
     flushPlaybackTiming('failed')
-    tryAutoNext('播放歌曲失败')
+    await recoverPlayback('播放歌曲失败')
     isLoadingSong.value = false
   } finally {
     // 只有当前请求才能关闭 loading
@@ -1307,10 +1237,13 @@ const tryAutoNext = (reason: string) => {
     showPlaybackError(failureMessage)
     return
   }
-  if (list.value.length <= 1 || playMode.value === PlayMode.SINGLE || isLongProgramSong(songInfo.value)) {
+  if (list.value.length <= 1 || playMode.value === PlayMode.SINGLE) {
     showPlaybackError(failureMessage)
     return
   }
+  // 长音频/播客此前命中这里直接静默放弃，表现就是"中途断了就不播、也不跳"。
+  // 换源（搜音乐候选）仍在 tryUrlSequential 里对播客禁用，不会把节目当歌乱跳；
+  // 这里只是推进播放队列到下一项，对长节目同样应该继续走下去。
   const limit = getAutoNextLimit()
   showPlaybackError(`自动跳过当前歌曲：原因：${reason}`)
   // 对齐 Electron：允许有限次自动跳过，但不是无限连跳。
@@ -1510,7 +1443,12 @@ const prefetchNextTrack = async (): Promise<void> => {
 
 /** 设置副槽并写入内存缓存 */
 function _setPrefetchSlot(song: SongList, url: string): void {
-  controlAudio.setSecondaryUrl(url)
+  // 副槽是 <audio> 双槽无感过渡用的；mpv 模式没有副槽，写了反而会让隐藏
+  // audio 元素去真实加载一个直链，白白多一次网络请求甚至触发 error 事件。
+  // mpv 模式只需把 URL 放进内存/持久缓存供 playSong 复用。
+  if (!isNativePlaybackActive()) {
+    controlAudio.setSecondaryUrl(url)
+  }
   const key = `${song.source}:${song.songmid}`
   _prefetchedUrlCache.set(key, url)
   if (_prefetchedUrlCache.size > _PREFETCH_URL_CACHE_MAX) {
@@ -1864,13 +1802,12 @@ const initPlayback = async () => {
         (userInfo.value.lastPlaySongSource ? song.source === userInfo.value.lastPlaySongSource : true)
     )
     if (lastPlayedSong) {
-      // 记录退出时是否在播放：决定重启后是续播还是只恢复进度
-      const wasPlayingAtExit = Boolean(userInfo.value.wasPlaying)
       // UI 立即更新
       songInfo.value = { ...lastPlayedSong }
       Audio.value.isPlay = false
-      // 对齐安卓：保留退出时的播放状态，让"启动自动播放"设置消费；
-      // 恢复期间不写 wasPlaying = false，避免把"上次正在播"这个信息抹掉。
+      // 完全关闭后重启：只恢复上次的歌和进度，是否自动起播仅由「启动软件后自动播放」
+      // 决定，不再因为「退出时正在播」而续播（有意与安卓端行为不一致）。
+      // 缩小/恢复窗口不会重跑本初始化，所以暂停状态按运行时的 isPlay 原样保持。
       mediaSessionController.updatePlaybackState('paused')
 
       const restoreTime = Number(userInfo.value.currentTime || 0)
@@ -1881,7 +1818,7 @@ const initPlayback = async () => {
       }
 
       // 启动恢复复用正常点播链：缓存命中、当前源刷新、候选音源回退和失败后的自动下一首。
-      const shouldAutoStart = usePlaySetting().autoPlayOnLaunch || wasPlayingAtExit
+      const shouldAutoStart = usePlaySetting().autoPlayOnLaunch
       // 启动时插件 worker 可能还没完全预热，第一次 URL 解析可能失败。
       // 加一次延迟重试，让 sidecar 初始化完成后再试。
       try {

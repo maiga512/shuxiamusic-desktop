@@ -78,6 +78,15 @@ let driftTimer: ReturnType<typeof setTimeout> | null = null
 let lastDriftAt = 0
 const DRIFT_INTERVAL_MS = 5000
 
+// macOS CoreAudio AO 静默死亡恢复:系统默认输出设备切换 / 蓝牙连接断开 /
+// coreaudiod 重启 / 睡眠唤醒后,mpv 的音频输出会哑掉但解码照常推进。监听
+// devicechange,防抖后让 mpv 重建 AO(aid 循环),音频随即回到当前默认设备。
+let reloadingAudioOutput = false
+let lastAudioReloadAt = 0
+let deviceChangeTimer: ReturnType<typeof setTimeout> | null = null
+const AUDIO_RELOAD_COOLDOWN_MS = 1500
+const DEVICE_CHANGE_DEBOUNCE_MS = 800
+
 let audioStoreRef: any = null
 export const attachNativePlaybackStore = (store: any) => {
   audioStoreRef = store
@@ -223,6 +232,39 @@ export const isNativePlaybackAvailable = (): boolean => backend === 'mpv'
 
 export const isNativePlaybackActive = (): boolean =>
   backend === 'mpv' && Boolean(currentUrl)
+
+// 让 mpv 重建音频输出(AO),从 macOS CoreAudio 静默死亡中恢复。
+// 冷却 + 单飞:短时间内的多次 devicechange(蓝牙切换常连发)只重建一次,
+// 避免反复拆装音频链造成可听的断断续续。失败软处理,绝不冒充播放错误。
+const reloadNativeAudioOutput = async (): Promise<void> => {
+  const api = mpvApi()
+  if (!api?.reloadAudioOutput || !isNativePlaybackActive()) return
+  if (reloadingAudioOutput) return
+  const now = Date.now()
+  if (now - lastAudioReloadAt < AUDIO_RELOAD_COOLDOWN_MS) return
+  reloadingAudioOutput = true
+  lastAudioReloadAt = now
+  try {
+    await api.reloadAudioOutput()
+    // 重建期间 mpv 时钟未停,这里对齐一次本地时钟,避免进度跳动。
+    await syncClockFromMpv()
+  } catch (error) {
+    console.warn('[nativePlayback] 重建音频输出失败:', error)
+  } finally {
+    reloadingAudioOutput = false
+  }
+}
+
+// devicechange 防抖:系统切换默认设备 / 蓝牙连断会瞬间连发多次事件,
+// 等设备拓扑稳定后再重建一次 AO。
+const scheduleAudioReload = () => {
+  if (!isNativePlaybackActive()) return
+  if (deviceChangeTimer) clearTimeout(deviceChangeTimer)
+  deviceChangeTimer = setTimeout(() => {
+    deviceChangeTimer = null
+    void reloadNativeAudioOutput()
+  }, DEVICE_CHANGE_DEBOUNCE_MS)
+}
 
 const shouldUseNativePlayback = (): boolean => backend === 'mpv'
 
@@ -449,9 +491,25 @@ const installListeners = () => {
     if (!isNativePlaybackActive()) return
     void syncClockFromMpv()
     if (clockPlaying) startLocalClock()
+    // 睡眠唤醒后 CoreAudio AO 常已失效,主动重建一次。
+    void reloadNativeAudioOutput()
   }
   window.addEventListener('ceru-wake', onWake)
   listenerCleanups.push(() => window.removeEventListener('ceru-wake', onWake))
+
+  // 监听音频设备拓扑变化(蓝牙连断、插拔、coreaudiod 重启),防抖后重建 AO。
+  const mediaDevices = navigator?.mediaDevices
+  if (mediaDevices?.addEventListener) {
+    const onDeviceChange = () => scheduleAudioReload()
+    mediaDevices.addEventListener('devicechange', onDeviceChange)
+    listenerCleanups.push(() => {
+      mediaDevices.removeEventListener('devicechange', onDeviceChange)
+      if (deviceChangeTimer) {
+        clearTimeout(deviceChangeTimer)
+        deviceChangeTimer = null
+      }
+    })
+  }
 }
 
 const disableNativePlayback = (reason?: string) => {

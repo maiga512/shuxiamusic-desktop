@@ -1,3 +1,51 @@
+## 2026-10-11 桌面版 1.0.5 发布 + GitHub 自动更新通道打通
+
+- 诉求：确认桌面端能不能「从 GitHub 更新」、是不是要编译后上传。
+- 诊断：更新端点 `tauri.conf.json → plugins.updater.endpoints` 指向
+  `maiga512/shuxiamusic-release` 的 `desktop-latest/latest.json`，但该 Release/资产此前
+  不存在（HTTP 404），桌面端自动更新一直没真正可用。且 20:08 那次 1.0.4 构建没带
+  `TAURI_SIGNING_PRIVATE_KEY`，`.app.tar.gz` 与 `.sig` 不匹配（旧 sig 属于 15:58 包）。
+- 做了什么：
+  - `package.json` 版本 1.0.4 → **1.0.5**（`tauri.conf.json` 的 version 读 `../package.json`）。
+  - 带签名私钥重编译：`TAURI_SIGNING_PRIVATE_KEY=$(cat src-tauri/ceru-updater.key)` +
+    `..._PASSWORD=$(cat src-tauri/ceru-updater.key.password)` → `npm run tauri:build:macos`，
+    这次产出配套的 updater 签名（`树夏Music.app.tar.gz.sig`，含 `version:1.0.5`）。
+  - 发布到 `maiga512/shuxiamusic-release` 的 `desktop-latest` Release（公开），资产：
+    `latest.json`、`shuxiamusic_macos_aarch64.app.tar.gz`（更新包，ASCII 命名避免 URL 编码问题）、
+    `shuxiamusic_1.0.5_aarch64.dmg`（手动下载）。
+  - `latest.json` 只含 `darwin-aarch64` 平台（Apple Silicon）；pub_date/signature/url 齐全。
+- 验证：端点 `desktop-latest/latest.json` 现 HTTP 200、version=1.0.5；更新包 URL HTTP 200。
+  `/Applications` 当前装的是 1.0.4，低于 1.0.5，启动约 15 秒后台自检会命中（或设置→关于手动检查）。
+- 边界/后续：仅出了 **aarch64**，Intel Mac 不会收到更新（latest.json 无 darwin-x86_64）；
+  端点用固定 tag `desktop-latest`，每次发版需 `--clobber` 覆盖同名资产并重写 latest.json；
+  真机「检测到更新→下载→验签→重启安装」整条链仍需用户在 1.0.4 客户端上实走一遍确认。
+- 索引：本条为发布记录；版本号变更不改图结构，未重跑 graphify 全量产物。
+
+## 2026-10-11 换源收藏丢失收尾：收藏锚点持久化 + 列表心形按原曲判定
+
+- 诉求：QQ 收藏的歌，后台换源到酷我播放后，前台收藏状态丢了。用户要「前台只显示一个身份
+  （收藏/原曲那个），即便该源播不了也照常显示并能操作收藏；后台你自己换源播放就行」。
+- 背景：2026-10-09 已加「收藏锚点」`GlobalPlayStatus.player.favoriteAnchor`，但只活在内存、
+  只覆盖底栏星，两个缺口没补：①重启后持久化队列项已是换源后的酷我实例，`initPlayback→playSong`
+  把锚点设成酷我 → 掉星；②播放队列列表 `SongVirtualList.vue` 的心形按队列项自身
+  `source:songmid` 判定，换源项显示未收藏。
+- 改动（surgical，三处）：
+  - `src/utils/audio/globaPlayList.ts`：新增 `stampOriginalIdentity(previousSong,nextSong)`，
+    `replaceCurrentSongInList` 换源替换队列项时把原收藏身份（source/songmid/hash/name/singer/
+    albumName/albumId/img；多次换源保留最早）盖到新项 `_originalIdentity`，随 `list`
+    `JSON.stringify` 落 `localStorage`。`playSong` 顶部改 `setFavoriteAnchor((song as any)._originalIdentity || song)`，
+    重启恢复时从队列项携带的原身份还原锚点。
+  - `src/components/Music/SongVirtualList.vue`：`favoriteSongKey` 与 `onToggleLike` 的
+    `favoriteSong` 优先用 `_originalIdentity` 规范化 → `isLiked` 命中原曲收藏键、增删喜欢
+    操作原收藏记录。新增 `displaySource(song)=_originalIdentity?.source||source`，列表音源
+    标签改用它 → 换源后的队列项仍显示原收藏音源（QQ），不显示后台实际播放音源（酷我）。
+- 不改：取消喜欢的队列移除 `evictUnlikedSongFromPlayback` 仍传当前队列项（换源后是酷我项，
+  命中正确、能切下一首）；`applyCurrentSongInfo` 仍按实际在播音源更新 songInfo/下载·音质 UI。
+- 验证：`npx vue-tsc --noEmit` 全量通过（exit 0）；`ReadLints` 两文件无诊断。重启后恢复锚点、
+  队列列表心形需桌面环境实播确认。
+- 索引：已更新 `AI_INDEX.md`（任务路由「收藏」行 + 维护日志）与 `TOP_GRAPH.md`
+  「Playback And Media」收藏锚点段；局部数据流改动，未重跑 graphify 全量产物。
+
 ## 2026-10-10 根治系统权限反复弹窗：adhoc → 稳定自签名证书签名
 
 - 现象/诉求：用户抱怨已授权的系统权限（「设备控制和数据访问」= 本地网络/DLNA 投屏查找设备、
@@ -330,7 +378,7 @@ Electron 对照：
    - `LocalUserDetail` 的 watch 不再把 currentTime 归零去重，进度变化按 3s 节流独立落盘。
 2. 播放音质：保留桌面逐档降级，但对齐安卓 `songDeclaresQuality` —— 歌曲声明了 types 时，未声明的档位不发请求，降级只在声明档位内进行；首选未声明时取"不超过首选的最高声明档"。
 3. 失败自动下一首：0ms → 5s（`AUTO_NEXT_ON_FAILURE_DELAY_MS`，对齐安卓/落雪），防止烂列表请求风暴。
-4. 换源：确定性失败（鉴权/额度/403/401/VIP/无版权）拉黑该源 120s（对齐安卓 `blockProvider`），换源循环跳过。
+4. 换源：确定性失败（鉴权/额度/403/401/VIP/无版权）只按「源+歌曲」维度短暂跳过 120s（结合落雪思路：不整源拉黑，避免一首版权歌把整个源封死 2 分钟），该源上的其它歌曲照常可用；回退链内跳过已失败的「源+歌」组合。
 5. 下载目录：设置页 `saveDirectories`/`resetDirectories` 会把 `downloadDir` 推给实际执行下载的 Node sidecar（新增 `download.setDownloadDir`）；`DirectorySettings.vue` 加载时也同步一次（启动校正）。
 
 验收：`npm run build`（含 vue-tsc）通过；sidecar `node --check` 通过；Graphify 增量 6742/14961/316。

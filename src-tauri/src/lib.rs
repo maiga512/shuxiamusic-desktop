@@ -1792,6 +1792,7 @@ pub fn run() {
             mpv_probe,
             mpv_set_audio_filters,
             mpv_get_state,
+            mpv_reload_audio_output,
             mpv_debug_hot_ping,
             mpv_shutdown,
             // Native audio
