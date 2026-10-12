@@ -12,7 +12,8 @@
   VERSION / NOTES    版本号与更新说明
   GITEE_TARGET_BRANCH 新建 Release 时打标签所依附的分支，默认 master
 
-没有令牌时直接跳过（exit 0），方便 Secret 还没配好时整条流水线不被卡住。
+没有令牌时直接报错退出（exit 1）。Gitee 是国内更新主通道，必须发布成功，
+不能静默跳过，否则国内用户收不到更新。
 """
 import json
 import os
@@ -33,8 +34,7 @@ NOTES = os.environ.get("NOTES", "树夏Music 桌面版更新")
 OUT = Path("release-assets")
 
 if not TOKEN:
-    print("未配置 GITEE_TOKEN，跳过 Gitee 发布。")
-    sys.exit(0)
+    sys.exit("::error::未配置 GITEE_TOKEN，无法发布到 Gitee。Gitee 是国内更新主通道，必须配置令牌。")
 if not REPO or "/" not in REPO:
     sys.exit(f"GITEE_REPOSITORY 无效（应为 owner/repo）：{REPO!r}")
 

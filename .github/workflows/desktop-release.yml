@@ -279,11 +279,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
 
-      # Gitee 侧与 GitHub 并行发布：更新器端点顺序 [Gitee, GitHub]，国内优先命中 Gitee。
-      # 未配置 GITEE_RELEASE_TOKEN 时脚本自动跳过（不报错）；万一 Gitee 上传失败也不拖垮
-      # 已完成的 GitHub 发布（continue-on-error），更新器会自动回退 GitHub。
-      - name: 发布到 Gitee desktop-latest（可选，缺令牌自动跳过）
-        continue-on-error: true
+      # Gitee 是国内用户的更新主通道（更新器端点顺序 [Gitee, GitHub]），必须发布成功。
+      # if: always() 确保即使上面的 GitHub 步骤失败，这一步仍然执行；不再 continue-on-error，
+      # Gitee 上传失败会让整个发布任务失败并报错（fail loud），而不是被静默跳过。
+      - name: 发布到 Gitee desktop-latest（必须成功，国内更新主通道）
+        if: ${{ always() }}
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
           GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
