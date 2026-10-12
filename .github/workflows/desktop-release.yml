@@ -269,6 +269,10 @@ jobs:
       - name: 发布到 desktop-latest（make_latest=false，安卓不受影响）
         uses: softprops/action-gh-release@v2
         with:
+          # 必须用 token 输入传 PAT：softprops v2 的 token 输入默认 ${{ github.token }}
+          # （Actions 自动令牌，只能写当前仓库），只设 env.GITHUB_TOKEN 不会覆盖它，
+          # 于是跨仓库写 shuxiamusic-release 时报 "Resource not accessible by integration"。
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
           repository: ${{ env.RELEASE_REPOSITORY }}
           tag_name: ${{ env.RELEASE_TAG }}
           name: 树夏Music 桌面版 v${{ needs.prepare.outputs.version }}
@@ -276,8 +280,6 @@ jobs:
           make_latest: false
           files: release-assets/**/*
           fail_on_unmatched_files: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
 
       # Gitee 是国内用户的更新主通道（更新器端点顺序 [Gitee, GitHub]），必须发布成功。
       # if: always() 确保即使上面的 GitHub 步骤失败，这一步仍然执行；不再 continue-on-error，
