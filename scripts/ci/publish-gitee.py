@@ -18,11 +18,18 @@
 import json
 import os
 import sys
+import time
+import tempfile
 import urllib.request
 import urllib.parse
 import urllib.error
 import uuid
 from pathlib import Path
+
+# 境外 GitHub 运行器上传大文件到 Gitee 常被限速导致 write timeout。
+# 多次重试 + 指数退避，并把 multipart 落盘后以文件流发送（不整包塞进内存）。
+UPLOAD_RETRIES = int(os.environ.get("GITEE_UPLOAD_RETRIES", "5"))
+UPLOAD_BACKOFF = float(os.environ.get("GITEE_UPLOAD_BACKOFF", "5"))
 
 API = "https://gitee.com/api/v5"
 TOKEN = os.environ.get("GITEE_TOKEN", "").strip()
@@ -67,27 +74,56 @@ def find_release():
 
 def upload(release_id, filepath: Path, upload_name: str):
     boundary = uuid.uuid4().hex
-    parts = []
-    parts.append(f"--{boundary}\r\nContent-Disposition: form-data; name=\"access_token\"\r\n\r\n{TOKEN}\r\n")
-    head = (
+    pre = (
+        f"--{boundary}\r\nContent-Disposition: form-data; name=\"access_token\"\r\n\r\n{TOKEN}\r\n"
         f"--{boundary}\r\n"
         f"Content-Disposition: form-data; name=\"file\"; filename=\"{upload_name}\"\r\n"
         f"Content-Type: application/octet-stream\r\n\r\n"
-    )
-    body = b"".join(p.encode() for p in parts)
-    body += head.encode() + filepath.read_bytes() + f"\r\n--{boundary}--\r\n".encode()
-    req = urllib.request.Request(
-        f"{API}/repos/{REPO}/releases/{release_id}/attach_files",
-        data=body,
-        method="POST",
-    )
-    req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+    ).encode()
+    post = f"\r\n--{boundary}--\r\n".encode()
+    content_length = len(pre) + filepath.stat().st_size + len(post)
+
+    # 把整个 multipart 落到临时文件，上传时按文件流发送，避免大文件撑爆内存，
+    # 同时每次重试都能从头重放同一份请求体。
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+        tmp.write(pre)
+        with filepath.open("rb") as src:
+            while True:
+                chunk = src.read(1024 * 1024)
+                if not chunk:
+                    break
+                tmp.write(chunk)
+        tmp.write(post)
+
+    url = f"{API}/repos/{REPO}/releases/{release_id}/attach_files"
+    last_err = None
     try:
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            info = json.loads(resp.read().decode())
-            print(f"  上传成功: {upload_name} -> {info.get('browser_download_url')}")
-    except urllib.error.HTTPError as e:
-        raise SystemExit(f"上传 {upload_name} 失败: {e.code} {e.read().decode(errors='replace')}")
+        for attempt in range(1, UPLOAD_RETRIES + 1):
+            with tmp_path.open("rb") as body:
+                req = urllib.request.Request(url, data=body, method="POST")
+                req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
+                req.add_header("Content-Length", str(content_length))
+                try:
+                    with urllib.request.urlopen(req, timeout=600) as resp:
+                        info = json.loads(resp.read().decode())
+                        print(f"  上传成功: {upload_name} -> {info.get('browser_download_url')}")
+                        return
+                except urllib.error.HTTPError as e:
+                    detail = e.read().decode(errors="replace")
+                    # 4xx 多半是鉴权/参数问题，重试没意义，直接失败。
+                    if e.code < 500:
+                        raise SystemExit(f"上传 {upload_name} 失败: {e.code} {detail}")
+                    last_err = f"{e.code} {detail}"
+                except (urllib.error.URLError, TimeoutError, OSError) as e:
+                    last_err = str(e)
+            if attempt < UPLOAD_RETRIES:
+                wait = UPLOAD_BACKOFF * attempt
+                print(f"  上传 {upload_name} 第 {attempt} 次失败({last_err})，{wait:.0f}s 后重试")
+                time.sleep(wait)
+        raise SystemExit(f"上传 {upload_name} 失败：重试 {UPLOAD_RETRIES} 次仍超时/出错，最后错误：{last_err}")
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
 
 manifest = Path("release-assets-gitee") / "latest.json"
