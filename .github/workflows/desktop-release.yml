@@ -6,9 +6,11 @@ name: Desktop Release
 # 因此本工作流发布时必须 make_latest=false，绝不能抢走“最新 Release”指针，
 # 否则安卓的 AppUpdateManager 会拉到桌面 Release 而更新失败。
 #
-# 双平台发布：桌面同时发到 Gitee 的 songsong2020/shuxiamusic-desktop-release（公开，
-# 固定标签 desktop-latest）。tauri.conf.json 的更新器端点顺序为 [Gitee, GitHub]，
-# 国内优先命中 Gitee，连不上自动回退 GitHub。Gitee 发布需要 Secret: GITEE_RELEASE_TOKEN。
+# Gitee 通道（更新器端点顺序 [Gitee, GitHub]，国内优先命中 Gitee）：全部走本机直传
+# （scripts/ci/publish-gitee-local.sh，令牌在 ~/.config/ceru/gitee_token）——GitHub 境外
+# runner 跨境传 Gitee 被限速，大文件 80+ 分钟级卡死，CI 不再上传 Gitee。
+# 本工作流只负责 GitHub 侧（desktop-latest + 版本化 Release）；CI 构建完成后在本机
+# 执行 publish-gitee-local.sh 发布 Gitee 并同步发布中心首页版本。
 
 on:
   workflow_dispatch:
@@ -311,28 +313,20 @@ jobs:
           files: release-assets-versioned/**/*
           fail_on_unmatched_files: true
 
-      # Gitee 是国内用户的更新主通道（更新器端点顺序 [Gitee, GitHub]），必须发布成功。
-      # if: always() 确保即使上面的 GitHub 步骤失败，这一步仍然执行；不再 continue-on-error，
-      # Gitee 上传失败会让整个发布任务失败并报错（fail loud），而不是被静默跳过。
-      - name: 发布到 Gitee desktop-latest（必须成功，国内更新主通道）
-        if: ${{ always() }}
-        id: gitee-latest
-        env:
-          GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
-          GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
-          GITEE_RELEASE_TAG: ${{ env.GITEE_RELEASE_TAG }}
-          GITEE_TARGET_BRANCH: master
-          VERSION: ${{ needs.prepare.outputs.version }}
-          NOTES: ${{ needs.prepare.outputs.notes }}
-        run: python3 scripts/ci/publish-gitee.py
-
-      # 发布完成后同步发布中心首页（shuxiamusic-release）表格的「当前版本」。
-      # 只有 GitHub 和 Gitee 的 desktop-latest 都发布成功才更新，否则首页版本号不撒谎。
-      - name: 更新发布中心首页版本（shuxiamusic-release）
-        if: ${{ always() && steps.latest-github.outcome == 'success' && steps.gitee-latest.outcome == 'success' }}
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
-          GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
-          HUB_ROW: 树夏Music 桌面端
-          HUB_VERSION: ${{ needs.prepare.outputs.version }}
-        run: python3 scripts/ci/update-hub-readme.py
+      # ── Gitee 发布全部走本机直传（GitHub 境外 runner 跨境传 Gitee 被限速，大文件 80+ 分钟级卡死）──
+      # 本工作流只发 GitHub 侧。Gitee 侧请在 CI 构建完成后于本机执行（国内直连，几分钟传完，
+      # 发布 desktop-latest + 版本化 Release，并同步发布中心首页版本）：
+      #
+      #   gh run download <RUN_ID> -D /tmp/ceru-release/work
+      #   把 desktop-macos-arm64/、desktop-windows-x64/ 里的安装包+签名平铺进
+      #   /tmp/ceru-release/work/release-assets/
+      #   scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work <版本号> [更新说明]
+      #
+      # 令牌在本机 ~/.config/ceru/gitee_token（chmod 600），无需人工提供。
+      - name: Gitee 发布指引（本机直传，不走 CI 跨境上传）
+        run: |
+          echo "::notice::Gitee 发布走本机直传（CI 跨境上传限速，已不再执行）。"
+          echo "::notice::CI 构建完成后在本机执行："
+          echo "::notice::  1) gh run download ${{ github.run_id }} -D /tmp/ceru-release/work"
+          echo "::notice::  2) 把 desktop-macos-arm64/、desktop-windows-x64/ 产物平铺进 /tmp/ceru-release/work/release-assets/"
+          echo "::notice::  3) scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work ${{ needs.prepare.outputs.version }} \"${{ needs.prepare.outputs.notes }}\""

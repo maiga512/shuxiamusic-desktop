@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Gitee 本地直连兜底发布：GitHub 境外 runner 往 Gitee 传大文件被跨境限速超时时，
-# 用本机（国内直连 Gitee）把 CI 已编好的产物发布到 Gitee 的 desktop-latest，
-# 保证国内用户正常收到更新。正常发布仍走 workflow_dispatch 流水线（令牌在
-# GITEE_RELEASE_TOKEN secret 里，不需要人工提供）；本脚本只用于流水线卡住时兜底。
+# Gitee 发布脚本（正式主路径）：Gitee 上传全部走本机直连。
+# GitHub 境外 runner 跨境传 Gitee 被限速，大文件 80+ 分钟级卡死，
+# CI 工作流只负责 GitHub 侧（desktop-latest + 版本化 Release）；
+# CI 构建完成后在本机运行本脚本发布 Gitee（desktop-latest + 版本化 Release），
+# 并同步发布中心首页版本（update-hub-readme.py，GitHub + Gitee 镜像）。
+# 令牌从 ~/.config/ceru/gitee_token 读取（兜底 ~/.gitee-token），无需每次再提供。
 #
 # 前提：工作目录 $1 下有一个平铺的安装件目录：
 #   release-assets/
@@ -36,8 +38,8 @@ if [ ! -f "$TOKEN_FILE" ]; then
   exit 1
 fi
 
-cd "$WORK_DIR"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$WORK_DIR"
 
 if [ ! -f release-assets-gitee/latest.json ]; then
   echo "未检测到 release-assets-gitee/latest.json，自动生成..."
@@ -55,9 +57,20 @@ VERSION="$VERSION" \
 NOTES="$NOTES" \
 python3 "$SCRIPT_DIR/publish-gitee.py"
 
+# 发布中心首页版本同步（GitHub + Gitee 镜像）：GH 令牌从 gh CLI 取；失败只告警不阻断。
+if command -v gh >/dev/null 2>&1 && [ -n "$(gh auth token 2>/dev/null || true)" ]; then
+  echo "同步发布中心首页版本..."
+  GH_TOKEN="$(gh auth token)" \
+  GITEE_TOKEN="$(tr -d '[:space:]' < "$TOKEN_FILE")" \
+  HUB_VERSION="$VERSION" \
+  HUB_ROW="树夏Music 桌面端" \
+    python3 "$SCRIPT_DIR/update-hub-readme.py" \
+    || echo "警告：发布中心首页版本同步失败（可稍后手动重跑 update-hub-readme.py）"
+fi
+
 echo ""
 echo "更新器清单校验（应看到 version $VERSION 且 URL 指向 Gitee）："
-curl -fsS --max-time 30 \
+curl -fsSL --max-time 30 \
   "https://gitee.com/songsong2020/shuxiamusic-desktop-release/releases/download/desktop-latest/latest.json" \
   | head -c 400
 echo ""
