@@ -121,13 +121,33 @@ macOS CoreAudio AO silent-death recovery: after a default-output-device switch,
 Bluetooth connect/disconnect, `coreaudiod` restart, or sleep/wake, MPV's audio
 output can go silent while decoding and the clock keep advancing. The frontend
 `nativePlayback.ts` listens to `navigator.mediaDevices` `devicechange` (debounced
-800ms) and the existing `ceru-wake` event, then calls the `mpv_reload_audio_output`
-command, which cycles `aid` (`no` -> restore) in `mpv_player.rs` to tear down and
-rebuild the whole audio chain (AO included) without reopening the network stream.
-The reload is single-flight with a 1.5s cooldown and fails soft — an AO rebuild
-error never surfaces as a playback error, so it does not trigger source switch or
-auto-next. It does not cover a default-device change that neither adds nor removes
-a device (no `devicechange` signal reaches the WebView).
+800ms) and the `app-system-wake` event — emitted by `system_power.rs`, which
+subscribes to `NSWorkspaceDidWakeNotification` on the Rust main thread — then
+calls the `mpv_reload_audio_output` command, which cycles `aid` (`no` -> restore)
+in `mpv_player.rs` to tear down and rebuild the whole audio chain (AO included)
+without reopening the network stream. The reload is single-flight with a 1.5s
+cooldown and fails soft — an AO rebuild error never surfaces as a playback error,
+so it does not trigger source switch or auto-next.
+
+Dock-bar volume uses a perceptual power curve: the slider keeps its displayed
+percentage (0–100) as the app-volume domain in `nativePlayback.ts`, and
+`sliderToMpvVolume(p) = p²/100` maps it onto mpv's `volume` property before
+crossing IPC (100 = device full scale, i.e. the full level of whatever the
+system volume is set to). 100% = full system level, 50% = mpv 25 (-12 dB,
+roughly half perceived loudness), 0% = silent. The earlier linear 1:1 mapping
+only cut -6 dB from 100%→50%, which is nearly inaudible — the slider's upper
+half felt like it was not being controlled by the real percentage. Both the
+frontend IPC merge (`flushMpvVolumeIpc`) and the Rust `mpv_set_volume` early
+return now dedupe with a 0.25 threshold in the mpv-volume domain. DLNA volume
+sync still sends the raw slider percentage.
+
+Window-visibility wake
+(`ceru-wake`: minimize/restore, hide/show, 15s idle wake) must NOT trigger the
+reload: it only re-syncs the local progress clock. Rebuilding the AO on every
+window restore caused an audible pause at click-to-restore (AO teardown gap), so
+the rebuild is gated strictly on real system sleep/wake and device changes. It
+does not cover a default-device change that neither adds nor removes a device (no
+`devicechange` signal reaches the WebView).
 
 At application exit, `src-tauri/src/lib.rs` routes `RunEvent::ExitRequested` and `Exit` to `mpv_shutdown`. The Tauri adapter takes the Rust-owned MPV `Child` out of the runtime state, releases the runtime lock, then calls `kill + wait` directly; exit does not depend on an MPV IPC `quit` response. `closeToTray` still hides the main window and intentionally leaves playback alive.
 

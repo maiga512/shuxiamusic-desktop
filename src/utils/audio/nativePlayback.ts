@@ -279,6 +279,15 @@ const stopVolumeFade = () => {
   }
 }
 
+// 感知音量曲线：滑条百分比 -> mpv 音量值(0-100，100=设备满刻度，即系统音量档位的完整音量)。
+// 映射为 p²/100：100%→100(满)，50%→25(-12dB，听感约一半响度)，0%→0。
+// 若按线性 1:1 映射，100%→50% 只有 -6dB、人耳几乎无感，滑条上半段"按百分比控制"
+// 完全失真——这正是"音量没有按真的百分之多少来控制"的根因。
+const sliderToMpvVolume = (percent: number): number => {
+  const p = Math.max(0, Math.min(100, percent))
+  return (p * p) / 100
+}
+
 let lastSentMpvVolume = Number.NaN
 let volumeIpcBusy = false
 let pendingMpvVolume: number | null = null
@@ -291,7 +300,8 @@ const flushMpvVolumeIpc = async () => {
     while (pendingMpvVolume !== null) {
       const send = pendingMpvVolume
       pendingMpvVolume = null
-      if (Number.isFinite(lastSentMpvVolume) && Math.abs(lastSentMpvVolume - send) < 0.5) {
+      // 去抖按 mpv 音量域(0-100)比较：曲线后低音量段每 1% 滑条只动 ~0.2，阈值取 0.25
+      if (Number.isFinite(lastSentMpvVolume) && Math.abs(lastSentMpvVolume - send) < 0.25) {
         continue
       }
       lastSentMpvVolume = send
@@ -308,12 +318,14 @@ const flushMpvVolumeIpc = async () => {
 const applyMpvVolumeNow = async (volume: number, immediate = false) => {
   const next = Math.max(0, Math.min(100, volume))
   currentMpvVolume = next
-  pendingMpvVolume = next
+  // 展示/状态保持滑条百分比域，真正下发给 mpv 的是感知曲线值
+  const mpvVolume = sliderToMpvVolume(next)
+  pendingMpvVolume = mpvVolume
   if (immediate) {
     pendingMpvVolume = null
-    lastSentMpvVolume = next
+    lastSentMpvVolume = mpvVolume
     const api = mpvApi()
-    if (api?.setVolume) await api.setVolume(next)
+    if (api?.setVolume) await api.setVolume(mpvVolume)
     return
   }
   await flushMpvVolumeIpc()
@@ -487,15 +499,27 @@ const installListeners = () => {
     api.onEnded?.(handleEnded),
     api.onError?.(handleError)
   ].filter((item): item is () => void => typeof item === 'function')
-  const onWake = () => {
+  // 窗口可见性唤醒（最小化/恢复、隐藏/显示主窗口）与 15s 闲置唤醒：只对齐进度时钟。
+  // 绝不重建 MPV 音频链——窗口级唤醒与 CoreAudio 存活状态无关，若在每次恢复窗口时
+  // 拆装 AO，会产生可听见的停顿（最小化后恢复窗口声音"卡一下"的根因）。
+  const onWindowWake = () => {
     if (!isNativePlaybackActive()) return
     void syncClockFromMpv()
     if (clockPlaying) startLocalClock()
-    // 睡眠唤醒后 CoreAudio AO 常已失效,主动重建一次。
+  }
+  window.addEventListener('ceru-wake', onWindowWake)
+  listenerCleanups.push(() => window.removeEventListener('ceru-wake', onWindowWake))
+
+  // 真实系统睡眠/唤醒（Rust 侧 NSWorkspace didWake 派发的 app-system-wake）：
+  // 唤醒后 CoreAudio AO 常已静默失效，主动重建一次音频输出。
+  const onSystemWake = () => {
+    if (!isNativePlaybackActive()) return
+    void syncClockFromMpv()
+    if (clockPlaying) startLocalClock()
     void reloadNativeAudioOutput()
   }
-  window.addEventListener('ceru-wake', onWake)
-  listenerCleanups.push(() => window.removeEventListener('ceru-wake', onWake))
+  const offSystemWake = (window as any).api?.app?.onSystemWake?.(onSystemWake)
+  if (typeof offSystemWake === 'function') listenerCleanups.push(offSystemWake)
 
   // 监听音频设备拓扑变化(蓝牙连断、插拔、coreaudiod 重启),防抖后重建 AO。
   const mediaDevices = navigator?.mediaDevices
@@ -633,7 +657,7 @@ export const nativeLoad = async (url: string, options: NativeLoadOptions = {}): 
       userAgent: options.userAgent || media.userAgent,
       autoplay: Boolean(options.autoplay),
       startTimeSeconds: options.startTime || 0,
-      volume: options.autoplay ? 0 : desiredVolume,
+      volume: options.autoplay ? 0 : sliderToMpvVolume(desiredVolume),
       playbackRate: options.playbackRate || lastPlaybackRate || 1
     })) as NativeSnapshot
     currentGeneration = Number(snapshot?.generation || currentGeneration || 0)

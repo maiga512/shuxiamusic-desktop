@@ -234,6 +234,43 @@ fn ax_is_trusted(prompt: bool) -> bool {
     }
 }
 
+/**
+ * 系统授权提示「每个 App 版本最多弹一次」。
+ *
+ * 每次重新打包签名都会变化，macOS TCC 会把新签名当成「新 App」，之前的辅助功能
+ * 授权失效、系统提示必然重弹——这是系统行为，代码无法绕过。为避免同一版本
+ * 每次启动都弹（用户点过拒绝/忽略后尤其骚扰），把「本版本已弹过」记到
+ * app_data_dir；后续启动只静默后台重试，用户可在快捷键设置里手动重新请求。
+ */
+#[cfg(target_os = "macos")]
+fn ax_prompt_state_path(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|dir| dir.join("ax_prompt_state.json"))
+}
+
+#[cfg(target_os = "macos")]
+fn ax_prompted_for_version(app: &tauri::AppHandle) -> bool {
+    let Some(path) = ax_prompt_state_path(app) else {
+        return false
+    };
+    std::fs::read_to_string(path)
+        .map(|s| s.trim() == app.package_info().version.to_string())
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "macos")]
+fn mark_ax_prompted(app: &tauri::AppHandle) {
+    let Some(path) = ax_prompt_state_path(app) else {
+        return
+    };
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let _ = std::fs::write(path, app.package_info().version.to_string());
+}
+
 static AX_RETRY_STARTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// 媒体键 tap 注册失败（几乎都是缺辅助功能权限）时的恢复流程：
@@ -322,11 +359,20 @@ pub fn apply_global_hotkeys(app: &tauri::AppHandle) -> Value {
             &format!("accessibility_trusted={trusted} media_keys_registered={media_keys_ok}"),
         );
         if !media_keys_ok {
-            let _ = ax_is_trusted(true);
-            now_playing::log_media_event(
-                "hotkeys",
-                "媒体键注册失败（疑似缺辅助功能权限），已弹系统授权提示，授权后自动重试",
-            );
+            if ax_prompted_for_version(app) {
+                // 本版本已经弹过一次：不再骚扰，静默后台等用户去系统设置授权。
+                now_playing::log_media_event(
+                    "hotkeys",
+                    "媒体键注册失败（疑似缺辅助功能权限），本版本已弹过授权提示，静默等待授权（设置页可重新请求）",
+                );
+            } else {
+                let _ = ax_is_trusted(true);
+                mark_ax_prompted(app);
+                now_playing::log_media_event(
+                    "hotkeys",
+                    "媒体键注册失败（疑似缺辅助功能权限），已弹系统授权提示（每版本一次），授权后自动重试",
+                );
+            }
             spawn_ax_retry(app);
         }
     }
@@ -362,6 +408,31 @@ pub fn save_and_apply(app: &tauri::AppHandle, db: &Database, payload: Vec<Hotkey
         db.set_hotkeys(&payload);
     }
     apply_global_hotkeys(app)
+}
+
+/**
+ * 快捷键设置页：查询辅助功能权限状态；request=true 时重新弹系统授权对话框，
+ * 并在未授权时启动后台自动重试（用户授权后立即补注册媒体键，不用重启 App）。
+ * 非 macOS 平台恒为 true（媒体键由系统原生处理，无权限概念）。
+ */
+#[tauri::command]
+pub fn hotkeys_accessibility(app: tauri::AppHandle, request: bool) -> Result<bool, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let trusted = ax_is_trusted(request);
+        if request {
+            mark_ax_prompted(&app);
+        }
+        if !trusted {
+            spawn_ax_retry(&app);
+        }
+        Ok(trusted)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (app, request);
+        Ok(true)
+    }
 }
 
 #[cfg(test)]

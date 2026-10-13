@@ -24,9 +24,9 @@ memory when the index and graph already answer the question.
 
 | 端 | 说明 | 绝对路径 |
 | --- | --- | --- |
-| **Mac / 桌面端**（本仓库） | 树夏Music 桌面版，Tauri 2 + Rust + Vue 3 | `/Users/songsong/Movies/ceru-tauri` |
+| **Mac / 桌面端**（本仓库） | 树夏Music 桌面版，Tauri 2 + Rust + Vue 3 | `/Users/songsong/Movies/树夏Music-Desk-tauri` |
 | **安卓 / 车机端** | 树夏Music 移动与车机版，Kotlin + Jetpack Compose | `/Volumes/致钛 2T/shuxiamusic` |
-| **同步服务器（NAS）** | 三端共用的云同步后端，Node 服务，`@ceru/nas-sync-server` | `/Users/songsong/Movies/ceru-tauri/nas-sync-server` |
+| **同步服务器（NAS）** | 三端共用的云同步后端，Node 服务，`@ceru/nas-sync-server` | `/Users/songsong/Movies/树夏Music-Desk-tauri/nas-sync-server` |
 | Electron 旧版（只读参考） | 迁移前的 Electron 实现，行为对照用，**禁止修改** | `/Volumes/致钛 2T/CeruMusic` |
 
 改跨端行为（同步、收藏、歌单、播客、插件）时，Mac 与安卓两端要一起对齐，服务器契约以
@@ -34,9 +34,9 @@ memory when the index and graph already answer the question.
 
 ## Project Boundary
 
-- Active project: `/Users/songsong/Movies/ceru-tauri`（Mac 桌面端）
+- Active project: `/Users/songsong/Movies/树夏Music-Desk-tauri`（Mac 桌面端）
 - Android / 车机端: `/Volumes/致钛 2T/shuxiamusic`
-- 同步服务器 (NAS): `/Users/songsong/Movies/ceru-tauri/nas-sync-server`
+- 同步服务器 (NAS): `/Users/songsong/Movies/树夏Music-Desk-tauri/nas-sync-server`
 - Read-only Electron reference: `/Volumes/致钛 2T/CeruMusic`
 - Never modify the Electron reference project.
 - Product behavior must follow the Electron implementation. Tauri-specific code

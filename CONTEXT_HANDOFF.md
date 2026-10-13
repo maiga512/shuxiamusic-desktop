@@ -1,3 +1,61 @@
+## 2026-10-13 dock 栏音量改为感知曲线（按真百分比控制）
+
+- 诉求：dock 栏音量弹层「没有按照真的百分之多少的音量来控制音量」。预期：系统音量
+  设多少格，APP 100% 就是那个完整音量，再按百分比往下减小；不控制、也不跟随系统音量。
+- 排查结论：
+  - 全链路（PlayMusic 弹层 → ControlAudio.setVolume → nativeSetVolume →
+    `mpv_set_volume` → mpv `volume` 属性）里没有任何系统音量代码（Rust/sidecar/前端
+    均无 osascript/CoreAudio 设备音量调用），"改系统音量"的担忧不成立；live mpv IPC
+    实测 get/set `volume` 正常。
+  - 真实问题：滑条百分比此前**线性 1:1** 直发 mpv。100%→50% 只有 -6dB，人耳几乎
+    听不出——滑条上半段"百分比失真"，这就是"没有按真的百分之多少控制"的来源。
+    Electron 版（`audio.volume = v/100`）同为线性，属继承缺陷；安卓端音量图标是
+    直接拉系统音量 UI（`adjustStreamVolume`+`FLAG_SHOW_UI`），无应用内曲线可对照。
+- 修复：
+  - `src/utils/audio/nativePlayback.ts`：新增 `sliderToMpvVolume(p) = p²/100`
+    （mpv `volume` 单位是 0-100 百分比，100=满刻度）。展示/持久化保持滑条百分比域，
+    只在 `applyMpvVolumeNow` 与 `nativeLoad` 请求体下发时换算：100%→100（满）、
+    50%→25（-12dB，听感约一半响度）、25%→6.25、0%→0。
+  - 去抖阈值：前端 `flushMpvVolumeIpc` 与 Rust `mpv_set_volume` 早期返回
+    0.5 → 0.25（mpv 音量域；曲线后低音量段每 1% 滑条只动 ~0.2）。
+  - Rust 初始 `state.volume = 80.0` 保留，加注释说明它不得与任何整数百分比的
+    映射值重合（89.44% 才映射到 80），避免首次设音量被去抖吞掉。
+  - 不变量：100% 恒等于设备满刻度（系统音量档位的完整音量）；不读取、不修改系统
+    音量；DLNA 音量同步仍发原始百分比。
+- 验证：`cargo check` 通过（无新增警告）；`npx vue-tsc --noEmit` exit 0。
+  听感验收需重新出包：100% = 系统档位完整音量；拖到 50% 听感约一半；低音量段
+  1% 步进有效。
+- 索引：TOP_GRAPH.md「Playback And Media」新增音量感知曲线段；AI_INDEX 路由新增
+  音量行、维护日志新条目；Graphify 增量重建。
+
+## 2026-10-13 最小化恢复窗口声音卡顿修复 + 仓库目录改名
+
+- 诉求：①仓库文件夹从 ceru-tauri 改名（去掉 ceru 前缀，跟产品名走）；②诊断「最小化
+  后点恢复窗口，声音卡顿/暂停一下再播」。
+- 改名：`/Users/songsong/Movies/ceru-tauri` → `/Users/songsong/Movies/树夏Music-Desk-tauri`
+  （同一组词、空格换连字符，避免路径空格在 shell 脚本里踩坑）。仓库内 9 份文档
+  （AGENTS.md、AI_INDEX.md、docs/ 等）绝对路径已同步；Cargo 包名/npm 名/bundle id
+  （com.cerumusic.tauri）未动。Codex 桌面端的项目注册需按新路径重新添加。
+- 卡顿根因（已确认代码链路）：MPV 原生播放下，恢复窗口 → Rust 广播
+  `app-window-state-changed`（Resized/Focused 事件）→ `appWindowState.ts`
+  `applyState` 派发 `ceru-wake`（窗口可见性/15s 闲置唤醒共用事件）→
+  `nativePlayback.ts` onWake 每次都 `mpv_reload_audio_output`（`aid: no→restore`
+  拆装整条 CoreAudio AO）→ 可听停顿。该重建是 2026-10-11 为「睡眠唤醒后 AO 静默
+  死亡」加的恢复手段，但 `ceru-wake` 被窗口级变化复用，误伤了最小化/恢复与闲置唤醒。
+- 修复：
+  - `src-tauri/src/system_power.rs`（新增）：NSWorkspace
+    `NSWorkspaceDidWakeNotification` 观察者（ClassBuilder 模式，同 now_playing.rs），
+    真实系统唤醒时 `app.emit("app-system-wake")`；仅 macOS，其他平台 no-op。
+  - `src/utils/audio/nativePlayback.ts`：`ceru-wake` 处理只对齐本地进度时钟
+    （syncClockFromMpv/startLocalClock），不再重建 AO；新增 `app-system-wake` 监听
+    才 `reloadNativeAudioOutput()`；`devicechange`（800ms 防抖）路径不变。
+  - `src/tauri-bridge.ts`：app 命名空间新增 `onSystemWake` 订阅入口。
+  - `src-tauri/src/lib.rs`：setup 里 `system_power::init_system_power_watcher(app.handle())`。
+- 验证：`cargo check` 通过（无新增警告）；`npx vue-tsc --noEmit` exit 0。听感验证
+  （最小化→恢复、合盖→开盖）需重新出包后实测。
+- 索引：TOP_GRAPH.md「Playback And Media」AO 恢复段、AI_INDEX 路由条目与维护日志已
+  更新；Graphify 增量重建（见 AI_INDEX 日志）。
+
 ## 2026-10-11 桌面版 1.0.5 发布 + GitHub 自动更新通道打通
 
 - 诉求：确认桌面端能不能「从 GitHub 更新」、是不是要编译后上传。
@@ -871,7 +929,7 @@ AI search entry points:
 
 Active project:
 
-`/Users/songsong/Movies/ceru-tauri`
+`/Users/songsong/Movies/树夏Music-Desk-tauri`
 
 Read-only reference project:
 
@@ -1023,7 +1081,7 @@ Still user-check:
   API 名称可以保留英文，但解释和结论必须使用中文。
 - Never modify the completed Electron project at `/Volumes/致钛 2T/CeruMusic`.
   It is the behavior and visual reference and must remain intact.
-- Continue development only in `/Users/songsong/Movies/ceru-tauri`.
+- Continue development only in `/Users/songsong/Movies/树夏Music-Desk-tauri`.
 - **Electron parity is mandatory for every product change.** Before changing
   behavior, data flow, playback, caching, artwork, desktop lyrics, animations,
   layout, IPC, plugin selection, or UI styling, locate and read the equivalent
@@ -1347,7 +1405,7 @@ instance was running during this pass, so no duplicate app was launched.
 The following checks passed after the latest changes:
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 npm run build
 node --check sidecar/index.mjs
 node --check sidecar/services/musicSdk/index.mjs
@@ -1358,7 +1416,7 @@ cd src-tauri && cargo check
 No new release package was produced in this pass. The previously packaged
 application remains:
 
-`/Users/songsong/Movies/ceru-tauri/src-tauri/target/release/bundle/macos/ceru-tauri.app`
+`/Users/songsong/Movies/树夏Music-Desk-tauri/src-tauri/target/release/bundle/macos/ceru-tauri.app`
 
 The latest source synchronization change was hot-reloaded into the existing
 dev instance. The active test process tree was:
@@ -1453,8 +1511,8 @@ options are:
 Use this in the new thread:
 
 ```text
-项目目录是 /Users/songsong/Movies/ceru-tauri。先完整阅读
-/Users/songsong/Movies/ceru-tauri/CONTEXT_HANDOFF.md，再继续处理 Ceru Music
+项目目录是 /Users/songsong/Movies/树夏Music-Desk-tauri。先完整阅读
+/Users/songsong/Movies/树夏Music-Desk-tauri/CONTEXT_HANDOFF.md，再继续处理 Ceru Music
 Tauri 版。Electron 完整版只在 /Volumes/致钛 2T/CeruMusic 只读参考，绝对不要修改。
 任何功能、播放链路、缓存、封面、桌面歌词、动画和布局改动，都必须先找到
 Electron 对应文件/符号，逐项对照调用顺序、参数、超时、缓存和回退逻辑后再移植。

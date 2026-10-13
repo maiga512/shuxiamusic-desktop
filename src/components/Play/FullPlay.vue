@@ -111,12 +111,21 @@ const resetGestureWheelState = () => {
 // 触控板甩动会带出数百 ms 的惯性 wheel 事件流，仅靠固定冷却挡不住
 // 惯性 —— 惯性没停就会再次累计过阈值，造成"滑一下切好几下"。
 // 按"段"处理：同方向累计位移，过阈值切一次并锁存(latched)；
-// 直到事件断流(>SWIPE_GAP_MS)或方向反转才解锁，下一次甩动才会再切。
+// 锁存不随切换清除，减速衰减的惯性尾事件全部忽略。
+// 重新武装（判定"又甩了一下"）满足其一：
+//   1) 事件断流 > SWIPE_GAP_MS（惯性完全停住）；
+//   2) 尾部已衰减到峰值 60% 以下且当前幅度回升到上一事件 1.4 倍
+//      （新甩动会重新加速，惯性尾只会减速）。
+// 误判重武装也无害：再触发仍需真实累计 48px 新位移。
 const swipeState = {
   acc: 0,
   dir: 0,
   latched: false,
-  lastEventAt: 0
+  lastEventAt: 0,
+  // 触发瞬间的事件幅度，作为惯性尾衰减的参照
+  peakDelta: 0,
+  // 最近一个参与判定事件的幅度（惯性尾逐事件变小）
+  lastDelta: 0
 }
 const SWIPE_GAP_MS = 180
 
@@ -125,6 +134,8 @@ const resetSwipeState = () => {
   swipeState.dir = 0
   swipeState.latched = false
   swipeState.lastEventAt = 0
+  swipeState.peakDelta = 0
+  swipeState.lastDelta = 0
 }
 const resetPinchState = () => {
   pinchWheelState.acc = 0
@@ -171,10 +182,14 @@ const applyFullPlayGesture = (kind: FullPlayGestureKind, enter?: boolean) => {
     // 目标状态由 Rust 端窗口化全屏快照判断，避免动画期间状态滞后。
     window.api?.toggleFullscreen?.(enter)
   }
-  resetGestureWheelState()
-  resetSwipeState()
-  resetPinchState()
-  resetThreeFingerTouchState()
+  // 'layout' 由滑动段锁存驱动：切换后不能清锁存，否则同一次甩动的惯性尾
+  // 会重新累计过阈值再切（滑一下切好几下）。其他手势状态互清，防残留。
+  if (kind !== 'layout') {
+    resetGestureWheelState()
+    resetSwipeState()
+    resetPinchState()
+    resetThreeFingerTouchState()
+  }
   return true
 }
 
@@ -216,12 +231,23 @@ const onFullPlayWheel = (event: WheelEvent) => {
   // 太小只当抖动忽略。
   if (absX < 8) return
 
-  // 事件断流 = 上一次甩动结束了，开新的滑动段。
-  if (swipeState.lastEventAt && now - swipeState.lastEventAt > SWIPE_GAP_MS) {
+  // 本段已切过一次（锁存中）：惯性尾默认忽略，识别出"又甩了一下"才重新武装。
+  if (swipeState.latched) {
+    const dt = swipeState.lastEventAt ? now - swipeState.lastEventAt : 0
+    const freshBurst =
+      dt > SWIPE_GAP_MS ||
+      (swipeState.lastDelta > 0 &&
+        swipeState.lastDelta < swipeState.peakDelta * 0.6 &&
+        absX > swipeState.lastDelta * 1.4)
+    if (!freshBurst) {
+      swipeState.lastEventAt = now
+      swipeState.lastDelta = absX
+      return
+    }
     resetSwipeState()
   }
   swipeState.lastEventAt = now
-
+  swipeState.lastDelta = absX
   const direction = event.deltaX > 0 ? 1 : -1
   // 方向反转 = 上一段滑完了，按新方向重新累计（来回甩都各算一次）。
   if (swipeState.dir !== 0 && direction !== swipeState.dir) {
@@ -237,6 +263,7 @@ const onFullPlayWheel = (event: WheelEvent) => {
 
   event.preventDefault()
   swipeState.latched = true
+  swipeState.peakDelta = Math.max(absX, 16)
   applyFullPlayGesture('layout')
 }
 

@@ -32,7 +32,7 @@ Use this for normal TypeScript, Vue, Rust, Node sidecar, script, or configuratio
 changes.
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 
 # Incremental AST update. No LLM is needed for code.
 graphify update .
@@ -58,7 +58,7 @@ Use this whenever Markdown, HTML, or other semantic source files change.
 2. Run the incremental update first:
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 graphify update .
 ```
 

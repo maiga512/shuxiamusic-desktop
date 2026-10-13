@@ -5433,6 +5433,8 @@ setProgress: (progress: number, options?: { paused?: boolean }) => {
         getWindowStatePayload().then(cb).catch(console.warn)
         return off
       },
+      // 真实系统睡眠/唤醒（Rust 侧 NSWorkspace didWake 派发），区别于窗口可见性唤醒
+      onSystemWake: (cb: () => void) => onTauriEvent('app-system-wake', cb),
     },
 
     // ---- Desktop Lyric Window ----

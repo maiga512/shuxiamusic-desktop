@@ -126,6 +126,9 @@ impl Default for MpvSnapshot {
             url: None,
             current_time: 0.0,
             duration: None,
+            // 初值只在首次 set_volume/load 前可见。它必须不与任何整数滑条百分比的
+            // sliderToMpvVolume 映射值相等(89.44% 才映射到 80)，否则首次设音量会被去抖
+            // 阈值吞掉、mpv 停留在默认 100。
             volume: 80.0,
             muted: false,
             playback_rate: 1.0,
@@ -1425,7 +1428,8 @@ pub fn mpv_set_volume(app: AppHandle, volume: f64) -> Result<MpvSnapshot, String
     let path = get_runtime_ipc_path(app.clone())?;
     let next_volume = volume.clamp(0.0, 100.0);
     let current_volume = snapshot().volume;
-    if (current_volume - next_volume).abs() < 0.5 {
+    // 前端下发的是感知曲线映射值(p^2/100)，低音量段变化步长小，阈值相应收紧
+    if (current_volume - next_volume).abs() < 0.25 {
         return Ok(snapshot());
     }
     let _ = set_property(&path, "volume", json!(next_volume))?;

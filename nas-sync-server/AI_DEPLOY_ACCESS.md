@@ -30,7 +30,7 @@ ssh shuxia-nas 'sudo -n whoami'    # -> root
 
 - 运行容器：`ceru-nas-sync`（`ssh shuxia-nas 'sudo -n docker ps'` 可见）
 - compose / 源码目录：`/zspace/zsrp/zdocker/compose_config/ceru-nas-sync/nas-sync-server`
-- 本机源码（source of truth）：`/Users/songsong/Movies/ceru-tauri/nas-sync-server`
+- 本机源码（source of truth）：`/Users/songsong/Movies/树夏Music-Desk-tauri/nas-sync-server`
 
 ## 常用部署命令
 
@@ -40,7 +40,7 @@ ssh shuxia-nas 'sudo -n docker ps --filter name=ceru-nas-sync'
 
 # 同步本机最新源码到 NAS（示例，按需调整）
 rsync -avz -e "ssh" --rsync-path="sudo rsync" \
-  /Users/songsong/Movies/ceru-tauri/nas-sync-server/src/ \
+  /Users/songsong/Movies/树夏Music-Desk-tauri/nas-sync-server/src/ \
   shuxia-nas:/zspace/zsrp/zdocker/compose_config/ceru-nas-sync/nas-sync-server/src/
 
 # 重新构建并重启容器

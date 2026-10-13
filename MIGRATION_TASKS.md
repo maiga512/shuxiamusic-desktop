@@ -110,7 +110,7 @@ Tauri 添加歌曲到歌单时，必须和 Electron 一样插入头部，并在�
 ### 验收
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri/src-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri/src-tauri
 cargo check
 ```
 
@@ -202,7 +202,7 @@ cargo check
 5. `cargo check` 不涉及本任务时可不跑；至少跑：
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 npm run build
 ```
 
@@ -869,7 +869,7 @@ Tauri 的这些文件先前已从 Electron 移植，本任务重点不是重写�
 3. 构建：
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 npm run build
 node --check sidecar/index.mjs
 node --check sidecar/services/plugins/index.mjs
@@ -997,7 +997,7 @@ cargo check
 ### 通用开头
 
 ```text
-项目目录是 /Users/songsong/Movies/ceru-tauri。
+项目目录是 /Users/songsong/Movies/树夏Music-Desk-tauri。
 先读 AGENTS.md、CONTEXT_HANDOFF.md 的 Non-Negotiable Constraints，
 再读 MIGRATION_TASKS.md。
 只领取我指定的任务编号，不要重读整个仓库，不要修改其他任务文件。

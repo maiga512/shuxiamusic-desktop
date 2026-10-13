@@ -4,6 +4,7 @@ mod hotkeys;
 mod models;
 mod now_playing;
 mod process_util;
+mod system_power;
 mod windowed_fs;
 
 use commands::cover_proxy::*;
@@ -1350,6 +1351,11 @@ pub fn run() {
             init_now_playing(app.handle());
             eprintln!("[setup] after now playing");
 
+            // 真实系统睡眠/唤醒监听：唤醒后 MPV 的 CoreAudio AO 常静默失效，
+            // 向 Webview 派发 app-system-wake 让前端重建音频输出。
+            // 注意与窗口可见性唤醒(ceru-wake)严格区分，窗口级唤醒不得触发 AO 重建。
+            system_power::init_system_power_watcher(app.handle());
+
             // ---- 监听前端同步的 close_to_tray 设置，写入 DB ----
             let handle = app.handle().clone();
             handle.listen("settings:sync-close-to-tray", {
@@ -1648,6 +1654,7 @@ pub fn run() {
             hotkeys_get,
             hotkeys_set,
             hotkeys_set_recording,
+            hotkeys::hotkeys_accessibility,
             now_playing_update,
             media_diag_log,
             // Directory settings

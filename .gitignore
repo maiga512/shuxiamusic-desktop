@@ -32,3 +32,10 @@ graphify-out/20*/
 # Python 缓存
 __pycache__/
 *.pyc
+
+# 本地运行时产物与外置参考副本（不入库）
+.ceru-run/
+electron-old/
+electron-reference/
+*.bak
+*.backup

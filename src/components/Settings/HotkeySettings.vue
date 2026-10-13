@@ -39,6 +39,26 @@ const saving = ref(false)
 const enabled = ref(true)
 const bindings = ref<HotkeyConfig['bindings']>({})
 
+// 媒体键(CGEventTap)依赖 macOS 辅助功能权限。每个版本最多由系统提示一次，
+// 这里只负责展示状态并在缺失时提供手动重新请求入口。
+const axTrusted = ref(true)
+const refreshAxStatus = async () => {
+  try {
+    axTrusted.value = await tauriInvoke<boolean>('hotkeys_accessibility', { request: false })
+  } catch {
+    axTrusted.value = true
+  }
+}
+const requestAx = async () => {
+  const ok = await tauriInvoke<boolean>('hotkeys_accessibility', { request: true }).catch(
+    () => false
+  )
+  axTrusted.value = ok
+  if (!ok) {
+    MessagePlugin.warning('尚未授权：请打开 系统设置 → 隐私与安全性 → 辅助功能，允许树夏Music')
+  }
+}
+
 const displayBinding = (action: HotkeyAction) => {
   const acc = bindings.value[action] || ''
   return acceleratorToDisplay(acc)
@@ -197,6 +217,7 @@ watch(
 
 onMounted(() => {
   void load()
+  void refreshAxStatus()
   window.electron?.ipcRenderer?.on?.('hotkeys:media-capture', (_: any, acc: string) => {
     if (!recording.value.visible) return
     const value = String(acc || '')
@@ -240,6 +261,18 @@ const recordCanSave = computed(() => {
           <div class="item-desc">关闭后将不会注册自定义组合键；系统多媒体键（播放/暂停、上一首、下一首）由操作系统原生接管，始终可用</div>
         </div>
         <t-switch v-model="enabled" :loading="saving" @change="save" />
+      </div>
+
+      <div v-if="!axTrusted" class="setting-item">
+        <div class="item-info">
+          <div class="item-title">媒体键不可用</div>
+          <div class="item-desc">
+            系统多媒体键（播放/暂停、上一首、下一首）需要辅助功能权限。每个版本最多提示一次，也可手动重新请求
+          </div>
+        </div>
+        <t-button size="small" theme="primary" variant="outline" @click="requestAx">
+          重新请求权限
+        </t-button>
       </div>
 
       <div class="hotkey-list" :class="{ disabled: !enabled }">

@@ -7,7 +7,7 @@
 ### 第一步：运行完整测试套件
 
 ```bash
-cd /Users/songsong/Movies/ceru-tauri
+cd /Users/songsong/Movies/树夏Music-Desk-tauri
 ./perf-test-suite.sh
 ```
 
