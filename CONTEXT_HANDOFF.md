@@ -1,3 +1,27 @@
+## 2026-10-14 v1.0.8 双平台发布完成（GitHub + Gitee）
+
+- 版本 1.0.7 → 1.0.8（`package.json` 单一来源 + `src-tauri/Cargo.toml`），commit 716ce14
+  已推送 GitHub main（`maiga512/shuxiamusic-desktop`）。
+- GitHub（CI run 38448755879，`desktop-release.yml` 一次触发编 Mac+Win，四 job 全 success）：
+  - `maiga512/shuxiamusic-release` → `desktop-latest`：已清掉混入的 1.0.7 旧附件，
+    现为 1.0.8 双平台五件套 + latest.json（双平台）。
+  - 版本化 `desktop-v1.0.8`：五件套完整。
+- Gitee（本机直传，`scripts/ci/publish-gitee-local.sh`）：
+  - 第一次跑到一半 Windows exe 报 400「仓库附件配额 1 GB 已满」。根因：Gitee API v5
+    releases 列表/详情接口都不返回附件 id，`publish-gitee.py` 清旧附件循环空转，
+    旧 `desktop-latest` 残留 1.0.7 五件套+旧 latest.json，新旧合计约 1.07GB 顶满配额。
+  - 处理（沿用 v1.0.7 先例）：API DELETE 三条 release（desktop-latest 1202414 /
+    desktop-v1.0.7 1202420 / desktop-v1.0.8 1203796）→ 重跑脚本重建：
+    新 `desktop-latest` id=1203804（六件套）、新 `desktop-v1.0.8` id=1203806（五件套），
+    附件合计约 548MB、余量 ~450MB。
+  - 经验：Gitee 写操作（DELETE release/attachment）只认 `?access_token=` 查询参数，
+    `token:` 请求头会 401「登录失效」（GET 两者皆可）。
+- 验证：`desktop-latest/latest.json` 回读 version=1.0.8，darwin-aarch64 与
+  windows-x86_64 URL 均指向 Gitee 且带签名；发布中心首页（GitHub + Gitee 镜像）
+  「树夏Music 桌面端」行已同步 v1.0.8。本机 1.0.8 已装到 /Applications/树夏Music.app
+  （旧版备份 ~/旧版树夏Music-1.0.7.app）。
+- 索引：AI_INDEX 维护日志新增 10-14 发布条目；无应用代码改动，graphify 未重跑。
+
 ## 2026-10-13 dock 栏音量改为感知曲线（按真百分比控制）
 
 - 诉求：dock 栏音量弹层「没有按照真的百分之多少的音量来控制音量」。预期：系统音量
