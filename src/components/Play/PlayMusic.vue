@@ -63,6 +63,7 @@ import {
 } from '@renderer/utils/playlist/playlistManager'
 import {
   ensureLocalFavoritesPlaylist,
+  findFavoriteSongByIdentity,
   normalizeFavoriteSong,
   syncAddSongsToCloud,
   syncRemoveSongsFromCloud
@@ -84,6 +85,31 @@ const { Audio } = storeToRefs(controlAudio)
 const { list, userInfo } = storeToRefs(localUserStore)
 const { player } = storeToRefs(globalPlayStatus)
 const songInfo = computed(() => player.value.songInfo || ({} as any))
+
+// 展示身份锚定收藏锚点（用户选中的歌）：自动换源后底栏的歌名/歌手/封面
+// 不跟随播放实例漂移——新音源缺失或不同的封面不会覆盖原显示。
+// 仅当锚点与当前播放实例是同一首歌（歌名+歌手）时才采用锚点展示，
+// 避免切歌 URL 加载窗口提前显示下一首。
+const sameDisplayIdentity = (a: any, b: any): boolean => {
+  if (!a?.name || !b?.name) return false
+  const an = String(a.name).trim().toLowerCase()
+  const bn = String(b.name).trim().toLowerCase()
+  if (an !== bn) return false
+  const as_ = String(a.singer || '').trim().toLowerCase()
+  const bs_ = String(b.singer || '').trim().toLowerCase()
+  return !as_ || !bs_ || as_ === bs_
+}
+const displayAnchor = computed(() => {
+  const anchor: any = globalPlayStatus.player.favoriteAnchor
+  if (!anchor || !songInfo.value?.songmid) return null
+  return sameDisplayIdentity(anchor, songInfo.value) ? anchor : null
+})
+const displaySongName = computed(() => displayAnchor.value?.name || songInfo.value.name)
+const displaySinger = computed(() => displayAnchor.value?.singer || songInfo.value.singer)
+const displayCoverSrc = computed(() => {
+  const anchorImg: any = displayAnchor.value?.img
+  return (typeof anchorImg === 'string' && anchorImg) || player.value.cover || songCover
+})
 
 const {} = controlAudio
 
@@ -244,9 +270,27 @@ const refreshLikeState = async () => {
           (!userInfo.value.lastPlaySongSource || song.source === userInfo.value.lastPlaySongSource)
       )
     const favoriteSong = anchorSong ? normalizeFavoriteSong(toRaw(anchorSong) as any) : null
-    const favoriteSongId = favoriteSong?.songmid || String(userInfo.value.lastPlaySongId)
-    const hasRes = await songListAPI.hasSong(cachedFavoritesId, favoriteSongId, favoriteSong?.source || userInfo.value.lastPlaySongSource || undefined)
-    likeState.value = !!(hasRes.success && hasRes.data)
+    let liked = false
+    if (favoriteSong) {
+      // 1) 精确命中：锚点自身的 source:songmid
+      const hasRes = await songListAPI.hasSong(cachedFavoritesId, favoriteSong.songmid, favoriteSong.source)
+      liked = !!(hasRes.success && hasRes.data)
+      // 2) 跨源身份：精确 id 未命中，但「我的喜欢」里同一首歌（歌名+歌手）
+      //    在另一音源下有记录（自动换源 / 其他设备同步）。心形按歌曲本身判定，
+      //    不因正在播的是哪个音源实例而丢星。
+      if (!liked) {
+        const songsRes = await songListAPI.getSongs(cachedFavoritesId)
+        liked = !!findFavoriteSongByIdentity(songsRes?.data, favoriteSong)
+      }
+    } else {
+      const hasRes = await songListAPI.hasSong(
+        cachedFavoritesId,
+        String(userInfo.value.lastPlaySongId),
+        userInfo.value.lastPlaySongSource || undefined
+      )
+      liked = !!(hasRes.success && hasRes.data)
+    }
+    likeState.value = liked
   } catch {
     likeState.value = false
   }
@@ -942,21 +986,34 @@ const onToggleLike = async () => {
     if (!favoriteSong) throw new Error('歌曲缺少可同步的唯一标识')
     // 每次点击都以本地数据库为准，避免异步刷新中的旧内存状态把新增误判成取消。
     const storedState = await songListAPI.hasSong(favoritesId!, favoriteSong.songmid, favoriteSong.source)
-    const isCurrentlyLiked = Boolean(storedState.success && storedState.data)
+    let isCurrentlyLiked = Boolean(storedState.success && storedState.data)
+    // 要删除的收藏记录默认是锚点自身；若心形是靠跨源身份命中显示的
+    // （同一首歌、收藏记录挂在另一音源的 songmid 下），则删除匹配到的那条，
+    // 与显示一致，「歌单取消 → 云端同步取消」链路不变。
+    let removeTarget: any = favoriteSong
+    if (!isCurrentlyLiked) {
+      const songsRes = await songListAPI.getSongs(favoritesId!)
+      const matched = findFavoriteSongByIdentity(songsRes?.data, favoriteSong)
+      const matchedNormalized = matched ? normalizeFavoriteSong(toRaw(matched) as any) : null
+      if (matchedNormalized) {
+        isCurrentlyLiked = true
+        removeTarget = matchedNormalized
+      }
+    }
     likeState.value = isCurrentlyLiked
     if (isCurrentlyLiked) {
       const removeRes = await songListAPI.removeSong(
         favoritesId!,
-        favoriteSong.songmid,
-        favoriteSong.source
+        removeTarget.songmid,
+        removeTarget.source
       )
       if (removeRes.success && removeRes.data) {
         likeState.value = false
         try {
           await syncRemoveSongsFromCloud(
             favoritesPlaylist as any,
-            [favoriteSong.songmid],
-            [favoriteSong]
+            [removeTarget.songmid],
+            [removeTarget]
           )
         } catch (error) {
           console.error('同步取消喜欢到云端失败:', error)
@@ -2204,7 +2261,7 @@ watch(showFullPlay, (val) => {
         <div v-if="songInfo.songmid" class="album-cover">
           <s-image
             :key="`${songInfo.source || ''}:${songInfo.songmid || songInfo.hash || songInfo.name}`"
-            :src="player.cover || songCover"
+            :src="displayCoverSrc"
             :max-edge="128"
             :release-on-hide="false"
             alt="专辑封面"
@@ -2212,8 +2269,8 @@ watch(showFullPlay, (val) => {
         </div>
 
         <div class="song-info">
-          <div class="song-name">{{ songInfo.name }}</div>
-          <div class="artist-name">{{ songInfo.singer }}</div>
+          <div class="song-name">{{ displaySongName }}</div>
+          <div class="artist-name">{{ displaySinger }}</div>
         </div>
 
         <div class="left-actions">

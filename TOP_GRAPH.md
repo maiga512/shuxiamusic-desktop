@@ -226,6 +226,20 @@ survives automatic source switching and unliking always targets the picked ident
 on unliking (`evictUnlikedFromPlayback`) keeps using the current playback
 instance, so the currently playing (possibly fallback) song still advances correctly.
 
+When the exact `source:songmid` cannot identify the favorite, the dock like state
+falls back to cross-source identity matching (`findFavoriteSongByIdentity` in
+`cloudLibrarySync.ts`): the same song (normalized title + artist) may carry a
+favorite record under a different source's songmid (auto source switch started from
+a different instance, or a favorite synced from another device). `refreshLikeState`
+then treats the song as liked, and `onToggleLike` removes that matched record, so the
+displayed state and the "playlist removal -> cloud sync removal" chain stay
+consistent. The dock title/artist/cover display is also anchor-first
+(`PlayMusic.displayAnchor` / `displaySongName` / `displaySinger` /
+`displayCoverSrc`): when the anchor and the current playback instance are the same
+song, the bottom bar keeps showing the identity the user picked, and a missing or
+different cover from the fallback source does not overwrite the original display.
+
+
 The anchor also survives restart and reaches list views through a persisted
 per-item field. When a source fallback replaces a queue entry
 (`replaceCurrentSongInList`), `stampOriginalIdentity` copies the user's original

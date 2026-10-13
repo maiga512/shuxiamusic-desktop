@@ -153,6 +153,33 @@ export const normalizeFavoriteSong = <T extends Record<string, any>>(song: T) =>
   return songmid ? ({ ...song, source, songmid } as T & { source: string; songmid: string }) : null
 }
 
+// 跨源身份匹配：同一首歌（歌名+歌手）的收藏记录可能挂在不同音源的 songmid 下
+// （自动换源、不同设备同步、不同音源插件解析出的 id 不同）。精确 source:songmid
+// 未命中时，按歌曲自身身份识别收藏记录，让"已喜欢"的展示不随播放源漂移。
+const normalizeIdentityText = (value: unknown): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+
+export const findFavoriteSongByIdentity = (
+  favoriteSongs: readonly any[] | null | undefined,
+  song: any
+): any | null => {
+  const targetName = normalizeIdentityText(song?.name)
+  const targetSinger = normalizeIdentityText(song?.singer)
+  if (!targetName) return null
+  for (const candidate of favoriteSongs || []) {
+    const candName = normalizeIdentityText(candidate?.name)
+    if (candName !== targetName) continue
+    const candSinger = normalizeIdentityText(candidate?.singer)
+    // 双方都有歌手时必须一致；任一侧缺歌手时仅按歌名匹配，避免同名歌误判
+    if (targetSinger && candSinger && candSinger !== targetSinger) continue
+    return candidate
+  }
+  return null
+}
+
 const songTrackKey = (song: {
   songmid?: string | number
   id?: string | number
