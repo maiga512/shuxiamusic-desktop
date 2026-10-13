@@ -12,6 +12,10 @@
   VERSION / NOTES    版本号与更新说明
   GITEE_TARGET_BRANCH 新建 Release 时打标签所依附的分支，默认 master
 
+流程：
+  1) 固定标签 desktop-latest（更新器主通道）：清旧附件，重传全部安装包 + latest.json
+  2) 版本化 Release（desktop-v<版本>）：每版本独立，旧版可随时下载；只传安装包，不传 latest.json
+
 没有令牌时直接报错退出（exit 1）。Gitee 是国内更新主通道，必须发布成功，
 不能静默跳过，否则国内用户收不到更新。
 """
@@ -61,8 +65,8 @@ def api(method: str, path: str, data=None):
         raise SystemExit(f"Gitee API {method} {path} 失败: {e.code} {detail}")
 
 
-def find_release():
-    url = f"{API}/repos/{REPO}/releases/tags/{urllib.parse.quote(TAG)}?access_token={TOKEN}"
+def find_release(tag: str):
+    url = f"{API}/repos/{REPO}/releases/tags/{urllib.parse.quote(tag)}?access_token={TOKEN}"
     try:
         with urllib.request.urlopen(url, timeout=60) as resp:
             return json.loads(resp.read().decode())
@@ -127,45 +131,61 @@ def upload(release_id, filepath: Path, upload_name: str):
 
 
 manifest = Path("release-assets-gitee") / "latest.json"
-if not manifest.exists():
-    sys.exit("缺少 release-assets-gitee/latest.json，请先运行 make-latest-json.py（并设置 GITEE_REPOSITORY）。")
+VERSION_PLAIN = VERSION.lstrip("v")
 
-skip = {"latest.json"}
-installers = sorted(p for p in OUT.iterdir() if p.is_file() and p.name not in skip)
+installers = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != "latest.json")
 if not installers:
     sys.exit("release-assets/ 下没有可发布的安装包产物，终止。")
 
-release = find_release()
-if release is None:
-    print(f"desktop-latest Release 不存在，新建（分支 {BRANCH}）。")
-    release = api(
-        "POST",
-        f"/repos/{REPO}/releases",
-        {
-            "access_token": TOKEN,
-            "tag_name": TAG,
-            "name": f"树夏Music 桌面版 v{VERSION}",
-            "body": NOTES,
-            "prerelease": "false",
-            "target_commitish": BRANCH,
-        },
-    )
-else:
-    print(f"复用已存在的 Release id={release.get('id')}，先清掉旧附件再重传。")
-    for att in release.get("assets", []) or []:
-        att_id = att.get("id") if isinstance(att, dict) else None
-        name = att.get("name") if isinstance(att, dict) else None
-        # Gitee 的 assets 里源码包没有可删除 id，跳过；只删我们上传过的附件。
-        if att_id is None:
-            continue
-        api("DELETE", f"/repos/{REPO}/releases/{release['id']}/attach_files/{att_id}?access_token={TOKEN}")
-        print(f"  已删除旧附件: {name}")
 
-release_id = release["id"]
-print(f"开始上传到 Gitee {REPO} @ {TAG} (release id={release_id})")
-for f in installers:
-    upload(release_id, f, f.name)
-# Gitee 版清单以 latest.json 之名上传，这样更新器端点地址才对得上。
-upload(release_id, manifest, "latest.json")
+def ensure_release(tag: str, release_name: str) -> int:
+    """找到或创建指定标签的 Release；复用已有 Release 时先删旧附件。返回 release id。"""
+    release = find_release(tag)
+    if release is None:
+        print(f"Release {tag} 不存在，新建（分支 {BRANCH}）。")
+        release = api(
+            "POST",
+            f"/repos/{REPO}/releases",
+            {
+                "access_token": TOKEN,
+                "tag_name": tag,
+                "name": release_name,
+                "body": NOTES,
+                "prerelease": "false",
+                "target_commitish": BRANCH,
+            },
+        )
+    else:
+        print(f"复用已存在的 Release {tag} id={release.get('id')}，先清掉旧附件再重传。")
+        for att in release.get("assets", []) or []:
+            att_id = att.get("id") if isinstance(att, dict) else None
+            name = att.get("name") if isinstance(att, dict) else None
+            # Gitee 的 assets 里源码包没有可删除 id，跳过；只删我们上传过的附件。
+            if att_id is None:
+                continue
+            api("DELETE", f"/repos/{REPO}/releases/{release['id']}/attach_files/{att_id}?access_token={TOKEN}")
+            print(f"  已删除旧附件: {name}")
+    return release["id"]
+
+
+def publish_tag(tag: str, release_name: str, include_manifest: bool):
+    release_id = ensure_release(tag, release_name)
+    print(f"开始上传到 Gitee {REPO} @ {tag} (release id={release_id})")
+    for f in installers:
+        upload(release_id, f, f.name)
+    if include_manifest:
+        if not manifest.exists():
+            sys.exit(f"缺少 {manifest}，请先运行 make-latest-json.py（并设置 GITEE_REPOSITORY）。")
+        # Gitee 版清单以 latest.json 之名上传，这样更新器端点地址才对得上。
+        upload(release_id, manifest, "latest.json")
+    print(f"Gitee {tag} 发布完成: https://gitee.com/{REPO}/releases/tag/{tag}")
+
+
+# 1) 固定标签 desktop-latest：更新器主通道（安装包 + latest.json）
+publish_tag(TAG, f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=True)
+
+# 2) 版本化 Release（desktop-v<版本>）：每个版本一个，不被固定标签覆盖，
+#    发布中心首页「全部历史版本」可据此随时下载旧版本。不附 latest.json（只给 desktop-latest 用）。
+publish_tag(f"desktop-v{VERSION_PLAIN}", f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=False)
 
 print(f"Gitee 发布完成：https://gitee.com/{REPO}/releases/download/{TAG}/latest.json")

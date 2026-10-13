@@ -268,6 +268,7 @@ jobs:
           fi
       - name: 发布到 desktop-latest（make_latest=false，安卓不受影响）
         uses: softprops/action-gh-release@v2
+        id: latest-github
         with:
           # 必须用 token 输入传 PAT：softprops v2 的 token 输入默认 ${{ github.token }}
           # （Actions 自动令牌，只能写当前仓库），只设 env.GITHUB_TOKEN 不会覆盖它，
@@ -280,12 +281,42 @@ jobs:
           make_latest: false
           files: release-assets/**/*
           fail_on_unmatched_files: true
+      # 版本化 Release：每个版本一个独立 Release（desktop-v<版本>），不被固定标签覆盖，
+      # 发布中心首页「全部历史版本」可随时下载旧版。只附安装包和签名，不附 latest.json
+      # （latest.json 只属于 desktop-latest 更新器端点）。此步失败只告警不阻断发布。
+      - name: 准备版本化 Release 附件（安装包+签名，排除 latest.json）
+        run: |
+          mkdir -p release-assets-versioned
+          for f in release-assets/*; do
+            [ -f "$f" ] || continue
+            case "$(basename "$f")" in
+              latest.json) : ;;
+              *) cp "$f" release-assets-versioned/ ;;
+            esac
+          done
+          echo "版本化 Release 附件:"; ls -la release-assets-versioned
+      - name: 发布版本化 Release desktop-v${{ needs.prepare.outputs.version }}（make_latest=false，不影响安卓）
+        if: ${{ always() && steps.latest-github.outcome == 'success' }}
+        continue-on-error: true
+        id: versioned-github
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
+          repository: ${{ env.RELEASE_REPOSITORY }}
+          tag_name: desktop-v${{ needs.prepare.outputs.version }}
+          name: 树夏Music 桌面版 v${{ needs.prepare.outputs.version }}
+          body: ${{ needs.prepare.outputs.notes }}
+          make_latest: false
+          target_commitish: main
+          files: release-assets-versioned/**/*
+          fail_on_unmatched_files: true
 
       # Gitee 是国内用户的更新主通道（更新器端点顺序 [Gitee, GitHub]），必须发布成功。
       # if: always() 确保即使上面的 GitHub 步骤失败，这一步仍然执行；不再 continue-on-error，
       # Gitee 上传失败会让整个发布任务失败并报错（fail loud），而不是被静默跳过。
       - name: 发布到 Gitee desktop-latest（必须成功，国内更新主通道）
         if: ${{ always() }}
+        id: gitee-latest
         env:
           GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
           GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
@@ -294,3 +325,14 @@ jobs:
           VERSION: ${{ needs.prepare.outputs.version }}
           NOTES: ${{ needs.prepare.outputs.notes }}
         run: python3 scripts/ci/publish-gitee.py
+
+      # 发布完成后同步发布中心首页（shuxiamusic-release）表格的「当前版本」。
+      # 只有 GitHub 和 Gitee 的 desktop-latest 都发布成功才更新，否则首页版本号不撒谎。
+      - name: 更新发布中心首页版本（shuxiamusic-release）
+        if: ${{ always() && steps.latest-github.outcome == 'success' && steps.gitee-latest.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+          GITEE_TOKEN: ${{ secrets.GITEE_RELEASE_TOKEN }}
+          HUB_ROW: 树夏Music 桌面端
+          HUB_VERSION: ${{ needs.prepare.outputs.version }}
+        run: python3 scripts/ci/update-hub-readme.py
