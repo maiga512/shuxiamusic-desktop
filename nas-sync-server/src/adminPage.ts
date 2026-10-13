@@ -3,7 +3,7 @@ export const renderAdminPage = () => `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Ceru NAS 同步管理</title>
+    <title>树夏Music 同步管理</title>
     <style>
       :root {
         color-scheme: dark;
@@ -503,7 +503,7 @@ export const renderAdminPage = () => `<!doctype html>
   <body>
     <main id="loginScreen" class="login-screen">
       <section class="login-card">
-        <h1>Ceru NAS 同步管理</h1>
+        <h1>树夏Music 同步管理</h1>
         <p id="loginHint">请先登录 NAS 同步服务器管理后台。</p>
         <label for="adminUsername">管理员账号</label>
         <input id="adminUsername" class="mono" autocomplete="username" />
@@ -520,7 +520,7 @@ export const renderAdminPage = () => `<!doctype html>
     <main id="appShell" class="app-shell" hidden>
       <header>
         <div>
-          <h1>Ceru NAS 同步管理</h1>
+          <h1>树夏Music 同步管理</h1>
           <p>这是部署在 NAS 上的同步服务器。所有用户共用服务器地址，但每个用户用自己的绑定码登录，数据按账号独立保存。</p>
         </div>
         <div class="top-actions">
