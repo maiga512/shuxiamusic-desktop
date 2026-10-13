@@ -41,6 +41,16 @@ body,
   user-select: none;
 }
 
+/* 输入框与可编辑区域恢复鼠标拖拽选择（覆盖上方全局 user-select:none 的继承），
+   多端同步/插件设置的服务器地址、端口、绑定码等可直接拖动选中后复制。
+   密码框点右侧眼睛图标显示为明文后即可同样拖选。 */
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 html.desktop-lyric-window,
 html.desktop-lyric-window body,
 html.desktop-lyric-window #app {
@@ -54,6 +64,14 @@ body::selection,
 *::selection {
   background: transparent !important;
   color: inherit !important;
+}
+
+/* 输入框内的选中高亮保持可见（上方全局规则把选区做透明了），颜色跟随系统。 */
+input::selection,
+textarea::selection,
+[contenteditable="true"]::selection {
+  background: Highlight !important;
+  color: HighlightText !important;
 }
 
 img,
