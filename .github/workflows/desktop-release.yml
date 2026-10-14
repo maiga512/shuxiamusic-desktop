@@ -116,11 +116,22 @@ jobs:
           npm run tauri -- build --target ${{ env.TRIPLE }} --bundles app,dmg
       - name: 收集并重命名产物
         run: bash scripts/ci/collect-macos.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
-      - uses: actions/upload-artifact@v4
+      # 直接传到发布仓库的 desktop-latest，不再走 actions/upload-artifact：
+      # 公开仓库的 Release 附件不占 Actions artifact 配额，而 artifact 免费额度只有
+      # 500MB，macOS 195MB + Windows 90MB 很容易顶满，曾导致 upload-artifact 报
+      # "Artifact storage quota has been hit" 直接中断整个发布。
+      # latest.json 由 publish 作业统一生成后上传，这里只传安装包与签名。
+      - name: 上传安装包到 Release（desktop-latest）
+        uses: softprops/action-gh-release@v2
         with:
-          name: desktop-macos-arm64
-          path: release-assets/*
-          if-no-files-found: error
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
+          repository: ${{ env.RELEASE_REPOSITORY }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: 树夏Music 桌面版 v${{ env.VERSION }}
+          body: ${{ needs.prepare.outputs.notes }}
+          make_latest: false
+          files: release-assets/*
+          fail_on_unmatched_files: true
 
   # Mac x64 暂时禁用：macos-latest-large 需要付费配额，当前账户配额不足
   # 等配额问题解决后可以重新启用
@@ -214,29 +225,44 @@ jobs:
       - name: 收集并重命名产物
         shell: bash
         run: bash scripts/ci/collect-windows.sh "${{ env.TRIPLE }}" "${{ env.LABEL }}" "${{ env.VERSION }}"
-      - uses: actions/upload-artifact@v4
+      - name: 上传安装包到 Release（desktop-latest）
+        uses: softprops/action-gh-release@v2
         with:
-          name: desktop-windows-x64
-          path: release-assets/*
-          if-no-files-found: error
+          token: ${{ secrets.RELEASE_REPO_TOKEN }}
+          repository: ${{ env.RELEASE_REPOSITORY }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: 树夏Music 桌面版 v${{ env.VERSION }}
+          body: ${{ needs.prepare.outputs.notes }}
+          make_latest: false
+          files: release-assets/*
+          fail_on_unmatched_files: true
 
   publish:
-    # 只硬依赖 arm64：Intel(macos-13) 运行器经常排队很久，Windows 代码还在修，
-    # 不能让它们拖住 Apple Silicon 的发布。x64/windows 编出来时其产物会被下方
-    # download-artifact 一并收进来；没编出来 make-latest-json 会自动跳过。
+    # 等两个平台都结束再生成 latest.json：构建作业已把安装包直接传到 desktop-latest，
+    # 这里按版本号把它们取回来，生成清单后再发布。Windows 作业是 continue-on-error，
+    # 编不出来时只发 macOS（make-latest-json 会跳过缺失平台），不会拖垮发布。
     needs:
       - prepare
       - build-macos-arm64
+      - build-windows-x64
     if: ${{ always() && needs.build-macos-arm64.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: desktop-*
-          path: incoming
-          merge-multiple: true
-      - name: 汇总产物并生成 latest.json
+      - name: 从 Release 取回本次版本的产物
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          mkdir -p release-assets
+          # 只取本次版本号的文件（构建作业已直传 desktop-latest），避免把历史版本
+          # 附件也拉下来。签名 .sig 与安装包同名，能被同一 pattern 命中。
+          gh release download "${{ env.RELEASE_TAG }}" \
+            -R "${{ env.RELEASE_REPOSITORY }}" \
+            -p "shuxiamusic_${VERSION}_*" \
+            -D release-assets --clobber
+          echo "已取回产物:"; ls -la release-assets
+      - name: 生成 latest.json
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
           NOTES: ${{ needs.prepare.outputs.notes }}
@@ -245,9 +271,6 @@ jobs:
           GITEE_REPOSITORY: ${{ env.GITEE_REPOSITORY }}
           GITEE_RELEASE_TAG: ${{ env.GITEE_RELEASE_TAG }}
         run: |
-          mkdir -p release-assets
-          find incoming -type f -exec cp {} release-assets/ \;
-          echo "已汇总产物:"; ls -la release-assets
           python3 scripts/ci/make-latest-json.py
           echo "生成的 latest.json (GitHub):"; cat release-assets/latest.json
           if [ -f release-assets-gitee/latest.json ]; then
@@ -286,8 +309,32 @@ jobs:
           name: 树夏Music 桌面版 v${{ needs.prepare.outputs.version }}
           body: ${{ needs.prepare.outputs.notes }}
           make_latest: false
-          files: release-assets/**/*
+          # 安装包已由构建作业直传，这里只补最新的 latest.json。
+          files: release-assets/latest.json
           fail_on_unmatched_files: true
+      # 清掉 desktop-latest 里不属于本次版本的旧附件：固定标签的 Release 会一直累积，
+      # 之前需要人工清理（Gitee 那次就是因为旧附件堆满配额）。旧版本仍可在版本化
+      # Release（desktop-v<版本>）里下载，latest.json 也只指向当前版本，删旧附件安全。
+      - name: 清理 desktop-latest 中的历史版本附件
+        if: ${{ always() && steps.latest-github.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_REPO_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          keep_prefix="shuxiamusic_${VERSION}_"
+          gh release view "${{ env.RELEASE_TAG }}" -R "${{ env.RELEASE_REPOSITORY }}" \
+            --json assets --jq '.assets[].name' | while read -r name; do
+            [ -n "$name" ] || continue
+            if [ "$name" = "latest.json" ]; then continue; fi
+            case "$name" in
+              "$keep_prefix"*) continue ;;
+            esac
+            echo "删除历史附件: $name"
+            gh release delete-asset "${{ env.RELEASE_TAG }}" "$name" \
+              -R "${{ env.RELEASE_REPOSITORY }}" --yes || true
+          done
+
       # 版本化 Release：每个版本一个独立 Release（desktop-v<版本>），不被固定标签覆盖，
       # 发布中心首页「全部历史版本」可随时下载旧版。只附安装包和签名，不附 latest.json
       # （latest.json 只属于 desktop-latest 更新器端点）。此步失败只告警不阻断发布。
