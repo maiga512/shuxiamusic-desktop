@@ -1,7 +1,7 @@
 {
   "package.json": {
-    "mtime": 1791902913.2471051,
-    "ast_hash": "496c8ea2a6499e25ff032358b91d4614",
+    "mtime": 1791981403.2264066,
+    "ast_hash": "018ac7fbb462a7585d6134b5854e3046",
     "semantic_hash": ""
   },
   "packages/shared-contract/package.json": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1791979610.1596065,
-    "ast_hash": "8779ce85bf76370f82274d8f7893b930",
+    "mtime": 1791987731.1430414,
+    "ast_hash": "bb2a1a301955f80f74a70c728089c64f",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1791979625.4992921,
-    "ast_hash": "84f2ffe6a8680d1125b7d7d09aab3872",
+    "mtime": 1791987751.5678704,
+    "ast_hash": "8430a221dfe1549f25939e230c86f591",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1791979588.5339186,
-    "ast_hash": "41e0676d4fcc58022c1661bc0a5c4c34",
+    "mtime": 1791987751.5686219,
+    "ast_hash": "ad340f76b18584d16bd85a47542f7e02",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -2960,8 +2960,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/desktop-release.yml": {
-    "mtime": 1791976004.0506568,
-    "ast_hash": "8470ac7be8d463e77ebd15c97c388593",
+    "mtime": 1791984770.9933863,
+    "ast_hash": "0887a1ff952c18efb231e813d1e7effa",
     "semantic_hash": ""
   },
   "COMPLETE_PERFORMANCE_FIX.md": {

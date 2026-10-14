@@ -4,6 +4,24 @@
 - 本版累积修复：音量等比例曲线 + 0% 可精确设置；耳机戴上不再自动播；下载列表文件夹图标可用；全屏双指横滑"滑一次只切一次"；全屏按钮退出后黑条 / 盖不住菜单栏；签名固定为自签证书（辅助功能权限跨重编译保留）。
 - 发布流程：`git push origin main` → `git tag desktop-v1.0.9 && git push origin desktop-v1.0.9` 触发 `Desktop Release`（macOS arm64 + Windows x64，Windows 只能在 GitHub 上编）→ `gh run download <RUN_ID> -D /tmp/ceru-release/work` → 平铺进 `release-assets/` → `scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work 1.0.9 "<说明>"` 直传 Gitee。
 - 注意：`npm ci` 对 `package-lock.json` 里的 version 字段不敏感（实测 exit 0），所以升版本无需同步 lock。
+- **踩坑（已修）**：首次触发（tag `desktop-v1.0.9`，run 38565810171）两个平台都编译成功，却双双卡在
+  `actions/upload-artifact@v4` 报 `Artifact storage quota has been hit` —— GitHub 免费额度下 Actions
+  artifact 存储只有 500MB，一次发布 macOS 195MB + Windows 90MB，累积两次即满；且配额要 6~12 小时才
+  重算，**删掉旧 artifact 也不能立刻恢复**（实测删到 0 后重跑仍失败），`publish` 作业被跳过、发布中断。
+  改造（commit 25ebad5）：构建作业改用 `softprops/action-gh-release` **直传发布仓库的 desktop-latest**
+  （公开仓库的 Release 附件不占 Actions artifact 配额），只传安装包与签名；`publish` 作业 `needs`
+  两平台都结束后用 `gh release download -p "shuxiamusic_<版本>_*"` 取回产物生成 `latest.json`，再只上传
+  `latest.json`（避免重复传 285MB）；并新增一步自动清理 desktop-latest 里的历史版本附件（此前需人工清理）。
+- **发布结果（run 38573021565，四作业全 success）**：
+  - GitHub `maiga512/shuxiamusic-release`：`desktop-latest` 仅 1.0.9 五件套 + latest.json（旧 1.0.8 附件被
+    新加的清理步骤自动删除）；`desktop-v1.0.9` 五件套；latest.json version=1.0.9 双平台；
+    `releases/latest` 仍是安卓 `v2.5.113-139`（未被桌面抢走）。
+  - Gitee `songsong2020/shuxiamusic-desktop-release`：`desktop-latest`(id 1205808) + `desktop-v1.0.9`(id 1205815)
+    各五件套 + latest.json，匿名可读、version=1.0.9 且 URL 指向 Gitee。发布前先 DELETE 了混有 1.0.8 附件的
+    旧 `desktop-latest`(id 1203804)（Gitee API 不返回附件 id，脚本删不掉旧附件，只能整个 Release 重建）。
+  - 发布中心首页（GitHub + Gitee 镜像）「树夏Music 桌面端」行均为 v1.0.9。
+  - 更新说明（latest.json 的 notes 与 Release body）已改成正式文案（音量等比例/0% 可调、耳机不自动播、
+    下载文件夹图标、全屏横滑一次一切、全屏黑条与菜单栏）。
 
 ## 2026-10-14 窗口化全屏两个 bug 修复（退出后顶部黑条 + 盖不住菜单栏）
 
