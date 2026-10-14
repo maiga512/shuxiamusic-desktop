@@ -1,3 +1,196 @@
+## 2026-10-14 发布 v1.0.9（GitHub + Gitee）
+
+- 版本 1.0.8 → 1.0.9（`package.json` 单一来源 + `src-tauri/Cargo.toml` 同步；`tauri.conf.json` 的 version 继承 `../package.json`）。
+- 本版累积修复：音量等比例曲线 + 0% 可精确设置；耳机戴上不再自动播；下载列表文件夹图标可用；全屏双指横滑"滑一次只切一次"；全屏按钮退出后黑条 / 盖不住菜单栏；签名固定为自签证书（辅助功能权限跨重编译保留）。
+- 发布流程：`git push origin main` → `git tag desktop-v1.0.9 && git push origin desktop-v1.0.9` 触发 `Desktop Release`（macOS arm64 + Windows x64，Windows 只能在 GitHub 上编）→ `gh run download <RUN_ID> -D /tmp/ceru-release/work` → 平铺进 `release-assets/` → `scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work 1.0.9 "<说明>"` 直传 Gitee。
+- 注意：`npm ci` 对 `package-lock.json` 里的 version 字段不敏感（实测 exit 0），所以升版本无需同步 lock。
+
+## 2026-10-14 窗口化全屏两个 bug 修复（退出后顶部黑条 + 盖不住菜单栏）
+
+- 用户反馈：全屏播放界面点「全屏」按钮 → ①退出后顶部出现一条**黑条**，切到歌单页黑条还在；②全屏时**盖不住顶部菜单栏/状态栏**，不是真全屏。
+- 根因（读 tao 0.37.1 源码确认，`src-tauri/src/windowed_fs.rs` 原实现用 Tauri API）：
+  - **黑条**：tao 的 `set_decorations(true)` 把 styleMask 设成 `Closable|Miniaturizable|Resizable|Titled`，**不含 `FullSizeContentView`**（`tao-0.37.1/src/platform_impl/macos/window.rs:1362`）。于是内容视图不再延伸到标题栏下方，整个页面被下推一个标题栏高度，顶部露出窗口底色 → 黑条。`titlebarAppearsTransparent` 也没被恢复。
+  - **盖不住菜单栏**：tao 的 `set_always_on_top(true)` 走 `set_level_async(NSFloatingWindowLevel = 3)`（`window.rs:1389`），低于主菜单/状态栏层（`NSMainMenuWindowLevel = 24`）；而且它用 `DispatchQueue::main().exec_async` **异步**派发，会覆盖同函数里同步执行的 `setLevel:1000`。
+- 追加发现（第二版修复）：`set_position`/`set_size` 走**事件循环消息**，`set_decorations`/`set_always_on_top` 走 **GCD 主队列**，两条队列顺序不可控；而且增删 `FullSizeContentView` 本身会改变窗口 frame 高度（实测 620 → 588，差 32pt = 标题栏高）。所以只在"最后补一个 fixup"仍会偏。改成 **macOS 路径完全弃用 Tauri 窗口 API**：把「改 styleMask / 设 frame / 设 level / 标题栏透明 / 隐藏红绿灯」放进**同一个主队列 AppKit 任务**（`dispatch_async_f` + `_dispatch_main_q`）按固定顺序执行。
+  - **进入**：快照 AppKit `frame`/`level`/`isZoomed` → 取消 zoom → 去掉 `Titled`（borderless，实测不改 frame）→ `setFrame:` 到 `[window screen].frame`（含菜单栏的**完整**屏幕 frame，不用 visibleFrame）→ `setLevel: 1000`。
+  - **退出**：恢复 Overlay mask（`Titled|Closable|Miniaturizable|Resizable|FullSizeContentView`）+ `setTitlebarAppearsTransparent:YES` + `setTitleVisibility:hidden` + 隐藏原生红绿灯 → **再**写回保存的 frame（顺序关键）→ 恢复 level/zoom。
+  - 新增 `objc2-core-foundation`（`features=["objc2"]`，取 `CGRect`）；非 macOS 保留原 Tauri 实现。
+- 验证：Swift 实测 `setFrame(screen.frame)` 对 titled/borderless 窗口都不被 `constrainFrameRect` 约束；去掉 `Titled` 不改 frame；加回 `FullSizeContentView` 会让 frame 高度缩一个标题栏高（故必须后写 frame）。Rust 独立工程（debug，编码断言开启）实测整轮 enter/exit：frame 精确回环（`MATCH frame = true`）、level 0→1000→0，`initWithContentRect:`/`frame`/`setFrame:display:`/`level`/`setLevel:`/`screen`/`isZoomed`/`zoom:`/`standardWindowButton:` 全部通过 objc2 编码断言。`cargo check` 通过（96 warnings，与改动前持平）。已重新出包（release）替换 /Applications/树夏Music.app，版本号 1.0.8 未动。效果需实机确认。
+- 索引：TOP_GRAPH Start Here 表新增一行；AI_INDEX 路由新增一行 + 维护日志；Graphify 增量重建。
+
+## 2026-10-14 全屏双指横滑切封面"来回跳"修复（滑一次只切一次）
+
+- 用户反馈：全屏播放界面双指左右滑切封面（CD 黑胶 ↔ 方形封面）时，滑一次会来回跳好几次才定住；要求"滑一次就只切换一次"。
+- 根因：`src/components/Play/FullPlay.vue` 的 `onFullPlayWheel` 用「固定冷却 + 幅度回升启发式」判定"新的一甩"：
+  `freshBurst = dt > SWIPE_GAP_MS(180ms) || (lastDelta < peakDelta*0.6 && absX > lastDelta*1.4)`，其中 `dt` 用 `performance.now()`（**处理时刻**）计算。
+  而切换 `layoutMode` 会整块换掉 `v-if` 的 CD/方形封面模板 → 主线程被渲染阻塞 → 阻塞结束后排队的惯性 wheel 事件成批处理 → `performance.now()` 间隔瞬间远超 180ms → 被误判成"新的一甩" → 解锁重新累计 → 再次过 48px 阈值 → 又切一次。每次切换都触发同样的阻塞，于是"滑一下切好几下、来回跳"。
+- 修复：改为按**事件时间戳静默间隔**重新武装。
+  - 过 48px 阈值触发一次后 `latched = true`，之后所有事件（含惯性尾）一律忽略。
+  - 只有相邻事件的 `event.timeStamp` 间隔 > `SWIPE_REARM_MS`(250ms)（真的停手了）才解锁。
+  - 关键：用 `event.timeStamp`（事件**生成**时刻；WebKit 为 DOMHighResTimeStamp，与 `performance.now()` 同基准，另有 epoch 兜底归一化）而非处理时刻 —— 事件被主线程阻塞排队时 `timeStamp` 仍保持真实的 60Hz 间隔，不会误判成新甩动。
+  - 删掉脆弱的幅度回升启发式与 `peakDelta/lastDelta/lastEventAt/SWIPE_GAP_MS` 字段；垂直占优分支只清水平累计、不再清锁存；锁存期间仍 `preventDefault` 抑制 WKWebView 横滑导航。
+- 验证：`npx vue-tsc --noEmit` exit 0；确认无残留旧字段引用；已重新出包（release）替换 /Applications/树夏Music.app，版本号 1.0.8 未动。手感需实机确认。
+- 索引：TOP_GRAPH「Playback And Media」手势段重写；AI_INDEX 路由新增一行 + 维护日志；Graphify 增量重建。
+
+## 2026-10-14 固定 macOS 签名身份（辅助功能权限跨版本保留）
+
+- 用户反馈：每次重新打包签名都变，辅助功能权限要重授，要求把签名固定住。
+- 根因：`src-tauri/tauri.conf.json` 的 `bundle.macOS.signingIdentity` 是 `"-"`（ad-hoc）。ad-hoc 签名的 designated requirement（DR）就是 `cdhash H"..."`（二进制内容哈希），任何代码改动或重编译都会变；macOS TCC（辅助功能）按 DR 记录授权 → 每次重编译都要重授。
+- 修复：改用 keychain 里已有的自签证书 **`Ceru Music Self-Signed`**（`CN=Ceru Music Self-Signed, O=CeruMusic`，Basic Constraints CA:FALSE，Key Usage Digital Signature，EKU Code Signing，有效期到 2036-10-07；私钥在 System keychain，证书在 login keychain）。
+  - `tauri.conf.json`：`"signingIdentity": "Ceru Music Self-Signed"`。
+  - DR 变为 `identifier "com.cerumusic.tauri" and certificate root = H"3fcb56609a8a5577c9cbbc19f53c04f94d764a77"` —— 只与证书绑定，跨重编译稳定。
+  - 把证书加入用户信任设置：`security add-trusted-cert -r trustRoot -p codeSign -k ~/Library/Keychains/login.keychain-db cert.pem`（之后 `spctl -a -vvv` = `accepted`，`origin=Ceru Music Self-Signed`）。
+  - `install-new-build.sh` 重写：**不再 `codesign --force --deep --sign -` 重签**（那会把证书签名换成 ad-hoc，前功尽弃），只 `cp -R` + `xattr -cr` + `codesign --verify`。
+  - CI：`.github/workflows/desktop-release.yml` 的 macos job 加 `APPLE_SIGNING_IDENTITY: "-"`（CI 运行器没有这张证书，覆盖回 ad-hoc，否则打包会因找不到身份失败）。将来接 Apple Developer ID 时改这一处。
+- 附带发现（记录进 TOP_GRAPH）：`kill -9` 强杀 App 会留下孤儿 mpv 进程（`Contents/Resources/mpv/bin/mpv`），它占着 LaunchServices 注册，导致之后双击/普通 `open` 只去激活那个已死实例而毫无反应；`pkill -f "mpv/bin/mpv"` 后恢复正常。正常退出走 `mpv_shutdown`，不会漏。
+- 验证：构建日志 `Signing with identity "Ceru Music Self-Signed"`；`codesign -d -r-` 输出证书型 DR；`codesign --verify --deep --strict` 通过；`spctl -a -vvv` accepted；app 正常启动并运行。版本号保持 1.0.8 未动。
+- 索引：TOP_GRAPH「Downloads」段补 openFileLocation 路由说明 + Start Here 表新增签名/孤儿 mpv 两行；AI_INDEX 路由两行 + 维护日志；Graphify 增量重建。
+
+## 2026-10-14 音量 0% 可精确设置 + 下载列表"文件夹"图标修复
+
+- 用户实测反馈：①音量滑条**拖到最底部（0%）点不了，一松手就弹回上面**；要求 0%、1% 都能精确点选。②下载列表点**文件夹图标没有任何反应**，Finder 不弹出来。
+- ①根因：多处把 `volume <= 0` 当成"脏数据"强制改写成 80——
+  - `src/utils/audio/nativePlayback.ts`：`nativeLoad` 的 `if (!(desiredVolume > 0)) desiredVolume = 80`、`nativeSetVolume` 的 `if (!(desiredVolume > 0) && !transition) desiredVolume = 80`；
+  - `src/store/LocalUserDetail.ts`：`if (!(Number(userInfo.value.volume) > 0)) userInfo.value.volume = 80`；
+  - `src/components/Play/PlayMusic.vue`：`userInfo.volume` watcher 的 `if (next <= 0 && Audio.volume <= 0) { setVolume(80); return }`。
+  滑条拖到底 → `ControlAudio.setVolume(0)` 写 store/userInfo → watcher 立刻 `setVolume(80)` → 视觉上"弹回 80%"。
+- 修复：**0 改为合法值**，只有非有限数/越界才回退 80。`nativeSetVolume` 用 `Number.isFinite` 判定；`nativeLoad` 保留 0；`LocalUserDetail.init()` 只过滤非数字与越界；watcher 去掉 0 改写。0% = 静音，1% = `sliderToMpvVolume(1)=21.54`（-40dB，可辨）。
+- ②根因：`sidecar/services/download/index.mjs` 的 `openFileLocation`（`open -R` / `explorer /select` / `xdg-open`）实现早已存在，但 `sidecar/index.mjs` 的方法路由表**漏注册** `download.openFileLocation` → 调用抛 `Unsupported sidecar method: download.openFileLocation` → `tauri-bridge.ts` 的 `invokeNodeDownload` try/catch 静默返回 `undefined` → `src/store/download.ts` 的 `if (res && res.success === false)` 永不成立 → 点图标毫无反馈。
+- 修复：`sidecar/index.mjs` 补注册路由；`tauri-bridge.ts` 的 `download.openFileLocation` 改 `invokeNodeDownloadStrict` 并把异常转成 `{success:false,message}`；`src/store/download.ts` 对"无路径/无响应/失败"都弹提示。
+- 验证：直接 spawn sidecar 发 `download.openFileLocation`（真实文件 `downloads/七里香 - 周杰伦.mp3`）→ `{"ok":true,"result":{"success":true}}`，Finder 成功定位；`node --check` 两个 sidecar 文件通过；`npx vue-tsc --noEmit` exit 0。
+- 索引：TOP_GRAPH 音量段补 0% 说明；AI_INDEX 路由两行更新（音量行、新增下载目录行）+ 维护日志；Graphify 增量 7818 nodes / 15428 edges / 537 communities，`graphify export html` 938 社区节点 / 923 边。已重新出包替换 /Applications/树夏Music.app（版本号未动）。
+
+## 2026-10-14 耳机戴上自动播修复 + 音量百分比改为等比例
+
+- 用户反馈两项：①摘下耳机暂停可接受，但**戴上又自动播**（其他 App 不这样）；②**音量百分比不对**——系统音量 5 格时调到 80% 声音就很小，要求按系统音量档位「分成 100 份、等比例」对应。
+- ①根因（`/tmp/ceru-media-keys.log` 实锤）：macOS 在输出设备变化/耳机插拔时会替 App 发系统媒体指令（拔耳机发 `pause`、插回发 `play`/`pause`）；`globaPlayList.ts` `onGlobalCtrl` 的 `pause` 是 **toggle 语义**（在播→暂停、不在播→播放），插回时那条系统 `pause` 被反转成播放（日志：`mp-remote: pause` → 2.56s 后 `mp-remote: pause` → `smtc-state: playing`）。
+  - 新增 `src-tauri/src/audio_device.rs`：CoreAudio `kAudioHardwarePropertyDefaultOutputDevice` 属性监听 → 派发 `app-audio-device-changed`（WebKit 在 macOS 不暴露 audiooutput 设备，`devicechange` 降为兜底）；`lib.rs` setup 注册，`tauri-bridge.ts` 暴露 `app.onAudioDeviceChanged`。
+  - `nativePlayback.ts`：记录最近设备变化时间（`lastAudioDeviceChangeAtMs()`）并同时触发 AO 重建；新增 `app-audio-device-changed` 监听。
+  - `globaPlayList.ts` `onGlobalCtrl`：在「设备变化后 6s」或「系统 `pause` 真的暂停了播放后 4s」（兜底：耳机插在 USB 声卡上时默认输出设备不变、拿不到 devicechange）内，系统来源（`source=media`）的 `play` 忽略、`pause` 只当暂停（绝不 toggle 成播放）；窗口外行为不变（保留 toggle 兜底状态感知滞后），App 内播放按钮不走该通道、不受影响。日志新增 `ctrl: play suppressed(...)` / `pause ignored(...)`。
+- ②根因：mpv 的 `volume` 属性**不是线性增益**——实测打包内 mpv v0.41（`ao=pcm` + `volumedetect`）为 `gain=(volume/100)^3`：volume 100/90/80/70/60/50/40/30/20 → 0/-2.7/-5.8/-9.2/-13.3/-18.0/-24.1/-31.2/-42.1 dB；`--volume=50` ≡ `--af=volume=-18.06dB`。上一版又叠了 `p²/100`，两层曲线相乘使 50% ≈ -36dB、80% ≈ -11.6dB，滑条下半段几乎全废。
+  - 修复：`nativePlayback.ts` 的 `sliderToMpvVolume(p) = 100 * Math.cbrt(p / 100)` 反解 mpv 三次曲线，最终增益=滑条百分比（100%→满刻度=系统音量档位完整音量、80%→-1.9dB、50%→-6dB、0%→静音），与 Electron 参考 `audio.volume = v/100` 一致；`mpv_player.rs` 去抖/初值注释同步（阈值 0.25 不变，1% 滑条≈0.33 mpv 单位）。
+- 验证：`cargo check` 通过（仅既有 96 warnings，无新增）；`npx vue-tsc --noEmit` exit 0；CoreAudio 常量用 C 程序核对、Rust FFI 注册返回 noErr(0)。**听感与耳机端到端需重新出包实测**。
+- 索引：TOP_GRAPH「Playback And Media」音量段重写 + 新增耳机自动恢复抑制段；AI_INDEX 路由两行更新 + 维护日志新条目；Graphify 增量重建 7818 nodes / 15427 edges / 546 communities，`graphify export html` 社区聚合 938 节点 / 923 边。
+
+## 2026-10-14 播放态 CPU 优化（Web Audio 空转 + mpv 冗余）
+
+- 用户要求：普通窗口播放中、最小化播放中都要降 CPU，不影响播放/动效/切歌。
+- 实测方法：进程累计 CPU 时间增量法（先用忙循环标定 95.6%/100% 验证精度）。
+  普通窗口播放中合计 17.0%（mpv 5.8 / 主进程 4.8 / WebContent 3.9 / GPU 1.6）；
+  最小化播放中 12.4%；**暂停+最小化仍有 6.96%**（WebContent 3.5 + GPU 1.6 纯空转）。
+- 根因（`sample` 20s 采样 + 帧计数定位）：`RemoteAudioDestinationProxy render
+  thread` 的 `AudioDestinationResampler::render` 占 728/13498 采样 ≈ 0.7s，与实测
+  CPU 时间吻合 → **WebKit 持续渲染整张 Web Audio 图**（AudioNode::processIfNecessary
+  + AudioBasicProcessorNode，即 EQ BiquadFilter 链）。触发点：`crossfade.ts`
+  `startRmsWatch()` 调 `getEnvelopeAnalyser()` → `getOrCreateAudioSource()` 建
+  MediaElementAudioSourceNode；`stopRmsWatch()` 只清定时器，**从不 suspend/close**，
+  图就永久空转。
+- 修复：
+  - `audioManager.ts`：新增 `syncContextPlaybackState(el, forceSuspend)` /
+    `syncAllContexts()`；WeakMap 不可遍历 → 另存 `audioElements` 强引用集合。
+  - `GlobalAudio.vue`：`@play`/`@pause`、`onVisibilityChange`（隐藏即挂起）、
+    `onMounted` 首帧对齐时同步。
+  - `crossfade.ts`：`stopRmsWatch()` 结束时同步一次。
+  - `mpv_player.rs`：新增 `--load-scripts=no`（纯音频无窗口，Lua 脚本全无用却常驻）
+    与 `--media-controls=no`（媒体键/Now Playing 由本 App `now_playing.rs` 负责）。
+- 验证：`vue-tsc` exit 0；`cargo check` 通过；已重打包替换 /Applications/树夏Music.app。
+- 复测结果（同一测量方法，每个场景先等 10~15s 稳定）：
+  | 场景 | 改前 | 改后 | 变化 |
+  | --- | --- | --- | --- |
+  | 暂停 + 最小化 | 6.96% | **1.77%** | -75% |
+  | 普通窗口 · 播放中 | 17.0% | **8.93%** | -47% |
+  | 最小化 · 播放中 | 12.4% | **9.83%** | -21% |
+  分项（普通窗口播放中）：WebContent 3.9→1.57、GPU 1.6→0.13、主进程 4.8→1.03、mpv 5.8→5.47。
+  `sample` 复查：暂停时 `AudioDestinationResampler::render` 采样数 = 0（音频图确已停止）。
+- 剩余大头 mpv 4~5% 为固有开销（对照实验）：裸 mpv 播同一 URL = 3.73%（最小参数）/ 4.93%（仅缓存）/
+  4.33%（缓存+重连），即 MP3 解码 + CoreAudio 输出（44.1k→48k 由 CoreAudio 实时线程重采样）。
+  非本 App 配置引入；再压需动音频管线、有爆音风险，不做。
+- `--load-scripts=no` 经查只影响用户脚本目录，mpv 内置 Lua（osc/stats/console/…）线程仍存在，
+  但实测全部阻塞、不耗 CPU，故保留该标志无害。
+- 测量注意：窗口状态切换后 10~20s 内主进程有瞬态偏高（可到 8%），稳定后回落 ~1.2%，
+  复测必须先等稳定，否则会误判为回归。
+- 索引：AI_INDEX 维护日志已追加；graphify 无新增符号（新增方法在同一模块），未重跑。
+
+## 2026-10-14 修复抽屉过渡「卡重影」
+
+- 用户反馈：抽屉版切换时「卡一个页面、卡重影，然后再出现」，每个界面都有。
+- 诊断（cua 运行时在本环境不可用，代码层推定）：重叠过渡里旧页淡出（80ms）与
+  新页滑入（260ms）是**两个同屏运动** → 重影；新页 KeepAlive 复活（display:none
+  → 显示）触发的样式/布局计算与动画同帧竞争 → 滑动卡顿感。
+- 修复（纯 CSS，`src/views/home/index.vue`）：
+  - 旧页**零退出动画**（`.page-leave-active` 无 transition，一帧后 KeepAlive 隐藏）；
+  - 新页 28px 左滑入 + back-out 1.75 回弹 240ms，`will-change: transform` 提层
+    走合成器，布局计算不再卡滑动；
+  - 28px 间隙露出 `.content` 应用底色（拉抽屉感）；reduced-motion 直接切。
+  - 设置页维持 60ms out-in（表单页轻）。
+- 验证：vue-tsc exit 0；重打包替换 /Applications/树夏Music.app（备份
+  ~/旧版树夏Music-1.0.8.app）。
+- 备选下一档（用户确认后再做）：导航 hover 时**预挂载**目标页 DOM 常驻
+  （真正"抽屉一直装好货"，内存 +MB 级）。
+- 索引：AI_INDEX 维护日志已追加；graphify 无新增符号，未重跑。
+
+## 2026-10-14 主页过渡抽屉化（消除黑屏间隔）
+
+- 用户反馈：点发现/播客/歌单还是「先黑一下屏再闪出来」；要「已经准备好了，
+  拉开抽屉直接出结果」；接受适当增加一丢丢内存换速度。
+- 根因：`mode="out-in"` 要求旧页先完全淡出新页才入场 → 每次切换必有 100ms
+  纯暗屏间隔（即使内容 100% 备好也躲不掉）。
+- 改动：
+  - `src/views/home/index.vue`：去掉 out-in 改重叠过渡——过渡期两页在
+    `.mainContent` 内 absolute 叠放：新页 28px 从左侧整块滑入（back-out 1.75、
+    260ms、全程不透明、直接盖住旧页），旧页底下 80ms 淡出。五页根节点均
+    height:100%，absolute 期间无布局跳变。
+  - `src/views/settings/index.vue`：面板退出 100ms→60ms。
+  - `src/utils/navigation/homePrefetch.ts`：预热 2.5s→1.2s。
+  - `src/components/sImage.vue`：封面释放宽限 30s→60s（一丢丢内存：期间几十张
+    解码封面常驻、MB 级；窗口隐藏仍立即释放）。
+- 验证：vue-tsc exit 0；重打包替换 /Applications/树夏Music.app（备份
+  ~/旧版树夏Music-1.0.8.app），构建产物已验证新过渡 CSS。
+- 说明：会话内首次点击的下限是网络（预热约 3s 后就绪）；若还要更「预挂载抽屉」
+  （启动即把各页 DOM 常驻），内存再上一层，待用户实测后再定。
+- 索引：AI_INDEX 维护日志已追加；graphify 本轮无新增符号（仅常量/样式/模板调整），
+  沿用 7806 节点图，未重跑。
+
+## 2026-10-14 Q弹过渡调大 + 板块首屏提速
+
+- 用户反馈：弹幅再大一点；发现/播客/歌单点进去「界面弹进来了但内容没加载到」，
+  要求点了马上有、又省内存。
+- 根因：
+  - 封面：sImage 的 release-on-hide 切走 tab 立即释放解码位图，切回时几十张封面
+    重新解码，卡片区肉眼可见「空」一下（每次切换都发生，是主要体感）。
+  - 数据：三页本已 KeepAlive + sessionCache SWR，重复点基本即时；真正的缺口是
+    会话内首次点击（无缓存 → 纯网络等待）。
+- 改动：
+  - 回弹加大：`cubic-bezier(0.34,1.75,0.64,1)` + 260ms（主页/设置面板同款）。
+  - `src/components/sImage.vue`：封面释放加 30s 宽限（`COVER_RELEASE_GRACE_MS`；
+    窗口隐藏仍立即释放；仅切 tab 时保留解码位图 30s）。
+  - `src/utils/navigation/homePrefetch.ts`（新）：主页稳定 2.5s 后空闲预热
+    发现（tags+hot 前 30 条）/播客（首个分类页 pageSize=15）首屏数据进 sessionCache；
+    只缓存元数据、不保留 DOM；映射与 key 与视图保持同步（注释标注）。
+  - `src/views/music/podcast.vue`：loadCategories 不再整删 `podcast:page:`
+    （分类树仍每次强制刷新），改走 SWR 命中预热缓存。
+  - `src/views/home/index.vue`：onMounted 调 `scheduleHomePrefetch()`。
+- 验证：`npx vue-tsc --noEmit` exit 0；重打包替换 /Applications/树夏Music.app
+  （备份 ~/旧版树夏Music-1.0.8.app），构建产物已验证含新曲线/预热代码；待实机确认。
+- 索引：AI_INDEX 维护日志已追加；graphify 增量重建（新模块 homePrefetch）。
+
+## 2026-10-14 板块切换 Q弹过渡（主页 + 设置页）
+
+- 诉求：点左侧板块（发现/歌单/播客/本地下载）或设置子板块时，右侧内容"Q弹"滑入。
+- 实现（纯 CSS、零新增依赖，3 文件 ~80 行）：
+  - `src/views/home/index.vue`：页面 Transition 由 120ms 纯淡入淡出改为
+    100ms 淡出 + 28px 左侧滑入过冲（back-out `cubic-bezier(0.34, 1.56, 0.64, 1)`，240ms）。
+  - `src/views/settings/index.vue`：右侧面板套 `<Transition name="settings-panel" mode="out-in">`
+    （24px 滑入同款曲线）；`.panel-content` 加 `overflow-x: hidden`；`.nav-item` 加
+    `&:active scale(0.98)` 按压反馈；既有「各卡片 animation:none」「窗口隐藏/空闲跳过动画」
+    即时响应优化保留。
+  - `src/components/layout/HomeLayout.vue`：主导航 `.nav-button` 加 `&:active scale(0.97)`。
+  - 全部带 `prefers-reduced-motion` 回退（退化为纯淡入）。
+- 手感调参：过冲幅度 = bezier 第二个 y 值（1.56 更弹 / 1.2 更收敛）；滑入距离 28px（主页）/
+  24px（设置页）；切出固定 100ms 快速淡出。
+- 验证：`npx vue-tsc --noEmit` exit 0；Q弹听感/观感待实机确认。
+- 索引：AI_INDEX 维护日志已追加；纯 CSS/模板改动，graphify 未重跑。
+
 ## 2026-10-14 v1.0.8 双平台发布完成（GitHub + Gitee）
 
 - 版本 1.0.7 → 1.0.8（`package.json` 单一来源 + `src-tauri/Cargo.toml`），commit 716ce14

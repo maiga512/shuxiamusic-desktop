@@ -94,7 +94,7 @@ safe.
 
 Startup keeps plugin initialization inside the welcome screen. The minimum splash wait is 1500ms, then `/home` route replacement starts the overlapping transition; `initPlayback()` is delayed 720ms after route replacement so home mount and local playback-state restore do not compete with the dissolve animation. It restores the last song through the same `playSong()` pipeline as manual playback, preserving URL-cache validation, current-source refresh, candidate-source fallback, and bounded failure auto-next. MPV errors arriving before a per-song error handler is installed are held against the current playback request and replayed once the handler is ready.
 
-Welcome-to-home uses an overlapping route transition: the starfield stays on top and dissolves (scale/blur/fade) while `/home` mounts underneath. The dissolve/reveal pair runs for 720ms with `linear` timing, so the old decelerating tail that made the final frames appear to pause is removed. FullPlay trackpad gestures are handled entirely in the frontend: two-finger horizontal swipe toggles `layoutMode` (`cd` vinyl vs square cover) with per-swipe latching — an 180ms event gap or a direction reversal starts a new swipe segment, and once a segment crosses the 48px trigger it latches so the remaining inertial wheel events are ignored (one swipe = at most one toggle); pinch (Safari `gesturestart`/`gesturechange`, plus `ctrl`+`wheel` fallback) toggles window fullscreen. Three-finger is intentionally not implemented. The earlier macOS AppKit local event monitor was removed because any Objective-C exception thrown inside `NSApplication sendEvent:` (for example `touchesMatchingPhase:inView:`) cannot be caught by Rust and aborts the whole process; the frontend-only path has no such native crash surface.
+Welcome-to-home uses an overlapping route transition: the starfield stays on top and dissolves (scale/blur/fade) while `/home` mounts underneath. The dissolve/reveal pair runs for 720ms with `linear` timing, so the old decelerating tail that made the final frames appear to pause is removed. FullPlay trackpad gestures are handled entirely in the frontend: two-finger horizontal swipe toggles `layoutMode` (`cd` vinyl vs square cover) with per-swipe latching. Once a segment crosses the 48px trigger it latches and **every** later wheel event is ignored until the latch is released; release only happens when two consecutive events are more than 250ms apart **in `event.timeStamp`** (event creation time, not handler time), with a 2s hard ceiling on the latch as a safety net in case some WebKit path never advances `timeStamp`. Using `event.timeStamp` is essential: toggling the layout swaps the whole CD/cover template, which blocks the main thread, so queued momentum events are handled in a burst where `performance.now()` gaps look like a "new swipe" — that misfire was the "one swipe flips back and forth several times" bug. Pinch (Safari `gesturestart`/`gesturechange`, plus `ctrl`+`wheel` fallback) toggles window fullscreen. Three-finger is intentionally not implemented. The earlier macOS AppKit local event monitor was removed because any Objective-C exception thrown inside `NSApplication sendEvent:` (for example `touchesMatchingPhase:inView:`) cannot be caught by Rust and aborts the whole process; the frontend-only path has no such native crash surface.
 
 ```text
 src/utils/audio/globaPlayList.ts
@@ -120,26 +120,48 @@ app ready so device labels and recognize features do not wait for first play.
 macOS CoreAudio AO silent-death recovery: after a default-output-device switch,
 Bluetooth connect/disconnect, `coreaudiod` restart, or sleep/wake, MPV's audio
 output can go silent while decoding and the clock keep advancing. The frontend
-`nativePlayback.ts` listens to `navigator.mediaDevices` `devicechange` (debounced
-800ms) and the `app-system-wake` event — emitted by `system_power.rs`, which
-subscribes to `NSWorkspaceDidWakeNotification` on the Rust main thread — then
-calls the `mpv_reload_audio_output` command, which cycles `aid` (`no` -> restore)
-in `mpv_player.rs` to tear down and rebuild the whole audio chain (AO included)
-without reopening the network stream. The reload is single-flight with a 1.5s
-cooldown and fails soft — an AO rebuild error never surfaces as a playback error,
-so it does not trigger source switch or auto-next.
+`nativePlayback.ts` listens to the `app-audio-device-changed` event — emitted by
+`src-tauri/src/audio_device.rs`, which registers a CoreAudio
+`kAudioHardwarePropertyDefaultOutputDevice` property listener (WebKit does not
+expose audio-output devices on macOS, so `navigator.mediaDevices` `devicechange`
+is only a fallback) — plus `navigator.mediaDevices` `devicechange` (debounced
+800ms) and the `app-system-wake` event (emitted by `system_power.rs` from
+`NSWorkspaceDidWakeNotification`), then calls the `mpv_reload_audio_output`
+command, which cycles `aid` (`no` -> restore) in `mpv_player.rs` to tear down and
+rebuild the whole audio chain (AO included) without reopening the network stream.
+The reload is single-flight with a 1.5s cooldown and fails soft — an AO rebuild
+error never surfaces as a playback error, so it does not trigger source switch or
+auto-next.
 
-Dock-bar volume uses a perceptual power curve: the slider keeps its displayed
-percentage (0–100) as the app-volume domain in `nativePlayback.ts`, and
-`sliderToMpvVolume(p) = p²/100` maps it onto mpv's `volume` property before
-crossing IPC (100 = device full scale, i.e. the full level of whatever the
-system volume is set to). 100% = full system level, 50% = mpv 25 (-12 dB,
-roughly half perceived loudness), 0% = silent. The earlier linear 1:1 mapping
-only cut -6 dB from 100%→50%, which is nearly inaudible — the slider's upper
-half felt like it was not being controlled by the real percentage. Both the
-frontend IPC merge (`flushMpvVolumeIpc`) and the Rust `mpv_set_volume` early
-return now dedupe with a 0.25 threshold in the mpv-volume domain. DLNA volume
-sync still sends the raw slider percentage.
+Headphone auto-resume suppression: macOS sends the app system media commands
+around an output-device change (pause on unplug, play/pause on replug/insert).
+`globaPlayList.ts` `onGlobalCtrl` treats system-sourced (`source=media`)
+`play`/`pause` inside a suppression window as device noise: `play` is ignored and
+`pause` is pause-only (never toggles to play). The window is 6s after
+`app-audio-device-changed`/`devicechange`, plus a 4s fallback after a system
+`pause` that actually paused playback (covers earphones that plug into a USB
+interface, where the default output device does not change). Outside the window
+the existing toggle-on-`pause` semantics is kept (it compensates for stale
+Now-Playing state), and UI-initiated play/pause is never suppressed.
+
+Dock-bar volume is a **proportional (linear-amplitude) mapping**, because mpv's
+own `volume` property is not linear: measured on the bundled mpv v0.41
+(`ao=pcm` + `volumedetect`), `gain = (volume/100)^3` — `volume=50` is -18.0 dB,
+`volume=80` is -5.8 dB. `nativePlayback.ts` therefore inverts that cubic:
+`sliderToMpvVolume(p) = 100 * cbrt(p/100)`, so the effective gain equals the
+slider percentage (100%→100 full scale = the full level of whatever the system
+volume is set to, 80%→92.83 = -1.9 dB, 50%→79.37 = -6 dB, 0%→0). The previous
+`p²/100` curve stacked a second power on top of mpv's cubic, so 50% landed near
+-36 dB and 80% near -11.6 dB — the lower half of the slider was effectively
+dead ("调到 80% 就很小了"). This also matches the Electron reference
+(`audio.volume = v/100`). Both the frontend IPC merge (`flushMpvVolumeIpc`) and
+the Rust `mpv_set_volume` early return dedupe with a 0.25 threshold in the
+mpv-volume domain (1% of slider ≈ 0.33 mpv units at full scale). DLNA volume
+sync still sends the raw slider percentage. 0% is a legitimate slider value
+(mute): every `volume <= 0 -> 80` coercion was removed from `nativePlayback.ts`
+(`nativeLoad`/`nativeSetVolume`), `LocalUserDetail.init()` (only non-finite /
+out-of-range persisted values fall back to 80) and the `PlayMusic.vue` watcher —
+otherwise dragging to the bottom bounced straight back to 80%.
 
 Window-visibility wake
 (`ceru-wake`: minimize/restore, hide/show, 15s idle wake) must NOT trigger the
@@ -350,6 +372,14 @@ download menu/dialog
 Quality failure must not be confused with a current-source mismatch. The
 download path must resolve the same effective source used by playback.
 
+The completed-task folder icon calls `download.openFileLocation` through
+`src/tauri-bridge.ts` into the Node sidecar, which runs `open -R` (macOS) /
+`explorer /select` (Windows) / `xdg-open` (Linux). The route must be registered
+in `sidecar/index.mjs`'s method table — the service implementation existing in
+`sidecar/services/download/index.mjs` is not enough; an unregistered method
+throws `Unsupported sidecar method` and the bridge's non-strict wrapper silently
+returns `undefined`, so the click appears to do nothing.
+
 ### 6. Desktop Lyrics
 
 ```text
@@ -412,6 +442,7 @@ architecture. A low Tauri shell number alone does not prove lower total cost.
 | Full player animation stutters | `src/components/Play/FullPlay.vue`, `src/components/Play/PlayMusic.vue` | animation path, compositor properties, visualizer cost |
 | Welcome dissolve into home | `src/views/welcome/index.vue`, `src/App.vue` | splash stays on top, home mounts underneath, scale/blur fade |
 | FullPlay trackpad gestures | `src/components/Play/FullPlay.vue`, `src/store/playSetting.ts` | two-finger layout, pinch fullscreen; frontend-only, no AppKit monitor |
+| Black bar at top after leaving fullscreen / menu bar not covered | `src-tauri/src/windowed_fs.rs` | macOS path no longer uses Tauri's window APIs at all; it runs the whole enter/exit in **one** main-queue AppKit task (`dispatch_async_f` + `_dispatch_main_q`), because tao 0.37's `set_decorations(true)` sets `Closable\|Miniaturizable\|Resizable\|Titled` with **no `FullSizeContentView`** (content pushed down by the title bar → black strip), `set_always_on_top(true)` sets `NSFloatingWindowLevel(3)` (below the menu bar's 24) asynchronously, and `set_position`/`set_size` go through the event loop while `set_decorations` goes through GCD — two queues with no ordering guarantee, and adding/removing `FullSizeContentView` itself changes the frame height by the title bar height. Enter: save AppKit `frame`/`level`/`isZoomed`, unzoom, drop `Titled`, `setFrame:` to `[window screen].frame` (full display frame incl. menu bar), `setLevel: 1000`. Exit: restore the Overlay mask (`Titled\|Closable\|Miniaturizable\|Resizable\|FullSizeContentView`) + transparent titlebar + hidden title + hide traffic lights, **then** write the saved frame back (order matters), then restore the saved level/zoom |
 | Fullscreen dock needs two clicks | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` | idle wake strip, parked full-play off dock, hidden dock pointer-events |
 | Dock progress jumps every second | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` | animate remaining duration with transform; do not raise `progressPublishInterval` |
 | First song after restart is slow | `src/utils/audio/globaPlayList.ts`, `src/utils/audio/audioHelpers.ts` | startup restore must not mpv_probe before mpv_load |
@@ -424,6 +455,8 @@ architecture. A low Tauri shell number alone does not prove lower total cost.
 | Headphone / Now Playing keys do nothing | `src-tauri/build.rs`, `src-tauri/src/now_playing.rs`, `src/utils/audio/useSmtc.ts`, `/tmp/ceru-media-keys.log` | bundleIdentifier must be non-nil for MediaRemote routing; 10s Now Playing heartbeat; artwork cached per URL |
 | Favorites list keeps jumping | `src/views/music/list.vue`, `src/components/Music/SongVirtualList.vue` | silent refresh must merge into existing row objects, never replace the array; cover directive re-observes only when the bound song really changed |
 | Plugin/source mapping is wrong | `src/utils/playlist/pluginIdentity.ts`, `src/tauri-bridge.ts` | normalized source identity, plugin registry, duplicate IDs |
+| Accessibility permission lost after every rebuild | `src-tauri/tauri.conf.json` (`bundle.macOS.signingIdentity`), `install-new-build.sh`, `.github/workflows/desktop-release.yml` | sign with the stable `Ceru Music Self-Signed` cert so the designated requirement is `certificate root = H"..."` (stable) instead of ad-hoc `cdhash` (changes every build); never re-sign with `codesign --sign -` after copying to /Applications; CI overrides back to `-` via `APPLE_SIGNING_IDENTITY` |
+| App won't relaunch after a hard kill (double-click does nothing) | orphaned `mpv` child process | `kill -9` on the app leaves `Contents/Resources/mpv/bin/mpv` alive holding the LaunchServices registration; `pkill -f "mpv/bin/mpv"` restores launching |
 
 ## Query Commands
 

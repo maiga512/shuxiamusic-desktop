@@ -590,6 +590,11 @@ function checkGuide() {
         padding: 0.7rem 1rem;
         border-radius: 0.5rem;
         border: none;
+        transition: transform 0.15s ease;
+
+        &:active {
+          transform: scale(0.97);
+        }
 
         .nav-icon {
           margin-right: 0.75rem;

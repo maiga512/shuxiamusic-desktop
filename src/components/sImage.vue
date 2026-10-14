@@ -244,12 +244,43 @@ watch(
   },
   { immediate: true }
 )
-const shouldReleaseDecoded = computed(() => {
+// 封面解码位图释放策略：
+// - 窗口隐藏/最小化 → 立即释放（内存优先，原有行为不变）；
+// - 切到别的 tab 但窗口仍可见 → 60s 宽限：快速来回切 tab 时封面回来即有，
+//   停留 60s 自动释放，不做长期常驻。
+const COVER_RELEASE_GRACE_MS = 60000
+const releaseDue = computed(() => {
   if (!props.observeVisibility || !props.releaseOnHide || !hasBeenVisible.value) return false
   if (pinnedThroughWindowSleep.value) return false
-  if (!windowVisible.value) return true
-  return !isCanLook.value
+  return !windowVisible.value || !isCanLook.value
 })
+const graceReleased = ref(false)
+let graceTimer: number | undefined
+watch(
+  releaseDue,
+  (due) => {
+    if (graceTimer !== undefined) {
+      window.clearTimeout(graceTimer)
+      graceTimer = undefined
+    }
+    if (!due) {
+      graceReleased.value = false
+      return
+    }
+    if (!windowVisible.value) {
+      graceReleased.value = true
+      return
+    }
+    graceTimer = window.setTimeout(() => {
+      graceTimer = undefined
+      graceReleased.value = true
+    }, COVER_RELEASE_GRACE_MS)
+  },
+  { immediate: true }
+)
+const shouldReleaseDecoded = computed(
+  () => releaseDue.value && (graceReleased.value || !windowVisible.value)
+)
 const shouldLoadImage = computed(() => {
   if (!props.src) return false
   if (shouldReleaseDecoded.value) return false
@@ -341,6 +372,10 @@ watch(
 )
 
 onUnmounted(() => {
+  if (graceTimer !== undefined) {
+    window.clearTimeout(graceTimer)
+    graceTimer = undefined
+  }
   try {
     if (imgRef.value) imgRef.value.src = ''
   } catch {

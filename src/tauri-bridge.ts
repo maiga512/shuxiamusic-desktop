@@ -4842,7 +4842,18 @@ export function createTauriBridge() {
         const nodeTasks = await invokeNodeDownload('validateFiles')
         return normalizeDownloadTaskList(nodeTasks || [])
       },
-      openFileLocation: (filePath: string) => invokeNodeDownload('openFileLocation', { filePath }),
+      // 用 strict 变体：失败时不再静默返回 undefined（那样点图标会毫无反馈），
+      // 而是回一个 {success:false,message} 让 UI 弹提示。
+      openFileLocation: async (filePath: string) => {
+        try {
+          return await invokeNodeDownloadStrict('openFileLocation', { filePath })
+        } catch (error: any) {
+          return {
+            success: false,
+            message: String(error?.message || error || '打开文件位置失败')
+          }
+        }
+      },
 
       onTaskAdded: (cb: (event: null, task: any) => void) => onElectronEvent('download:task-added', (event, task) => cb(event, normalizeDownloadTaskEvent(task))),
       onTaskProgress: (cb: (event: null, task: any) => void) => onElectronEvent('download:task-progress', (event, task) => cb(event, normalizeDownloadTaskEvent(task))),
@@ -5435,6 +5446,9 @@ setProgress: (progress: number, options?: { paused?: boolean }) => {
       },
       // 真实系统睡眠/唤醒（Rust 侧 NSWorkspace didWake 派发），区别于窗口可见性唤醒
       onSystemWake: (cb: () => void) => onTauriEvent('app-system-wake', cb),
+      // 默认输出设备变化（Rust 侧 CoreAudio kAudioHardwarePropertyDefaultOutputDevice 派发）：
+      // 耳机插拔 / 蓝牙连断 / 手动切换输出设备。比 WebView 的 devicechange 可靠。
+      onAudioDeviceChanged: (cb: () => void) => onTauriEvent('app-audio-device-changed', cb),
     },
 
     // ---- Desktop Lyric Window ----

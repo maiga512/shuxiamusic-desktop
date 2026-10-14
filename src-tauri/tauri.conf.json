@@ -52,7 +52,7 @@
     },
     "macOS": {
       "infoPlist": "Info.plist",
-      "signingIdentity": "-"
+      "signingIdentity": "Ceru Music Self-Signed"
     },
     "windows": {
       "webviewInstallMode": {

@@ -4,6 +4,8 @@ class AudioManager {
   private static instance: AudioManager
   private audioSources = new WeakMap<HTMLAudioElement, MediaElementAudioSourceNode>()
   private audioContexts = new WeakMap<HTMLAudioElement, AudioContext>()
+  // WeakMap 不可遍历；另存一份强引用集合，供 syncAllContexts 遍历（元素卸载时移除）
+  private audioElements = new Set<HTMLAudioElement>()
   private analysers = new Map<string, { node: AnalyserNode; element: HTMLAudioElement }>()
   // 为每个 audioElement 复用一个分流器，避免重复断开重连主链路
   private splitters = new WeakMap<HTMLAudioElement, GainNode>()
@@ -70,6 +72,36 @@ class AudioManager {
     const context = this.audioContexts.get(audioElement)
     if (!context || context.state !== 'running') return
     context.suspend().catch(() => {})
+  }
+
+  /**
+   * 按元素播放状态同步 Web Audio 图的运行/挂起。
+   *
+   * 背景：一旦为某个 <audio> 建过 MediaElementAudioSourceNode，WebKit 就会
+   * 持续渲染整张音频图（即使元素没在放音、窗口最小化也照跑），实测常驻
+   * 约 3% CPU（WebContent）+ 1.6%（GPU）。所以元素不在播放时必须 suspend，
+   * 真正开始播放前再 resume，声音链路不受影响。
+   */
+  syncContextPlaybackState(audioElement: HTMLAudioElement, forceSuspend = false): void {
+    const context = this.audioContexts.get(audioElement)
+    if (!context || context.state === 'closed') return
+    const playing = !forceSuspend && !audioElement.paused && !audioElement.ended
+    if (playing) {
+      if (context.state === 'suspended') context.resume().catch(() => {})
+    } else if (context.state === 'running') {
+      context.suspend().catch(() => {})
+    }
+  }
+
+  /** 挂起/恢复所有已创建的音频图（用于窗口隐藏、切到原生播放等场景）。 */
+  syncAllContexts(forceSuspend = false): void {
+    for (const el of Array.from(this.audioElements)) {
+      if (!this.audioContexts.get(el)) {
+        this.audioElements.delete(el)
+        continue
+      }
+      this.syncContextPlaybackState(el, forceSuspend)
+    }
   }
 
   // 获取或创建音频源
@@ -226,6 +258,7 @@ class AudioManager {
         // 存储引用
         this.audioSources.set(audioElement, source)
         this.audioContexts.set(audioElement, context)
+        this.audioElements.add(audioElement)
 
         console.log('AudioManager: 创建新的音频源和上下文 (含EQ)')
       }

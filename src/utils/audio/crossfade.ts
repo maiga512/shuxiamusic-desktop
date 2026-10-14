@@ -83,6 +83,13 @@ const stopRmsWatch = () => {
     _rmsInterval = null
   }
   _rmsWindow = []
+  // 观察结束：若元素已不在播放，把 Web Audio 图挂起（否则 WebKit 会一直空转渲染）
+  try {
+    const primary = ControlAudioStore().getPrimaryEl()
+    if (primary) AudioManager.syncContextPlaybackState(primary)
+  } catch {
+    /* 忽略 */
+  }
 }
 
 const resetState = () => {

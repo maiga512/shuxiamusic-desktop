@@ -193,6 +193,14 @@ const services = {
     return await downloadService.setDownloadDir(payload)
   },
 
+  // 下载列表里"文件夹"图标：在 Finder/资源管理器里定位已下载的文件。
+  // 服务实现早已存在（services/download/index.mjs 的 openFileLocation），
+  // 但此前漏注册路由，调用会抛 "Unsupported sidecar method"，
+  // 被 tauri-bridge 静默吞掉 → 点图标毫无反应。
+  async 'download.openFileLocation'(payload) {
+    return await downloadService.openFileLocation(payload)
+  },
+
   async 'music.url.cache.get'(payload) {
     return await downloadService.urlCacheGet(payload)
   },

@@ -265,10 +265,10 @@ const mergeRadios = (lists: RadioCard[][], limit = 10) => {
 }
 
 const loadCategories = async () => {
-  // Align Electron: always force-refresh official category tree on enter.
-  // Do not keep an empty in-memory cache around after a sidecar outage.
+  // 分类树每次进入强制刷新（官方新分类立即出现，对齐 Electron）。
+  // 分页数据不再整删：命中新缓存时先渲染、后台刷新（SWR，同发现页），
+  // 避免点进播客后首屏空白等待；缓存 TTL 10min，失效后自然走网络。
   deleteSessionCache('podcast:categories')
-  deleteSessionCache('podcast:page:')
   const nextCategories = (await podcastApi.getCategories(true)) || []
   categories.value = Array.isArray(nextCategories) ? nextCategories : []
   if (categories.value.length) setSessionCache('podcast:categories', categories.value)

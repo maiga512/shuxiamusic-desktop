@@ -87,6 +87,11 @@ let deviceChangeTimer: ReturnType<typeof setTimeout> | null = null
 const AUDIO_RELOAD_COOLDOWN_MS = 1500
 const DEVICE_CHANGE_DEBOUNCE_MS = 800
 
+// 最近一次音频设备拓扑变化(耳机插拔/蓝牙连断)的时间戳。macOS 会在这类变化前后
+// 替 App 发一条系统媒体指令(拔耳机发 pause、插回发 play)，前端据此抑制"戴上又自动播"。
+let lastAudioDeviceChangeAt = 0
+export const lastAudioDeviceChangeAtMs = (): number => lastAudioDeviceChangeAt
+
 let audioStoreRef: any = null
 export const attachNativePlaybackStore = (store: any) => {
   audioStoreRef = store
@@ -279,13 +284,20 @@ const stopVolumeFade = () => {
   }
 }
 
-// 感知音量曲线：滑条百分比 -> mpv 音量值(0-100，100=设备满刻度，即系统音量档位的完整音量)。
-// 映射为 p²/100：100%→100(满)，50%→25(-12dB，听感约一半响度)，0%→0。
-// 若按线性 1:1 映射，100%→50% 只有 -6dB、人耳几乎无感，滑条上半段"按百分比控制"
-// 完全失真——这正是"音量没有按真的百分之多少来控制"的根因。
+// 滑条百分比 -> mpv 音量值(0-100，100=设备满刻度，即系统音量档位的完整音量)。
+//
+// 关键：mpv 的 volume 属性不是线性增益。实测(打包内 mpv v0.41，ao=pcm + volumedetect)：
+//   gain = (volume/100)^3   —— volume=50 实测 -18.0dB、volume=80 实测 -5.8dB。
+// 所以把滑条百分比直接当 volume 下发(或再叠一层 p²)，实际增益会被三次曲线再压一次：
+//   p²/100 曲线下 50% ≈ -36dB、80% ≈ -11.6dB —— 滑条下半段几乎全废，
+//   这就是"调到 80% 就很小了、没有循序渐进"的根因。
+// 这里反解这条三次曲线，让最终增益 = 滑条百分比/100（等比例）：
+//   100%→100(满)、80%→92.83(-1.9dB)、50%→79.37(-6dB)、0%→0。
+// 与 Electron 版 audio.volume = v/100 的线性行为一致，也满足"把系统音量档位
+// 分成 100 份、按比例对应"的预期；不读取、不修改系统音量。
 const sliderToMpvVolume = (percent: number): number => {
   const p = Math.max(0, Math.min(100, percent))
-  return (p * p) / 100
+  return 100 * Math.cbrt(p / 100)
 }
 
 let lastSentMpvVolume = Number.NaN
@@ -521,10 +533,32 @@ const installListeners = () => {
   const offSystemWake = (window as any).api?.app?.onSystemWake?.(onSystemWake)
   if (typeof offSystemWake === 'function') listenerCleanups.push(offSystemWake)
 
-  // 监听音频设备拓扑变化(蓝牙连断、插拔、coreaudiod 重启),防抖后重建 AO。
+  // 默认输出设备变化（Rust 侧 CoreAudio 派发 app-audio-device-changed）：耳机插拔、
+  // 蓝牙连断、手动切换输出设备。比 WebView 的 devicechange 可靠（WebKit 在 macOS
+  // 不暴露 audiooutput 设备）。既用于重建 AO，也用于标记"刚发生过设备变化"，
+  // 供 globaPlayList 抑制 macOS 替 App 发的系统媒体指令（避免"戴上耳机自动播"）。
+  const onNativeDeviceChange = () => {
+    lastAudioDeviceChangeAt = Date.now()
+    scheduleAudioReload()
+  }
+  const offDeviceChanged = (window as any).api?.app?.onAudioDeviceChanged?.(onNativeDeviceChange)
+  if (typeof offDeviceChanged === 'function') {
+    listenerCleanups.push(offDeviceChanged)
+    listenerCleanups.push(() => {
+      if (deviceChangeTimer) {
+        clearTimeout(deviceChangeTimer)
+        deviceChangeTimer = null
+      }
+    })
+  }
+
+  // 兜底：WebView 的 devicechange（蓝牙连断、coreaudiod 重启等也会连发）。
   const mediaDevices = navigator?.mediaDevices
   if (mediaDevices?.addEventListener) {
-    const onDeviceChange = () => scheduleAudioReload()
+    const onDeviceChange = () => {
+      lastAudioDeviceChangeAt = Date.now()
+      scheduleAudioReload()
+    }
     mediaDevices.addEventListener('devicechange', onDeviceChange)
     listenerCleanups.push(() => {
       mediaDevices.removeEventListener('devicechange', onDeviceChange)
@@ -645,8 +679,14 @@ export const nativeLoad = async (url: string, options: NativeLoadOptions = {}): 
   store.Audio.currentTime = options.startTime && options.startTime > 0 ? options.startTime : 0
   store.Audio.duration = 0
   store.Audio.isPlay = Boolean(options.autoplay)
-  desiredVolume = typeof options.volume === 'number' ? options.volume : store.Audio.volume
-  if (!(desiredVolume > 0)) desiredVolume = 80
+  // 0 是合法的滑条值（用户可精确拖到 0% = 静音），只有非有限数才回退到 80。
+  // 旧代码把 0 强行改成 80，导致"拖到底部又弹回去"，见 nativeSetVolume 同款注释。
+  desiredVolume =
+    typeof options.volume === 'number' && Number.isFinite(options.volume)
+      ? options.volume
+      : store.Audio.volume
+  if (!Number.isFinite(desiredVolume)) desiredVolume = 80
+  desiredVolume = Math.max(0, Math.min(100, desiredVolume))
   currentMpvVolume = options.autoplay ? 0 : desiredVolume
   const media = currentNativeMedia(trimmed)
   try {
@@ -752,8 +792,11 @@ export const nativeSeek = async (seconds: number): Promise<boolean> => {
 
 export const nativeSetVolume = async (volume: number, transition = false): Promise<boolean> => {
   if (!isNativePlaybackAvailable()) return false
-  desiredVolume = Math.max(0, Math.min(100, Number(volume) || 0))
-  if (!(desiredVolume > 0) && !transition) desiredVolume = 80
+  // 0 是合法值：滑条拖到底就是静音（mpv volume 0），必须原样下发。
+  // 旧代码在这里把 0 改写成 80，于是"点到底部又弹回 80%"——用户要的是
+  // 精确控制（0%、1% 都能点），所以只对非有限数兜底。
+  const parsed = Number(volume)
+  desiredVolume = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0
   if (!isNativePlaybackActive()) return true
   if (transition && getAudioStore()?.Audio.isPlay) {
     void fadeMpvVolume(desiredVolume).catch(() => {})

@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { MessagePlugin } from 'tdesign-vue-next'
 
 export enum DownloadStatus {
   Queued = 'queued',
@@ -166,6 +167,7 @@ export const useDownloadStore = defineStore('download', {
 
     async deleteTask(taskId: string, deleteFile: boolean = false) {
       await window.api.download.deleteTask(taskId, deleteFile)
+      MessagePlugin.success(deleteFile ? '已删除任务与文件' : '已删除记录，文件保留在下载目录')
     },
 
     async retryTask(taskId: string) {
@@ -173,7 +175,18 @@ export const useDownloadStore = defineStore('download', {
     },
 
     async openFileLocation(filePath: string) {
-      await window.api.download.openFileLocation(filePath)
+      if (!filePath) {
+        MessagePlugin.warning('该任务没有文件路径')
+        return
+      }
+      const res: any = await window.api.download.openFileLocation(filePath)
+      if (!res) {
+        MessagePlugin.warning('无法打开文件位置：下载服务无响应')
+        return
+      }
+      if (res.success === false) {
+        MessagePlugin.warning(res.message || '无法打开文件位置')
+      }
     },
 
     async clearTasks(type: 'queue' | 'completed' | 'failed' | 'all') {

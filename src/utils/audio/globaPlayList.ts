@@ -26,6 +26,7 @@ import AudioManager from './audioManager'
 import {
   ensureNativePlayback,
   isNativePlaybackActive,
+  lastAudioDeviceChangeAtMs,
   nativeLoad,
   nativePause,
   nativeSeek
@@ -1611,6 +1612,15 @@ let unsubPlaybackPositionPlay: (() => void) | null = null
 let unsubPlaybackPositionPause: (() => void) | null = null
 // 媒体键双路投递去重状态（Rust 链路与 Media Session 链路的同指令合并）
 let lastMediaKeyEvent: { name: string; at: number } = { name: '', at: 0 }
+// 音频设备插拔(耳机拔/插、蓝牙连断)后抑制"系统自动恢复播放"的窗口时长。
+// 见 onGlobalCtrl：窗口内系统来源的 play 忽略、pause 只当暂停。
+const DEVICE_AUTO_RESUME_SUPPRESS_MS = 6000
+// 兜底窗口：有些耳机(插在 USB 声卡上的有线耳机等)摘戴时默认输出设备并不变化，
+// 拿不到 devicechange。这类情况下 macOS 的自动暂停/自动恢复是一对紧邻的系统指令
+// （实测间隔 1.3~2.6s），所以"刚被系统暂停过"之后的一小段时间内同样抑制恢复。
+const AUTO_RESUME_PAIR_MS = 4000
+// 最近一次"系统来源且真的暂停了播放"的时间戳（见 onGlobalCtrl 的 pause 分支）
+let lastSystemPauseAt = 0
 const onGlobalCtrl = (e: any) => {
   const name = e?.detail?.name
   const val = e?.detail?.val
@@ -1627,16 +1637,44 @@ const onGlobalCtrl = (e: any) => {
     }
     lastMediaKeyEvent = { name, at: now }
   }
+  // 耳机/音频设备插拔窗口：macOS 在输出设备变化时会替 App 发一条系统媒体指令
+  // （拔耳机发 pause、插回发 play/pause），前端照单全收就会出现"摘下暂停、戴上又自动播"。
+  // 设备变化后的一小段时间内，系统来源的 play 一律忽略、pause 只当暂停（不再反转成播放）；
+  // 窗口外的行为保持不变（保留 toggle 语义兜底系统状态感知滞后）。用户主动点 App 内
+  // 播放按钮不受影响（那条路径不走 global-music-control）。
+  const systemSourced = e?.detail?.source === 'media'
+  const nowMs = Date.now()
+  const inDeviceChangeWindow =
+    systemSourced && nowMs - lastAudioDeviceChangeAtMs() < DEVICE_AUTO_RESUME_SUPPRESS_MS
+  const inAutoResumePairWindow =
+    systemSourced && nowMs - lastSystemPauseAt < AUTO_RESUME_PAIR_MS
+  const suppressSystemResume = inDeviceChangeWindow || inAutoResumePairWindow
+  const suppressReason = inDeviceChangeWindow ? 'device change' : 'after system pause'
   switch (name) {
     case 'play':
+      if (suppressSystemResume) {
+        mediaDiagLog('ctrl', `play suppressed(${suppressReason} auto-resume)`)
+        break
+      }
       // 系统状态感知可能滞后（以为暂停其实已在播）→ 已在播就不重复启动
       if (!Audio.value.isPlay) void handlePlay()
       break
     case 'pause':
+      if (suppressSystemResume) {
+        // 设备插拔 / 系统自动暂停后的自动恢复：只暂停，绝不反转成播放
+        if (Audio.value.isPlay) {
+          lastSystemPauseAt = nowMs
+          void handlePause()
+        } else {
+          mediaDiagLog('ctrl', `pause ignored(${suppressReason} window)`)
+        }
+        break
+      }
       // 同样因为状态感知滞后，系统可能在"实际已暂停"时发 pause，直接 handlePause 会空转，
       // 用户按多少次都只收到 pause —— 耳机键"完全失灵"的体感来源。
       // 改成 toggle 语义：在播→暂停，不在播→播放，按键永远有实际效果。
       if (Audio.value.isPlay) {
+        if (systemSourced) lastSystemPauseAt = nowMs
         void handlePause()
       } else {
         void handlePlay()

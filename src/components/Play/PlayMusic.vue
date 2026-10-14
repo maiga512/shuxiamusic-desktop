@@ -874,11 +874,8 @@ watch(
     if (newVolume === undefined || newVolume === null) return
     const next = Number(newVolume)
     if (!Number.isFinite(next)) return
-    // Dirty persisted volume=0 used to keep starting muted and re-enter setVolume.
-    if (next <= 0 && (Audio.value.volume || 0) <= 0) {
-      setVolume(80)
-      return
-    }
+    // 0% 是合法音量（静音），不再改写成 80：旧守卫会让"拖到底部"立刻弹回 80%。
+    // 持久化脏数据的兜底已收口到 LocalUserDetail.init()（只过滤非数字/越界）。
     if (next === Audio.value.volume) return
     setVolume(next)
   },

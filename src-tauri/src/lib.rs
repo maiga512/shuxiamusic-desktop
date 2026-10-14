@@ -1,3 +1,4 @@
+mod audio_device;
 mod commands;
 mod db;
 mod hotkeys;
@@ -1355,6 +1356,11 @@ pub fn run() {
             // 向 Webview 派发 app-system-wake 让前端重建音频输出。
             // 注意与窗口可见性唤醒(ceru-wake)严格区分，窗口级唤醒不得触发 AO 重建。
             system_power::init_system_power_watcher(app.handle());
+
+            // 默认输出设备变化监听（耳机插拔 / 蓝牙连断）：向 Webview 派发
+            // app-audio-device-changed，前端据此(a)重建 MPV 音频输出，(b)抑制
+            // macOS 在设备变化时替 App 发的系统媒体指令（避免"戴上耳机自动播"）。
+            audio_device::init_audio_device_watcher(app.handle());
 
             // ---- 监听前端同步的 close_to_tray 设置，写入 DB ----
             let handle = app.handle().clone();

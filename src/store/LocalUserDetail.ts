@@ -113,7 +113,13 @@ function init(): void {
       if (UserInfoLocal) {
         userInfo.value = JSON.parse(UserInfoLocal) as UserInfo
         if (!userInfo.value.sourceQualityMap) userInfo.value.sourceQualityMap = {}
-        if (!(Number(userInfo.value.volume) > 0)) userInfo.value.volume = 80
+        // 0 是合法的持久化音量（用户主动拖到 0% = 静音），必须保留；
+        // 只有缺失/非数字/越界才回退到 80。旧代码把 0 改成 80，
+        // 会让"上次拖到 0"的用户重启后又突然有声音。
+        const persistedVolume = Number(userInfo.value.volume)
+        userInfo.value.volume = Number.isFinite(persistedVolume)
+          ? Math.max(0, Math.min(100, persistedVolume))
+          : 80
       } else {
         userInfo.value = {
           lastPlaySongId: null,

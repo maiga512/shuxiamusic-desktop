@@ -3,7 +3,7 @@ name = "ceru-tauri"
 # 应用对外版本号以根目录 package.json 为唯一来源（tauri.conf.json version 指向
 # ../package.json）。此处仅为 Cargo 必填项，不参与关于页/安装包版本展示，保持与
 # package.json 一致即可，无需每次手动维护。
-version = "1.0.8"
+version = "1.0.9"
 description = "树夏Music - Tauri Edition"
 authors = ["树夏Music Team"]
 edition = "2021"
@@ -45,6 +45,9 @@ symphonia = { version = "0.6.0", features = ["aac", "alac", "flac", "isomp4", "m
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["NSString"] }
 objc2-app-kit = { version = "0.3", default-features = false, features = ["NSStatusItem"] }
+# CGRect 用于窗口化全屏时直接读写 NSWindow 的 frame（Tauri/tao 的 set_size 走事件循环、
+# set_decorations/set_always_on_top 走 GCD，顺序不可控，必须在 AppKit 层一次性完成）。
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["objc2"] }
 block2 = "0.6"
 
 [profile.release]

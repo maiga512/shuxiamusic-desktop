@@ -108,34 +108,48 @@ const resetGestureWheelState = () => {
 }
 
 // 双指横滑"滑动段"状态：一次甩动只允许触发一次布局切换。
-// 触控板甩动会带出数百 ms 的惯性 wheel 事件流，仅靠固定冷却挡不住
-// 惯性 —— 惯性没停就会再次累计过阈值，造成"滑一下切好几下"。
-// 按"段"处理：同方向累计位移，过阈值切一次并锁存(latched)；
-// 锁存不随切换清除，减速衰减的惯性尾事件全部忽略。
-// 重新武装（判定"又甩了一下"）满足其一：
-//   1) 事件断流 > SWIPE_GAP_MS（惯性完全停住）；
-//   2) 尾部已衰减到峰值 60% 以下且当前幅度回升到上一事件 1.4 倍
-//      （新甩动会重新加速，惯性尾只会减速）。
-// 误判重武装也无害：再触发仍需真实累计 48px 新位移。
+//
+// 触控板甩动会带出数百 ms~1s 的惯性 wheel 事件流。之前用"固定冷却 + 幅度回升
+// 启发式"判定新甩动，实测不可靠：切换 layout 会整块换掉 CD/方形封面模板，
+// 主线程被渲染阻塞，排队的事件在阻塞结束后成批处理，"事件间隔"瞬间变大，
+// 被误判成"新的一甩"→ 反复切换，就是"滑一下来回跳好几下"。
+//
+// 现在改为按"事件时间戳静默间隔"重新武装：
+//   - 过阈值触发一次后 latched=true，之后所有事件（含惯性尾）一律忽略；
+//   - 只有当两个相邻事件的时间戳间隔 > SWIPE_REARM_MS（真的停手了）才解锁。
+// 关键是用 event.timeStamp（事件生成时刻）而不是 performance.now()（处理时刻）：
+// 事件被主线程阻塞排队时，timeStamp 仍保持真实的 60Hz 间隔，不会误判成新甩动。
 const swipeState = {
   acc: 0,
   dir: 0,
   latched: false,
-  lastEventAt: 0,
-  // 触发瞬间的事件幅度，作为惯性尾衰减的参照
-  peakDelta: 0,
-  // 最近一个参与判定事件的幅度（惯性尾逐事件变小）
-  lastDelta: 0
+  // 最近一个事件的事件时间戳（event.timeStamp，非处理时刻）
+  lastEventTs: 0,
+  // 锁存开始的处理时刻（performance.now()），仅作"锁存卡死"兜底
+  latchedAt: 0
 }
-const SWIPE_GAP_MS = 180
+const SWIPE_REARM_MS = 250
+// 兜底上限：万一某些 WebKit 路径的 wheel 事件 timeStamp 不推进（gap 恒 0），
+// 锁存会永远解不开、手势只能用一次。超过这个时长强制解锁；正常惯性尾
+// （<1.5s）不会碰到，所以不影响"滑一次切一次"。
+const SWIPE_LATCH_MAX_MS = 2000
 
 const resetSwipeState = () => {
   swipeState.acc = 0
   swipeState.dir = 0
   swipeState.latched = false
-  swipeState.lastEventAt = 0
-  swipeState.peakDelta = 0
-  swipeState.lastDelta = 0
+  swipeState.lastEventTs = 0
+  swipeState.latchedAt = 0
+}
+
+// 事件时间戳归一化：WebKit 是 DOMHighResTimeStamp（与 performance.now() 同基准），
+// 但个别环境可能是 epoch 毫秒。统一到"与 performance.now() 可比的毫秒"，
+// 只用于比较相邻事件间隔，绝对基准不重要。
+const normalizeEventTs = (ts: number): number => {
+  if (!Number.isFinite(ts) || ts <= 0) return performance.now()
+  // epoch 级时间戳（> 1e12）换算到 performance 基准
+  if (ts > 1e12) return performance.now() - (Date.now() - ts)
+  return ts
 }
 const resetPinchState = () => {
   pinchWheelState.acc = 0
@@ -219,51 +233,48 @@ const onFullPlayWheel = (event: WheelEvent) => {
     return
   }
 
-  // 滑动段锁存：一次甩动最多触发一次 layout 切换，惯性尾事件被忽略
-  const now = performance.now()
   const absX = Math.abs(event.deltaX)
   const absY = Math.abs(event.deltaY)
-  // 垂直占优时完全不干预，保留歌词上下滚动和系统行为。
-  if (absY > absX * 1.15) {
+  const eventTs = normalizeEventTs(event.timeStamp)
+
+  // 锁存中（本次甩动已切过一次）：惯性尾一律忽略，只有相邻事件真的静默
+  // 超过 SWIPE_REARM_MS 才解锁，允许下一次甩动。
+  if (swipeState.latched) {
+    const gap = swipeState.lastEventTs ? eventTs - swipeState.lastEventTs : 0
+    const heldFor = swipeState.latchedAt ? performance.now() - swipeState.latchedAt : 0
+    if (gap <= SWIPE_REARM_MS && heldFor < SWIPE_LATCH_MAX_MS) {
+      swipeState.lastEventTs = eventTs
+      event.preventDefault()
+      return
+    }
+    // 真的停手了（或锁存超时兜底）→ 解锁，把当前事件当作新一段的起点
     resetSwipeState()
+  }
+
+  // 垂直占优时完全不干预，保留歌词上下滚动和系统行为（只清水平累计，不动锁存）。
+  if (absY > absX * 1.15) {
+    swipeState.acc = 0
+    swipeState.dir = 0
+    swipeState.lastEventTs = eventTs
     return
   }
   // 太小只当抖动忽略。
   if (absX < 8) return
 
-  // 本段已切过一次（锁存中）：惯性尾默认忽略，识别出"又甩了一下"才重新武装。
-  if (swipeState.latched) {
-    const dt = swipeState.lastEventAt ? now - swipeState.lastEventAt : 0
-    const freshBurst =
-      dt > SWIPE_GAP_MS ||
-      (swipeState.lastDelta > 0 &&
-        swipeState.lastDelta < swipeState.peakDelta * 0.6 &&
-        absX > swipeState.lastDelta * 1.4)
-    if (!freshBurst) {
-      swipeState.lastEventAt = now
-      swipeState.lastDelta = absX
-      return
-    }
-    resetSwipeState()
-  }
-  swipeState.lastEventAt = now
-  swipeState.lastDelta = absX
+  swipeState.lastEventTs = eventTs
   const direction = event.deltaX > 0 ? 1 : -1
   // 方向反转 = 上一段滑完了，按新方向重新累计（来回甩都各算一次）。
   if (swipeState.dir !== 0 && direction !== swipeState.dir) {
     swipeState.acc = 0
-    swipeState.latched = false
   }
   swipeState.dir = direction
   swipeState.acc += event.deltaX
 
-  // 本段已经切过一次 → 剩余的惯性事件全部忽略，保证"滑一下切一次"。
-  if (swipeState.latched) return
   if (Math.abs(swipeState.acc) < GESTURE_TRIGGER_DISTANCE) return
 
   event.preventDefault()
   swipeState.latched = true
-  swipeState.peakDelta = Math.max(absX, 16)
+  swipeState.latchedAt = performance.now()
   applyFullPlayGesture('layout')
 }
 

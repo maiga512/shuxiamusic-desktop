@@ -124,6 +124,8 @@ onMounted(() => {
       }
     }
   }
+  // 启动即对齐一次：若已有音频图但元素没在播（例如上次会话遗留），立即挂起
+  AudioManager.syncAllContexts()
   console.log('音频组件初始化完成（双槽）')
 })
 
@@ -368,8 +370,10 @@ const handleTimeUpdate = (slot: AudioSlot): void => {
 }
 
 const handlePlay = (slot: AudioSlot): void => {
-  if (isNativePlaybackActive()) return
   const el = slot === 'A' ? audioARef.value : audioBRef.value
+  // 播放开始：把该元素的 Web Audio 图恢复运行（含原生播放兜底）
+  if (el) AudioManager.syncContextPlaybackState(el)
+  if (isNativePlaybackActive()) return
   // 首次真正播放时才创建 Web Audio 链路，避免应用空闲启动常驻 Audio Service。
   if (el) {
     if (needsAudioGraph()) applyToBoth()
@@ -400,8 +404,12 @@ const onVisibilityChange = () => {
   if (!isAppWindowVisible()) {
     safeCancelRaf(rafId)
     rafId = null
+    // 窗口隐藏：没有在放音的音频图全部挂起（原生播放走 mpv，不受影响）
+    AudioManager.syncAllContexts()
     return
   }
+  // 窗口恢复：按各元素当前播放状态重新对齐音频图
+  AudioManager.syncAllContexts()
   const activeEl = audioStore.Audio.audio
   if (isNativePlaybackActive()) {
     audioStore.publish('timeupdate')
@@ -480,6 +488,9 @@ const startSetupInterval = (): void => {
 }
 
 const handlePause = (slot: AudioSlot): void => {
+  const el = slot === 'A' ? audioARef.value : audioBRef.value
+  // 暂停/结束：挂起该元素的 Web Audio 图，避免静音空转持续吃 CPU
+  if (el) AudioManager.syncContextPlaybackState(el)
   if (isNativePlaybackActive()) return
   if (!isPrimarySlot(slot)) return
   // 早期翻转后，老歌在 secondary 槽被 isPrimarySlot 过滤；此处的 primary pause

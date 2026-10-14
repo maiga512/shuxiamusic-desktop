@@ -256,6 +256,8 @@ async function initializeSystem() {
 
   state.initialized = true
   await persistTasks()
+  // 重启后自动恢复队列：退出前等待中的任务不必等手动点"开始"
+  processQueue().catch(() => undefined)
 }
 
 async function setDownloadDir(payload = {}) {
@@ -439,25 +441,57 @@ async function performDownload(task, controller) {
     if (stat.isFile()) startByte = stat.size
   } catch {}
 
-  const headers = buildDownloadHeaders(task)
-  if (startByte > 0) headers.Range = `bytes=${startByte}-`
+  const requestStream = () =>
+    axios({
+      method: 'GET',
+      url,
+      responseType: 'stream',
+      headers: (() => {
+        const headers = buildDownloadHeaders(task)
+        if (startByte > 0) headers.Range = `bytes=${startByte}-`
+        return headers
+      })(),
+      signal,
+      timeout: 60000,
+      validateStatus: (status) => status >= 200 && status < 400,
+    })
 
-  const response = await axios({
-    method: 'GET',
-    url,
-    responseType: 'stream',
-    headers,
-    signal,
-    timeout: 60000,
-    validateStatus: (status) => status >= 200 && status < 400,
-  })
+  let response
+  try {
+    response = await requestStream()
+  } catch (error) {
+    // 416 Range Not Satisfiable：已有 temp 达到/超过服务端文件大小（上次可能已下完），清掉重下整份
+    if (Number(error?.response?.status) === 416 && startByte > 0) {
+      await fs.unlink(tempPath).catch(() => undefined)
+      startByte = 0
+      response = await requestStream()
+    } else {
+      throw error
+    }
+  }
 
-  const totalSize = Number.parseInt(response.headers['content-length'] || '0', 10) + startByte
-  let downloadedSize = startByte
+  // 服务端忽略 Range 直接返回 200 全量内容时必须从头重写，否则追加写会损坏文件
+  const baseByte = response.status === 206 ? startByte : 0
+  if (baseByte !== startByte) {
+    await fs.unlink(tempPath).catch(() => undefined)
+  }
+
+  const totalSize = Number.parseInt(response.headers['content-length'] || '0', 10) + baseByte
+  let downloadedSize = baseByte
   let lastReportedTime = Date.now()
-  let lastDownloadedSize = startByte
+  let lastDownloadedSize = baseByte
+  // 卡死保护：连续 30s 无数据到达视为失败（可重试），避免"下载中"0 速度挂死
+  const lastDataAt = { value: Date.now() }
+  const stallTimer = setInterval(() => {
+    if (Date.now() - lastDataAt.value > 30000) {
+      const meta = state.active.get(task.id)
+      if (meta) meta.mode = 'stall'
+      controller.abort('stall')
+    }
+  }, 5000)
 
   response.data.on('data', (chunk) => {
+    lastDataAt.value = Date.now()
     downloadedSize += chunk.length
     const current = Date.now()
     const elapsed = current - lastReportedTime
@@ -484,7 +518,11 @@ async function performDownload(task, controller) {
     emit('download:task-progress', normalizeTask(nextTask))
   })
 
-  await pipeline(response.data, await fs.open(tempPath, startByte > 0 ? 'a' : 'w').then((handle) => handle.createWriteStream({ start: startByte })))
+  try {
+    await pipeline(response.data, await fs.open(tempPath, baseByte > 0 ? 'a' : 'w').then((handle) => handle.createWriteStream({ start: baseByte })))
+  } finally {
+    clearInterval(stallTimer)
+  }
 
   await fs.rename(tempPath, filePath)
   const finalStat = await fs.stat(filePath)
@@ -528,10 +566,20 @@ async function startTask(taskId) {
   } catch (error) {
     const reason = String(error?.name || error?.code || error?.message || error || '')
     const activeMeta = state.active.get(taskId)
-    const abortedByPause = activeMeta?.mode === 'pause' || reason.includes('AbortError') || reason.includes('ERR_CANCELED')
+    const abortedByStall = activeMeta?.mode === 'stall'
+    const abortedByPause =
+      !abortedByStall && (activeMeta?.mode === 'pause' || reason.includes('AbortError') || reason.includes('ERR_CANCELED'))
     const abortedByCancel = activeMeta?.mode === 'cancel'
 
-    if (abortedByPause) {
+    if (abortedByStall) {
+      const failedTask = await updateTask(taskId, {
+        status: 'error',
+        speed: 0,
+        remainingTime: null,
+        error: '下载停滞（30 秒无数据），可点重试',
+      }, null)
+      if (failedTask) emit('download:task-error', failedTask)
+    } else if (abortedByPause) {
       const pausedTask = await updateTask(taskId, { status: 'paused', speed: 0, remainingTime: null }, null)
       if (pausedTask) emit('download:task-status-changed', pausedTask)
     } else if (abortedByCancel) {
@@ -728,7 +776,16 @@ export const service = {
         (type === 'queue' && ['queued', 'paused'].includes(task.status)) ||
         (type === 'completed' && task.status === 'completed') ||
         (type === 'failed' && task.status === 'error')
-      if (!remove) keep.push(task)
+      if (!remove) {
+        keep.push(task)
+        continue
+      }
+      const active = state.active.get(task.id)
+      if (active) {
+        active.mode = 'cancel'
+        active.controller.abort('cancel')
+      }
+      await fs.unlink(`${task.filePath}.temp`).catch(() => undefined)
     }
     state.tasks = new Map(keep.map((task) => [task.id, task]))
     state.queue = state.queue.filter((taskId) => state.tasks.has(taskId))
@@ -798,6 +855,35 @@ export const service = {
     await persistTasks()
     emitTaskListReset()
     return tasks
+  },
+
+  async openFileLocation(payload = {}) {
+    await initializeSystem()
+    const filePath = firstText(payload.filePath, payload.path, payload.file_path)
+    if (!filePath) return { success: false, message: '文件路径为空' }
+    const resolved = path.resolve(filePath)
+    const exists = await fs.access(resolved).then(() => true).catch(() => false)
+    if (!exists) return { success: false, message: '文件不存在（可能已被移动或删除）' }
+    const { execFile } = await import('node:child_process')
+    const run = (cmd, args) =>
+      new Promise((resolve) => {
+        execFile(cmd, args, (error) => resolve(error ? String(error?.message || error) : null))
+      })
+    if (process.platform === 'darwin') {
+      // Finder 打开所在文件夹并选中文件
+      const err = await run('open', ['-R', resolved])
+      return err ? { success: false, message: err } : { success: true }
+    }
+    if (process.platform === 'win32') {
+      const err = await run('explorer.exe', [`/select,${resolved}`])
+      return err ? { success: false, message: err } : { success: true }
+    }
+    const err = await run('xdg-open', [path.dirname(resolved)])
+    return err ? { success: false, message: err } : { success: true }
+  },
+
+  async setDownloadDir(payload = {}) {
+    return setDownloadDir(payload)
   },
 
   async getMaxConcurrent() {

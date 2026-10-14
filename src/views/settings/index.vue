@@ -272,11 +272,13 @@ const handleSearchSelect = async (item: SearchItem) => {
       <div class="content-panel">
         <div ref="contentPanelRef" class="panel-content">
           <!-- 切走就卸载，不 KeepAlive，插件/播放设置的 DOM 不能堆在内存里。 -->
-          <component
-            :is="currentComponent"
-            :key="activeCategory"
-            @switch-category="switchCategory"
-          />
+          <Transition name="settings-panel" mode="out-in">
+            <component
+              :is="currentComponent"
+              :key="activeCategory"
+              @switch-category="switchCategory"
+            />
+          </Transition>
         </div>
       </div>
     </div>
@@ -333,12 +335,17 @@ const handleSearchSelect = async (item: SearchItem) => {
     transition:
       background-color 0.15s ease,
       color 0.15s ease,
-      border-color 0.15s ease;
+      border-color 0.15s ease,
+      transform 0.15s ease;
     border-left: 0.1875rem solid transparent;
     border-radius: 0.3125rem;
 
     &:hover {
       background: var(--settings-nav-hover-bg);
+    }
+
+    &:active {
+      transform: scale(0.98);
     }
 
     &.active {
@@ -403,6 +410,7 @@ const handleSearchSelect = async (item: SearchItem) => {
   .panel-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     background: var(--settings-main-bg);
     scroll-behavior: auto;
     contain: layout style;
@@ -419,6 +427,37 @@ const handleSearchSelect = async (item: SearchItem) => {
 :deep(.setting-group) {
   content-visibility: auto;
   contain-intrinsic-size: auto 20rem;
+}
+
+// 子板块切换：与主页同款「左侧滑入 + 轻微回弹」，只动容器一层 transform，
+// 不恢复各卡片入场动画（与上方 animation: none 的即时响应优化保持一致）。
+.settings-panel-enter-active {
+  transition:
+    transform 0.26s cubic-bezier(0.34, 1.75, 0.64, 1),
+    opacity 0.16s ease;
+}
+
+.settings-panel-enter-from {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.settings-panel-leave-active {
+  transition: opacity 0.06s ease;
+}
+
+.settings-panel-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panel-enter-active {
+    transition: opacity 0.16s ease;
+  }
+
+  .settings-panel-enter-from {
+    transform: none;
+  }
 }
 
 // 响应式设计
@@ -475,6 +514,15 @@ const handleSearchSelect = async (item: SearchItem) => {
 
   .panel-content {
     scroll-behavior: auto;
+  }
+}
+
+.settings-window-hidden,
+.settings-window-inactive,
+.settings-page-idle {
+  .settings-panel-enter-active,
+  .settings-panel-leave-active {
+    transition: none !important;
   }
 }
 

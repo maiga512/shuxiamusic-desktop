@@ -127,8 +127,8 @@ impl Default for MpvSnapshot {
             current_time: 0.0,
             duration: None,
             // 初值只在首次 set_volume/load 前可见。它必须不与任何整数滑条百分比的
-            // sliderToMpvVolume 映射值相等(89.44% 才映射到 80)，否则首次设音量会被去抖
-            // 阈值吞掉、mpv 停留在默认 100。
+            // sliderToMpvVolume 映射值相等(100*cbrt(p/100)=80 时 p=51.2，非整数)，否则首次
+            // 设音量会被去抖阈值吞掉、mpv 停留在默认 100。
             volume: 80.0,
             muted: false,
             playback_rate: 1.0,
@@ -487,6 +487,14 @@ fn start_mpv_process(app: AppHandle, runtime: &mut MpvRuntime) -> Result<(), Str
         .arg("--hr-seek=no")
         .arg("--osd-level=0")
         .arg("--input-media-keys=no")
+        // 纯音频、无窗口播放：mpv 自带的 Lua 脚本（osc/stats/console/select/
+        // positioning/commands/context_menu/ytdl_hook）全部用不上，但会常驻线程
+        // 并周期性醒来。关掉可省 CPU，对播放链路无影响（本项目只播直链音频，
+        // 不依赖 yt-dlp）。
+        .arg("--load-scripts=no")
+        // 系统「正在播放」/媒体键由本 App 自己的 now_playing.rs 负责，
+        // 关掉 mpv 的 macOS 媒体控制集成，避免两套同时向 MediaPlayer 框架上报。
+        .arg("--media-controls=no")
         .arg(format!("--input-ipc-server={}", ipc_path))
         .arg("--cache=yes")
         .arg("--cache-on-disk=no")
@@ -1428,7 +1436,8 @@ pub fn mpv_set_volume(app: AppHandle, volume: f64) -> Result<MpvSnapshot, String
     let path = get_runtime_ipc_path(app.clone())?;
     let next_volume = volume.clamp(0.0, 100.0);
     let current_volume = snapshot().volume;
-    // 前端下发的是感知曲线映射值(p^2/100)，低音量段变化步长小，阈值相应收紧
+    // 前端下发的是反解 mpv 三次曲线后的值(100*cbrt(p/100))：1% 滑条步进在满刻度
+    // 附近约 0.33，阈值取 0.25 不会吞掉最小步进，又能滤掉重复下发。
     if (current_volume - next_volume).abs() < 0.25 {
         return Ok(snapshot());
     }
