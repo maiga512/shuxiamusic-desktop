@@ -1,3 +1,14 @@
+## 2026-10-14 NAS 同步服务器改名 + 下载/部署文档 + Gitee 镜像
+
+- 用户诉求：同步服务器仓库名不要 "Ceru Music"，改叫树夏Music / 拼音；补部署教程；贴安卓 + Mac 下载地址；Gitee 同样处理。
+- 改名：GitHub `maiga512/CeruMusic-NAS-Sync` → `maiga512/shuxiamusic-nas-sync`（`gh api -X PATCH repos/... -f name=...`，旧地址 301 重定向）。命名与既有 `shuxiamusic-desktop` / `shuxiamusic-release` 保持一致。
+- Gitee 镜像：新建 `songsong2020/shuxiamusic-nas-sync`。坑：Gitee **空仓库不允许直接设为公开**（`空仓库不支持设置为公开仓库`），必须先推内容再 `PATCH private=false`。推送走 HTTPS + token（本机未配 Gitee SSH key）。
+- README 重写（仓库根 + 子 README）：项目地址（GitHub/Gitee 镜像）、客户端下载（安卓 APK `shuxiamusic-release/releases/latest`、Mac `shuxiamusic-release/releases/tag/desktop-latest` + App 内自动更新 + Gitee 国内镜像）、完整部署教程（Docker Compose、各 NAS/面板对应位置、Web 后台、插件导入、反代、找回密码）。
+- Docker：镜像名改 `ghcr.io/maiga512/shuxiamusic-nas-sync`，**同时保留旧名 `ceru-music-nas-sync`**（metadata-action `images:` 列两个），两个 `latest` digest 相同，老部署不用改 compose。
+- 发布中心首页：GitHub `maiga512/shuxiamusic-release` 与 Gitee `songsong2020/shuxiamusic-release` 两份 README 的「同步服务器」行链接改为新仓库 + Gitee 镜像（用 contents API 直接改，因为本地 `/Volumes/致钛 2T/shuxiamusic` 工作区有未提交改动，不宜直接 push）。
+- **刻意未改**（改名会破坏既有部署 / 已导入插件）：环境变量 `CERU_SYNC_*`、容器名 `ceru-nas-sync`、SQLite 文件名 `ceru-sync.sqlite`、插件文件名 `plugins/ceru-nas-sync-service.js`。
+- 待办（未做，需用户确认）：本仓库 `nas-sync-server/` 是独立仓库的 vendored 副本，已落后（`http.ts` 超时 15s vs 独立仓库 25s，`adminPage.ts`/`package.json`/`tsconfig.json` 也有差异），如需对齐可从 `maiga512/shuxiamusic-nas-sync` 同步。
+
 ## 2026-10-14 发布 v1.0.9（GitHub + Gitee）
 
 - 版本 1.0.8 → 1.0.9（`package.json` 单一来源 + `src-tauri/Cargo.toml` 同步；`tauri.conf.json` 的 version 继承 `../package.json`）。
