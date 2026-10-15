@@ -16,7 +16,7 @@ import {
 } from '@tauri-apps/api/window'
 import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { open as openUrl } from '@tauri-apps/plugin-shell'
-import { exit as exitApp } from '@tauri-apps/plugin-process'
+import { exit as exitApp, relaunch as relaunchApp } from '@tauri-apps/plugin-process'
 import { BaseDirectory, remove } from '@tauri-apps/plugin-fs'
 import { checkUpdate, onUpdaterEvent, type UpdaterEvent } from './stubs/tauri-plugin-updater'
 import { pluginSandbox } from './utils/plugin/pluginSandbox'
@@ -5036,16 +5036,28 @@ export function createTauriBridge() {
       async checkForUpdates() {
         await recordAutoUpdateState('recordChecking')
         const result = await checkUpdate()
+        // 必须在写 recordCheckResult 之前读旧状态：recordCheckResult 会把 status
+        // 改成 update-available，从而把 pending 覆盖掉，守卫就永远失效、
+        // 每次后台检查（6 小时一轮）都重新下载整包。
+        const prev = await invokeNodeAutoUpdate('getState') as any
+        const prevVersion = String(prev?.data?.updateInfo?.name || '')
+        const remoteVersion = String(result?.manifest?.version || '')
+        const alreadyPending =
+          prev?.data?.status === 'pending' && !!prevVersion && prevVersion === remoteVersion
+
+        if (alreadyPending) {
+          // 同一版本已下载待安装：保持 pending，不重复下载
+          await recordAutoUpdateState('recordPending')
+          return result
+        }
+
         await recordAutoUpdateState('recordCheckResult', {
           shouldUpdate: Boolean(result?.shouldUpdate),
           manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
         })
         if (result?.shouldUpdate && result.manifest) {
-          const pending = await invokeNodeAutoUpdate('getState') as any
-          if (pending?.data?.status !== 'pending') {
-            await (result.manifest as any).downloadAndInstall()
-            await recordAutoUpdateState('recordPending')
-          }
+          await (result.manifest as any).downloadAndInstall()
+          await recordAutoUpdateState('recordPending')
         }
         return result
       },
@@ -5064,15 +5076,24 @@ export function createTauriBridge() {
         }
       },
       async quitAndInstall() {
-        const result = await checkUpdate()
-        await recordAutoUpdateState('recordCheckResult', {
-          shouldUpdate: Boolean(result?.shouldUpdate),
-          manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
-        })
-        if (result?.shouldUpdate && result.manifest) {
-          await recordAutoUpdateState('recordDownloadStarted', { mode: 'full' })
-          await (result.manifest as any).downloadAndInstall()
-          await recordAutoUpdateState('recordDownloaded', { mode: 'full' })
+        const prev = await invokeNodeAutoUpdate('getState') as any
+        if (prev?.data?.status !== 'pending') {
+          const result = await checkUpdate()
+          await recordAutoUpdateState('recordCheckResult', {
+            shouldUpdate: Boolean(result?.shouldUpdate),
+            manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
+          })
+          if (result?.shouldUpdate && result.manifest) {
+            await recordAutoUpdateState('recordDownloadStarted', { mode: 'full' })
+            await (result.manifest as any).downloadAndInstall()
+            await recordAutoUpdateState('recordDownloaded', { mode: 'full' })
+          }
+        }
+        // macOS 的安装是就地替换 .app 包，必须重启进程才能跑上新版本。
+        try {
+          await relaunchApp()
+        } catch (error) {
+          console.warn('[updater] 重启应用失败，请手动重启:', error)
         }
       },
       async recordEvent(event: any) {

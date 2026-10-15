@@ -36,16 +36,27 @@ export interface UpdaterEvent {
   error?: string
 }
 
+/**
+ * 原生 `plugin:updater|check` 返回的是 tauri-plugin-updater 的 Metadata：
+ *   { rid, current_version, version, date, body, raw_json }
+ * 注意：它**没有** available / shouldUpdate 字段（历史上这里按有这两个字段写，
+ * 导致判定恒为 false、永远提示「已是最新」，在线更新完全失效）。
+ * rid 是后续 download_and_install 必需的资源句柄。
+ */
 type NativeUpdate = {
-  available?: boolean
-  shouldUpdate?: boolean
+  rid?: number
   version?: string
+  current_version?: string
   currentVersion?: string
   date?: string
   body?: string
+  raw_json?: Record<string, any>
+  rawJson?: Record<string, any>
+  // 兼容字段（部分版本/自定义实现可能带）
+  available?: boolean
+  shouldUpdate?: boolean
   downloadUrl?: string
   url?: string
-  rawJson?: Record<string, any>
   manifest?: Record<string, any>
 }
 
@@ -68,7 +79,7 @@ function emitUpdaterEvent(event: UpdaterEvent) {
 }
 
 function getManifest(update: NativeUpdate): UpdateManifest {
-  const manifest = update.manifest || update.rawJson || update
+  const manifest = update.manifest || update.raw_json || update.rawJson || update
   return {
     version: String(manifest.version || update.version || ''),
     date: String(manifest.date || update.date || ''),
@@ -125,7 +136,10 @@ export async function checkUpdate(): Promise<UpdateResult | null> {
       return null
     }
 
-    const shouldUpdate = Boolean(result.available ?? result.shouldUpdate)
+    // 原生 check 只在「确有可用更新」时返回 Some(Metadata)；返回 null 才是已是最新。
+    // 旧写法 Boolean(result.available ?? result.shouldUpdate) 恒为 false（Metadata 无这两个字段），
+    // 于是永远走「已是最新」分支。这里改为：拿到非空结果即视为有更新，version 作兜底校验。
+    const shouldUpdate = Boolean(result.available ?? result.shouldUpdate ?? result.version)
     if (!shouldUpdate) {
       emitUpdaterEvent({ status: 'UPTODATE' })
       return { shouldUpdate, downloadAndInstall: async () => undefined }
@@ -140,7 +154,12 @@ export async function checkUpdate(): Promise<UpdateResult | null> {
         normalizeDownloadEvent(event, progressState)
       })
 
-      await invokeUpdater<void>(['plugin:updater|download_and_install'], { onEvent })
+      // 原生命令签名是 download_and_install(rid, on_event, ...)，rid 必填：
+      // 不传会直接报参数错误，下载永远失败（这是第二个 bug）。
+      await invokeUpdater<void>(['plugin:updater|download_and_install'], {
+        rid: result.rid,
+        onEvent,
+      })
       emitUpdaterEvent({ status: 'DOWNLOADED' })
     }
 
@@ -161,8 +180,13 @@ export async function checkUpdate(): Promise<UpdateResult | null> {
 
 export async function installUpdate(): Promise<void> {
   try {
-    await invokeUpdater<void>(['plugin:updater|download_and_install'])
-    emitUpdaterEvent({ status: 'DOWNLOADED' })
+    // download_and_install 需要 rid，必须先 check 拿到更新句柄，不能直接裸调。
+    const result = await checkUpdate()
+    if (!result?.shouldUpdate) {
+      emitUpdaterEvent({ status: 'UPTODATE' })
+      return
+    }
+    await result.downloadAndInstall()
   } catch (error) {
     console.warn('[tauri-plugin-updater stub] installUpdate failed:', error)
     emitUpdaterEvent({ status: 'ERROR', error: String(error) })

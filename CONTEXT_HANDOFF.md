@@ -101,6 +101,23 @@
 - 验证：`cargo check` 通过（仅既有 96 warnings，无新增）；`npx vue-tsc --noEmit` exit 0；CoreAudio 常量用 C 程序核对、Rust FFI 注册返回 noErr(0)。**听感与耳机端到端需重新出包实测**。
 - 索引：TOP_GRAPH「Playback And Media」音量段重写 + 新增耳机自动恢复抑制段；AI_INDEX 路由两行更新 + 维护日志新条目；Graphify 增量重建 7818 nodes / 15427 edges / 546 communities，`graphify export html` 社区聚合 938 节点 / 923 边。
 
+## 2026-10-15 v1.1.0 修复在线更新全链路
+
+- 用户反馈：点「检查更新」没反应。4 个 bug 叠加：
+  1. `src/stubs/tauri-plugin-updater.ts` 判定恒为 false（读不存在的 `available`/`shouldUpdate`
+     字段）→ 永远「已是最新」，在线更新自上线起完全失效。
+  2. `download_and_install` 缺必填 `rid` 参数 → 判定修好后下载也失败。
+  3. `src/tauri-bridge.ts` `recordCheckResult` 覆盖 `pending` 状态 → 每 6 小时重下 94MB。
+  4. `quitAndInstall` 不重启进程 → macOS 就地替换 .app 后仍跑旧代码。
+- 修复：判定改为 `!!(available ?? shouldUpdate ?? version)`；下载传 `{rid, onEvent}`；
+  写状态前先读旧状态做版本比对跳过重复下载；安装后 `relaunchApp()`。
+- 验证：1.0.8+修复版实测真实更新到 1.0.9（版本号 plutil 实证）；1.0.9+修复版
+  反复检查全部 up-to-date 零报错。更新包下载到系统临时目录，直接替换
+  `/Applications/树夏Music.app`，不在用户下载目录。
+- 发布：v1.1.0 发 GitHub + Gitee（Mac+Win）；本地不升级，留 1.0.9+修复版给用户
+  实测「点在线升级→更新」流程。
+- 索引：AI_INDEX 维护日志已追加。
+
 ## 2026-10-14 播放态 CPU 优化（Web Audio 空转 + mpv 冗余）
 
 - 用户要求：普通窗口播放中、最小化播放中都要降 CPU，不影响播放/动效/切歌。
