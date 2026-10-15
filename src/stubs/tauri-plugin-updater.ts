@@ -68,6 +68,10 @@ type NativeDownloadEvent =
 
 const listeners = new Set<(event: UpdaterEvent) => void>()
 
+// 防并发下载：多次点「检查更新」会同时触发 downloadAndInstall，
+// 多个安装实例同时替换 .app 会互相打架（一个成功、其余报「无法下载/更新失败」）。
+let installInFlight: Promise<void> | null = null
+
 function emitUpdaterEvent(event: UpdaterEvent) {
   listeners.forEach((listener) => {
     try {
@@ -149,18 +153,29 @@ export async function checkUpdate(): Promise<UpdateResult | null> {
     emitUpdaterEvent({ status: 'UPDATE_AVAILABLE', data: manifest })
 
     const downloadAndInstall = async () => {
-      const progressState = { downloaded: 0, total: 0 }
-      const onEvent = new Channel<NativeDownloadEvent>((event) => {
-        normalizeDownloadEvent(event, progressState)
-      })
+      // 已有安装在跑就复用它，绝不并发（并发会互相覆盖 .app 导致报错）
+      if (installInFlight) return installInFlight
 
-      // 原生命令签名是 download_and_install(rid, on_event, ...)，rid 必填：
-      // 不传会直接报参数错误，下载永远失败（这是第二个 bug）。
-      await invokeUpdater<void>(['plugin:updater|download_and_install'], {
-        rid: result.rid,
-        onEvent,
-      })
-      emitUpdaterEvent({ status: 'DOWNLOADED' })
+      installInFlight = (async () => {
+        const progressState = { downloaded: 0, total: 0 }
+        const onEvent = new Channel<NativeDownloadEvent>((event) => {
+          normalizeDownloadEvent(event, progressState)
+        })
+
+        // 原生命令签名是 download_and_install(rid, on_event, ...)，rid 必填：
+        // 不传会直接报参数错误，下载永远失败（这是第二个 bug）。
+        await invokeUpdater<void>(['plugin:updater|download_and_install'], {
+          rid: result.rid,
+          onEvent,
+        })
+        emitUpdaterEvent({ status: 'DOWNLOADED' })
+      })()
+
+      try {
+        await installInFlight
+      } finally {
+        installInFlight = null
+      }
     }
 
     return {
@@ -187,6 +202,7 @@ export async function installUpdate(): Promise<void> {
       return
     }
     await result.downloadAndInstall()
+    // 装完自动重启：macOS 是就地替换 .app，不重启用户看不到新版本
   } catch (error) {
     console.warn('[tauri-plugin-updater stub] installUpdate failed:', error)
     emitUpdaterEvent({ status: 'ERROR', error: String(error) })

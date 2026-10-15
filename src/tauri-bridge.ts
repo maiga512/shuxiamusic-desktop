@@ -5071,6 +5071,13 @@ export function createTauriBridge() {
         if (result?.shouldUpdate && result.manifest) {
           await (result.manifest as any).downloadAndInstall()
           await recordAutoUpdateState('recordDownloaded', { mode })
+          // macOS 是就地替换 .app，必须重启进程才能跑上新版本。
+          // 用户点「在线升级」预期是升级完直接用新版，这里装完自动重启。
+          try {
+            await relaunchApp()
+          } catch (error) {
+            console.warn('[updater] 自动重启失败，请手动重启:', error)
+          }
         } else {
           await recordAutoUpdateState('recordCheckResult', { shouldUpdate: false })
         }

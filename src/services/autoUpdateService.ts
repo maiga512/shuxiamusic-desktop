@@ -180,13 +180,12 @@ export class AutoUpdateService {
 
   // 显示检查更新通知
   private showCheckingNotification() {
-    return
-    // NotifyPlugin.info({
-    //   title: '检查更新',
-    //   content: '正在检查是否有新版本...',
-    //   duration: 2000,
-    //   offset: [0, '4.25rem']
-    // })
+    // 检查中有即时反馈，避免用户以为没反应而连点（连点曾导致并发下载互相打架）
+    NotifyPlugin.info({
+      title: '正在检查更新',
+      content: '请稍候...',
+      duration: 1500
+    })
   }
 
   // 显示有更新可用：后台自动下载，不弹出更新对话框。
