@@ -240,7 +240,7 @@ export const useSettingsStore = defineStore(
     }
 
     const shouldUseSpringFestivalTheme = () => {
-      const preview = localStorage.getItem('ceru_welcome_newyear_preview')
+      const preview = localStorage.getItem('shuxia_welcome_newyear_preview')
       if (preview === '1') return true
       return isSpringFestivalWindow()
     }

@@ -103,9 +103,9 @@ onMounted(() => {
   audioStore.init(audioARef.value || null, audioBRef.value || null)
 
   document.addEventListener('visibilitychange', onVisibilityChange)
-  window.addEventListener('ceru-window-state-change', onVisibilityChange)
-  window.addEventListener('ceru-wake', onVisibilityChange)
-  window.addEventListener('ceru-sleep', onVisibilityChange)
+  window.addEventListener('shuxia-window-state-change', onVisibilityChange)
+  window.addEventListener('shuxia-wake', onVisibilityChange)
+  window.addEventListener('shuxia-sleep', onVisibilityChange)
 
   const activeEl = audioStore.Audio.audio
   if (activeEl) {
@@ -533,9 +533,9 @@ onUnmounted(() => {
     window.api.pingService.stop()
   } catch {}
   document.removeEventListener('visibilitychange', onVisibilityChange)
-  window.removeEventListener('ceru-window-state-change', onVisibilityChange)
-  window.removeEventListener('ceru-wake', onVisibilityChange)
-  window.removeEventListener('ceru-sleep', onVisibilityChange)
+  window.removeEventListener('shuxia-window-state-change', onVisibilityChange)
+  window.removeEventListener('shuxia-wake', onVisibilityChange)
+  window.removeEventListener('shuxia-sleep', onVisibilityChange)
   safeCancelRaf(rafId)
   rafId = null
   for (const el of [audioARef.value, audioBRef.value]) {

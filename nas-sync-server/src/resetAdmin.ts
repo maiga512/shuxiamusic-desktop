@@ -11,7 +11,7 @@ if (!password || password.length < 6) {
   process.exit(1);
 }
 
-const dbPath = resolve(process.env.CERU_SYNC_DB_PATH || process.env.CERU_SYNC_DB || './data/ceru-sync.sqlite');
+const dbPath = resolve(process.env.SHUXIA_SYNC_DB_PATH || process.env.SHUXIA_SYNC_DB || './data/shuxia-sync.sqlite');
 const database = new SyncDatabase(dbPath);
 
 database.setSetting('admin.username', username);

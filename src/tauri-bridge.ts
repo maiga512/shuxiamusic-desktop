@@ -34,10 +34,10 @@ declare global {
   interface Window {
     api: Record<string, any>
     electron: Record<string, any>
-    __ceruVisibilityHandler?: EventListener
+    __shuxiaVisibilityHandler?: EventListener
     musicEmitter?: any
-    __ceruPluginAddLinkHandlerInstalled?: boolean
-    __ceruIpcStats?: {
+    __shuxiaPluginAddLinkHandlerInstalled?: boolean
+    __shuxiaIpcStats?: {
       total: number
       byCmd: Record<string, number>
       startedAt: number
@@ -127,17 +127,17 @@ function packInvokeArgs(
 
 const appWindow = getCurrentWindow()
 
-let ceruIpcStatsFlusherStarted = false
-function ensureCeruIpcStatsFlusher() {
-  if (ceruIpcStatsFlusherStarted) return
+let shuxiaIpcStatsFlusherStarted = false
+function ensureShuxiaIpcStatsFlusher() {
+  if (shuxiaIpcStatsFlusherStarted) return
   const enableStats =
     import.meta.env.DEV ||
     (typeof localStorage !== 'undefined' && localStorage.getItem('enable-ipc-stats') === 'true')
   if (!enableStats) return
-  ceruIpcStatsFlusherStarted = true
+  shuxiaIpcStatsFlusherStarted = true
   window.setInterval(() => {
     try {
-      const stats = window.__ceruIpcStats
+      const stats = window.__shuxiaIpcStats
       if (!stats || !stats.total) return
       const snapshot = {
         total: stats.total,
@@ -158,15 +158,15 @@ function ensureCeruIpcStatsFlusher() {
       void tauriInvoke('mpv_debug_hot_ping', {
         label: `ipc:${snapshot.total}|${top}|last:${snapshot.lastCmd || ''}`,
       }).catch(() => {})
-      ;(window as any).__ceruIpcStatsLast = snapshot
+      ;(window as any).__shuxiaIpcStatsLast = snapshot
     } catch {}
   }, 2000)
 }
 
 function recordIpcInvoke(cmd: string) {
-  ensureCeruIpcStatsFlusher()
+  ensureShuxiaIpcStatsFlusher()
   try {
-    const stats = (window.__ceruIpcStats ||= {
+    const stats = (window.__shuxiaIpcStats ||= {
       total: 0,
       byCmd: Object.create(null) as Record<string, number>,
       startedAt: Date.now(),
@@ -886,7 +886,7 @@ function getPluginSupportedSources(exports: any) {
 
 function isConvertedLxPluginCode(code: string): boolean {
   return (
-    code.includes('由 CeruMusic 插件转换器转换') ||
+    code.includes('由 ShuxiaMusic 插件转换器转换') ||
     (code.includes('const originalPluginCode') && code.includes('pluginInfo'))
   )
 }
@@ -931,7 +931,7 @@ function looksLikeLxPluginCode(code: string): boolean {
   return decodePluginDetectionText(raw).toLowerCase().includes('lx')
 }
 
-function isCeruPluginCode(code: string): boolean {
+function isShuxiaPluginCode(code: string): boolean {
   return (
     hasModuleExports(code) ||
     /\bexports\s*\./.test(code) ||
@@ -980,7 +980,7 @@ function detectImportPluginCompatibility(code: string): ImportPluginCompatibilit
     lower.includes('lx.currentscriptinfo') ||
     lower.includes('lx.request') ||
     lower.includes('lx_api')
-  const looksLikeCeru = lower.includes('cerumusic')
+  const usesCerumusicApi = lower.includes('cerumusic')
   const hasLxToken = looksLikeLxPluginCode(raw)
   const looksLikeShuxia = lower.includes('shuxia') || raw.includes('树夏')
   const looksLikeGenericSource =
@@ -989,13 +989,13 @@ function detectImportPluginCompatibility(code: string): ImportPluginCompatibilit
     lower.includes('getmediasource') ||
     lower.includes('lyric')
 
-  if (looksLikeCeru && lower.includes('worker_thread')) {
+  if (usesCerumusicApi && lower.includes('worker_thread')) {
     return { compatible: true, type: 'cr', formatName: '树夏music插件', reason: '树夏music Host 插件，按 cerumusic 兼容层加载' }
   }
   if (looksLikeLxEvent) {
     return { compatible: true, type: hasLxToken ? 'lx' : undefined, formatName: '洛雪插件', reason: '洛雪事件协议插件' }
   }
-  if (looksLikeCeru) {
+  if (usesCerumusicApi) {
     return { compatible: true, type: 'cr', formatName: '树夏music插件', reason: '树夏music CommonJS 插件' }
   }
   if (looksLikeShuxia) {
@@ -1249,7 +1249,7 @@ function normalizeMediaHeaders(headers: unknown): Record<string, string> {
   )
 }
 
-// Electron wraps Feiniu `{ url, headers }` results as `cerumusic-service://`.
+// Electron wraps Feiniu `{ url, headers }` results as `shuxiamusic-service://`.
 // Tauri's equivalent is the local media stream proxy, so the WebView audio
 // element can play cookie-protected streams without dropping auth headers.
 async function wrapPlaybackStreamIfNeeded(input: any, args: any = {}): Promise<any> {
@@ -2425,7 +2425,7 @@ async function getMusicPluginCandidatesForSource(
 // Keep the selected plugin as the primary path, matching Electron's
 // `getSongRealUrl` ordering. These are platform safety ceilings only; normal
 // plugins return in roughly 0.4-2.5 seconds.
-// Electron's CeruMusicPluginHost uses INVOKE_TIMEOUT = 30_000 for musicUrl.
+// Electron's ShuxiaMusicPluginHost uses INVOKE_TIMEOUT = 30_000 for musicUrl.
 // Keep the Tauri bridge at the same boundary; shortening this makes slow but
 // valid plugin responses look like failures and triggers duplicate work.
 const NODE_URL_DIRECT_TIMEOUT_MS = 30_000
@@ -2631,7 +2631,7 @@ async function tryNodePluginUrl(
     ...(pluginConfig ? { _serviceConfig: pluginConfig } : {}),
   }
 
-  // Electron's CeruMusicPluginHost.getMusicUrl always calls the selected
+  // Electron's ShuxiaMusicPluginHost.getMusicUrl always calls the selected
   // plugin's musicUrl method once with [source, songInfo, quality]. Converted
   // legacy plugins are normalized to musicUrl during installation.
   const invokeMusicMethod = async (method: string) =>
@@ -3579,7 +3579,7 @@ async function handlePluginAddLinkPayload(api: Record<string, any>, raw: any) {
   if (decision.show !== false) emit('plugin-notice', notice).catch(console.warn)
 }
 
-const HOTKEY_CONFIG_STORAGE_KEY = 'ceru_hotkey_config_v1'
+const HOTKEY_CONFIG_STORAGE_KEY = 'shuxia_hotkey_config_v1'
 const DEFAULT_HOTKEY_BINDINGS: Record<string, string> = {
   toggle: 'CommandOrControl+Alt+P',
   playPrev: 'CommandOrControl+Alt+Left',
@@ -4250,7 +4250,7 @@ export function createTauriBridge() {
               options: {
                 method: 'GET',
                 timeout: 30,
-                headers: { 'User-Agent': 'CeruMusic/1.0' },
+                headers: { 'User-Agent': 'ShuxiaMusic/1.0' },
               },
             }),
             35000,
@@ -5597,8 +5597,8 @@ setProgress: (progress: number, options?: { paused?: boolean }) => {
     },
   }
 
-  if (!window.__ceruPluginAddLinkHandlerInstalled) {
-    window.__ceruPluginAddLinkHandlerInstalled = true
+  if (!window.__shuxiaPluginAddLinkHandlerInstalled) {
+    window.__shuxiaPluginAddLinkHandlerInstalled = true
     listen('plugin-add-link', (event) => {
       handlePluginAddLinkPayload(api, event.payload).catch((e) => {
         console.error('[tauri-bridge] 处理插件安装链接失败:', e)

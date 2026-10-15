@@ -119,8 +119,8 @@ onMounted(() => {
   const handler = () => {
     showCloseDialog.value = true
   }
-  window.addEventListener('ceru-show-close-dialog', handler)
-  unsubShowDialog = () => window.removeEventListener('ceru-show-close-dialog', handler)
+  window.addEventListener('shuxia-show-close-dialog', handler)
+  unsubShowDialog = () => window.removeEventListener('shuxia-show-close-dialog', handler)
 
   unsubFullscreen = window.api?.onFullscreenChanged?.((value: boolean) => {
     isAppFullscreen.value = value

@@ -477,8 +477,8 @@ export const useGlobalPlayStatusStore = defineStore(
       pendingCoverAnalysis = null
       void runCoverColorAnalysis(cover)
     }
-    window.addEventListener('ceru-wake', flushPendingCoverAnalysis)
-    window.addEventListener('ceru-window-state-change', flushPendingCoverAnalysis)
+    window.addEventListener('shuxia-wake', flushPendingCoverAnalysis)
+    window.addEventListener('shuxia-window-state-change', flushPendingCoverAnalysis)
 
     function resetColors() {
       player.coverDetail.ColorObject = void 0

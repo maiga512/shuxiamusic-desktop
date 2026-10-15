@@ -819,7 +819,7 @@ async function handleImport() {
         markLocalPluginUpsert(identityKey)
         void pushLocalPluginNow(identityKey)
       }
-      window.dispatchEvent(new Event('ceru-nas-local-change'))
+      window.dispatchEvent(new Event('shuxia-nas-local-change'))
       // 显示成功消息
       if (result && result.pluginInfo) {
         MessagePlugin.success(`插件 "${result.pluginInfo.name}" 安装成功！`)
@@ -883,7 +883,7 @@ async function uninstallPlugin(pluginId: string, pluginName: string) {
             localUserStore.userInfo.selectSources = ''
             localUserStore.userInfo.selectQuality = ''
           }
-          window.dispatchEvent(new Event('ceru-nas-local-change'))
+          window.dispatchEvent(new Event('shuxia-nas-local-change'))
           MessagePlugin.success(`插件 "${pluginName}" 卸载成功！`)
         }
         dialog.destroy()
@@ -1249,7 +1249,7 @@ async function savePluginConfig() {
       savedConfigSnapshot.value = JSON.parse(JSON.stringify(plainConfig))
     }
     MessagePlugin.success('配置已保存')
-    window.dispatchEvent(new Event('ceru-nas-local-change'))
+    window.dispatchEvent(new Event('shuxia-nas-local-change'))
     configDialogVisible.value = false
 
     // 根据开关状态控制同步轮询

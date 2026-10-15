@@ -63,8 +63,8 @@ document.addEventListener(
   (event) => {
     const target = event.target
     if (!(target instanceof HTMLImageElement)) return
-    if (target.dataset.ceruImageRetry === '1') return
-    target.dataset.ceruImageRetry = '1'
+    if (target.dataset.shuxiaImageRetry === '1') return
+    target.dataset.shuxiaImageRetry = '1'
     target.referrerPolicy = 'no-referrer'
     // Electron keeps the original URL. Rewriting http CDN covers to https
     // breaks Kuwo artwork (HTTP 514) and still fails if ATS blocked the first load.
@@ -95,6 +95,7 @@ import { useSettingsStore } from '@renderer/store/Settings'
 // pinia
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { migrateCeruStorageKeys } from './utils/storageMigration'
 const appConfig: LogtoConfig = {
   endpoint,
   appId,
@@ -219,7 +220,7 @@ watch(
     try {
       window.api?.desktopLyric?.setMacStatusBarLyric?.(Boolean(enabled))
       if (enabled) {
-        window.dispatchEvent(new Event('ceru-sync-tray-lyric'))
+        window.dispatchEvent(new Event('shuxia-sync-tray-lyric'))
       }
     } catch {}
   },
@@ -257,6 +258,7 @@ document.addEventListener(
   { capture: true }
 )
 
+migrateCeruStorageKeys()
 app.mount('#app')
 startBackgroundUpdateCheck()
 

@@ -12,7 +12,7 @@
 
 import { shareAPI, type ShareDetail, type PlaylistShareDetail } from '@renderer/api/share'
 
-const SHARE_HOST = 'ceru.share.shiqianjiang.cn'
+const SHARE_HOST = 'shuxia.share.shiqianjiang.cn'
 
 export type CardType = 'song' | 'playlist'
 

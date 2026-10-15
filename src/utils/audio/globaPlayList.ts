@@ -94,7 +94,7 @@ type PlaybackTimingSample = {
   marks: Record<string, number>
 }
 
-const PLAYBACK_TIMING_STORAGE_KEY = 'ceru_playback_timings_v1'
+const PLAYBACK_TIMING_STORAGE_KEY = 'shuxia_playback_timings_v1'
 const PLAYBACK_TIMING_LIMIT = 40
 
 const recordPlaybackTiming = (sample: PlaybackTimingSample) => {
@@ -2018,13 +2018,13 @@ const startPlaybackPositionTracking = () => {
   if (unsubPlaybackPositionPlay || unsubPlaybackPositionPause) return
   unsubPlaybackPositionPlay = controlAudio.subscribe('play', restartPlaybackPositionTracking)
   unsubPlaybackPositionPause = controlAudio.subscribe('pause', restartPlaybackPositionTracking)
-  window.addEventListener('ceru-window-state-change', restartPlaybackPositionTracking)
-  window.addEventListener('ceru-wake', restartPlaybackPositionTracking)
+  window.addEventListener('shuxia-window-state-change', restartPlaybackPositionTracking)
+  window.addEventListener('shuxia-wake', restartPlaybackPositionTracking)
   // 关到托盘 / 隐藏窗口不触发 pagehide，进度只能靠 tick。这里监听 App.vue 的
   // 关窗请求，先强制落盘（对齐安卓退出时 persistPlaybackState(force=true)）。
-  window.addEventListener('ceru-persist-playback-state', persistPlaybackStateForClose)
+  window.addEventListener('shuxia-persist-playback-state', persistPlaybackStateForClose)
   // 麦克风权限流程会重开音频会话，结束后按需恢复播放
-  window.addEventListener('ceru-audio-session-ready', resumePlaybackAfterAudioSessionChange)
+  window.addEventListener('shuxia-audio-session-ready', resumePlaybackAfterAudioSessionChange)
   restartPlaybackPositionTracking()
 }
 
@@ -2076,10 +2076,10 @@ const stopPlaybackPositionTracking = () => {
   unsubPlaybackPositionPlay = null
   unsubPlaybackPositionPause?.()
   unsubPlaybackPositionPause = null
-  window.removeEventListener('ceru-window-state-change', restartPlaybackPositionTracking)
-  window.removeEventListener('ceru-wake', restartPlaybackPositionTracking)
-  window.removeEventListener('ceru-persist-playback-state', persistPlaybackStateForClose)
-  window.removeEventListener('ceru-audio-session-ready', resumePlaybackAfterAudioSessionChange)
+  window.removeEventListener('shuxia-window-state-change', restartPlaybackPositionTracking)
+  window.removeEventListener('shuxia-wake', restartPlaybackPositionTracking)
+  window.removeEventListener('shuxia-persist-playback-state', persistPlaybackStateForClose)
+  window.removeEventListener('shuxia-audio-session-ready', resumePlaybackAfterAudioSessionChange)
 }
 
 const uninstallPlayback = () => {

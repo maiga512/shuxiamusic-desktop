@@ -83,7 +83,7 @@ const fontList = ref<string[]>([])
 
 // 字体列表缓存：字体枚举是慢操作（macOS 上曾走 system_profiler 要 20 秒以上），
 // 每次进设置都重新拉会让界面发卡，所以先同步读缓存渲染，再后台刷新。
-const FONT_LIST_CACHE_KEY = 'ceru_font_list_cache_v1'
+const FONT_LIST_CACHE_KEY = 'shuxia_font_list_cache_v1'
 const FONT_LIST_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 const readCachedFontList = (): string[] => {

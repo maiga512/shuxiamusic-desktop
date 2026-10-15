@@ -14,8 +14,8 @@
       <p>本软件完全免费，代码已开源。</p>
       <p>
         开源地址：
-        <a href="#" @click.prevent="openLink('https://github.com/timeshiftsauce/CeruMusic')">
-          https://github.com/timeshiftsauce/CeruMusic
+        <a href="#" @click.prevent="openLink('https://github.com/timeshiftsauce/ShuxiaMusic')">
+          https://github.com/timeshiftsauce/ShuxiaMusic
         </a>
       </p>
       <p>
@@ -67,7 +67,7 @@
 import { ref, onMounted } from 'vue'
 
 const visible = ref(false)
-const STORAGE_KEY = 'ceru_music_has_seen_first_run_notice_tips'
+const STORAGE_KEY = 'shuxia_music_has_seen_first_run_notice_tips'
 
 const openLink = (url: string) => {
   window.open(url)

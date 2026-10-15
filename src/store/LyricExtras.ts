@@ -193,7 +193,7 @@ export const useLyricExtrasStore = defineStore(
      *   - `key` 显式指定,避免与其他 store 冲突
      */
     persist: {
-      key: 'ceru-lyric-extras',
+      key: 'shuxia-lyric-extras',
       pick: ['offsetMap']
     }
   }

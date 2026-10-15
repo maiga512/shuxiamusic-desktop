@@ -1,13 +1,13 @@
 /**
  * MusicFree 插件转换器。
  * 把 MusicFree 音源插件（module.exports = { platform, search, getMediaSource, getLyric, ... }）
- * 包装成 CeruMusic/树夏music 兼容的 music-source 模块，运行在同一套沙箱里。
+ * 包装成 ShuxiaMusic/树夏music 兼容的 music-source 模块，运行在同一套沙箱里。
  *
  * 覆盖范围：以 JSON 接口为主的常见插件。内置 axios / crypto-js / qs / he / dayjs 兼容层；
  * 依赖 cheerio 等网页解析库的插件会在运行时抛出明确错误（当前不支持）。
  */
 
-export const MUSICFREE_ADAPTER_MARKER = '/* ceru-musicfree-adapter */'
+export const MUSICFREE_ADAPTER_MARKER = '/* shuxia-musicfree-adapter */'
 
 const MF_QUALITYS = ['128k', '320k', 'flac', 'flac24bit']
 
@@ -79,7 +79,7 @@ export default function convertMusicFreePlugin(originalCode: string): string {
   const meta = extractMusicFreeMeta(originalCode)
   const preamble = MUSICFREE_ADAPTER_MARKER + '\n' +
     '/**\n' +
-    ' * 由 CeruMusic MusicFree 转换器转换\n' +
+    ' * 由 ShuxiaMusic MusicFree 转换器转换\n' +
     ' * @name ' + meta.pluginInfo.name + '\n' +
     ' * @version ' + meta.pluginInfo.version + '\n' +
     ' * @author ' + meta.pluginInfo.author + '\n' +

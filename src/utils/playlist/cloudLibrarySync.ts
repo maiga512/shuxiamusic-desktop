@@ -18,14 +18,14 @@ import { emitFavoritesSync } from '@renderer/utils/sync/realtimeSyncBus'
 import type { SongList, Songs } from '@common/types/songList'
 
 export const FAVORITES_PLAYLIST_NAME = '我的喜欢'
-const SONG_OPERATION_QUEUE_KEY = 'ceru_nas_playlist_song_operations'
-const SONG_OPERATION_SEQUENCE_KEY = 'ceru_nas_playlist_song_operation_sequence'
-const SONG_OPERATION_DEVICE_KEY = 'ceru_nas_playlist_song_operation_device'
-const SONG_OPERATION_OCCURRED_AT_KEY = 'ceru_nas_playlist_song_operation_occurred_at'
-const SONG_OPERATION_ACKNOWLEDGED_KEY = 'ceru_nas_playlist_song_operations_acknowledged'
-const PLAYLIST_MUTATION_QUEUE_KEY = 'ceru_nas_playlist_mutations'
+const SONG_OPERATION_QUEUE_KEY = 'shuxia_nas_playlist_song_operations'
+const SONG_OPERATION_SEQUENCE_KEY = 'shuxia_nas_playlist_song_operation_sequence'
+const SONG_OPERATION_DEVICE_KEY = 'shuxia_nas_playlist_song_operation_device'
+const SONG_OPERATION_OCCURRED_AT_KEY = 'shuxia_nas_playlist_song_operation_occurred_at'
+const SONG_OPERATION_ACKNOWLEDGED_KEY = 'shuxia_nas_playlist_song_operations_acknowledged'
+const PLAYLIST_MUTATION_QUEUE_KEY = 'shuxia_nas_playlist_mutations'
 const ACKNOWLEDGED_OPERATION_TTL_MS = 30_000 // 30 seconds protection window
-const RECENTLY_LOCAL_MODIFIED_KEY = 'ceru_nas_playlist_recently_local_modified'
+const RECENTLY_LOCAL_MODIFIED_KEY = 'shuxia_nas_playlist_recently_local_modified'
 const RECENTLY_LOCAL_MODIFIED_TTL_MS = 30_000 // 30 seconds local modification protection
 
 type PendingPlaylistSongOperation = {
@@ -680,7 +680,7 @@ export const syncAddSongsToCloud = async (playlist: SongList, songs: readonly So
   try {
     if (await canUseNasSync() && isFavoritesSongList(playlist)) {
       const result = await enqueueFavoriteSongOperations(playlist, 'add', cloudSongs)
-      window.dispatchEvent(new Event('ceru-nas-local-change'))
+      window.dispatchEvent(new Event('shuxia-nas-local-change'))
       emitFavoritesSync('add', 'local', songs)
       return result
     }
@@ -689,7 +689,7 @@ export const syncAddSongsToCloud = async (playlist: SongList, songs: readonly So
     const syncAPI = await getSongListSyncAPI()
     const res = await syncAPI.addSongsToList(cloudId, cloudSongs)
     await markPlaylistCloudSyncOk(playlist, cloudId, res.updatedAt)
-    window.dispatchEvent(new Event('ceru-nas-local-change'))
+    window.dispatchEvent(new Event('shuxia-nas-local-change'))
     emitFavoritesSync('add', 'local', songs)
     return res
   } catch (error) {
@@ -730,7 +730,7 @@ export const syncRemoveSongsFromCloud = async (
         songmids.map((songmid) => ({ songmid: String(songmid) }) as CloudSongDto),
         trackKeys
       )
-      window.dispatchEvent(new Event('ceru-nas-local-change'))
+      window.dispatchEvent(new Event('shuxia-nas-local-change'))
       emitFavoritesSync('remove', 'local', songmids)
       return removeResult
     }
@@ -742,7 +742,7 @@ export const syncRemoveSongsFromCloud = async (
       songmids.map((id) => String(id))
     )
     await markPlaylistCloudSyncOk(playlist, cloudId, res.updatedAt)
-    window.dispatchEvent(new Event('ceru-nas-local-change'))
+    window.dispatchEvent(new Event('shuxia-nas-local-change'))
     emitFavoritesSync('remove', 'local', songmids)
     return res
   } catch (error) {

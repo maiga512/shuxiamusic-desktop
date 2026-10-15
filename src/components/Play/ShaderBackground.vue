@@ -456,9 +456,9 @@ watch(
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas)
   document.addEventListener('visibilitychange', onShaderVisibilityChange)
-  window.addEventListener('ceru-window-state-change', onShaderVisibilityChange)
-  window.addEventListener('ceru-wake', onShaderVisibilityChange)
-  window.addEventListener('ceru-sleep', onShaderVisibilityChange)
+  window.addEventListener('shuxia-window-state-change', onShaderVisibilityChange)
+  window.addEventListener('shuxia-wake', onShaderVisibilityChange)
+  window.addEventListener('shuxia-sleep', onShaderVisibilityChange)
   initWebGL()
 })
 
@@ -466,9 +466,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCanvas)
   document.removeEventListener('visibilitychange', onShaderVisibilityChange)
-  window.removeEventListener('ceru-window-state-change', onShaderVisibilityChange)
-  window.removeEventListener('ceru-wake', onShaderVisibilityChange)
-  window.removeEventListener('ceru-sleep', onShaderVisibilityChange)
+  window.removeEventListener('shuxia-window-state-change', onShaderVisibilityChange)
+  window.removeEventListener('shuxia-wake', onShaderVisibilityChange)
+  window.removeEventListener('shuxia-sleep', onShaderVisibilityChange)
   stopRenderLoop()
 })
 </script>

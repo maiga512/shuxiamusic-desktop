@@ -255,14 +255,14 @@ const resolveOneSourceInner = async (
   const cachedUrl = await options.cache.get(sourceSong, quality)
   if (options.isUsablePlaybackUrl(cachedUrl)) {
     try {
-      console.info('[Ceru Media Gateway] quality cache hit', {
+      console.info('[树夏 Media Gateway] quality cache hit', {
         source: sourceSong.source,
         quality,
         songmid: sourceSong.songmid
       })
       return await validateSourceUrl(options, qualitySong, cachedUrl, quality)
     } catch (error) {
-      console.warn('[Ceru Media Gateway] quality cache rejected', {
+      console.warn('[树夏 Media Gateway] quality cache rejected', {
         source: sourceSong.source,
         quality,
         reason: error instanceof Error ? error.message : String(error || 'unknown')
@@ -272,7 +272,7 @@ const resolveOneSourceInner = async (
   }
 
   try {
-    console.info('[Ceru Media Gateway] quality resolve start', {
+    console.info('[树夏 Media Gateway] quality resolve start', {
       source: sourceSong.source,
       quality,
       songmid: sourceSong.songmid
@@ -283,7 +283,7 @@ const resolveOneSourceInner = async (
       `源解析 ${firstText(sourceSong.source, 'unknown')} ${quality}`
     )
     if (!options.isUsablePlaybackUrl(rawUrl)) {
-      console.warn('[Ceru Media Gateway] quality resolve unusable', {
+      console.warn('[树夏 Media Gateway] quality resolve unusable', {
         source: sourceSong.source,
         quality,
         rawUrl
@@ -295,7 +295,7 @@ const resolveOneSourceInner = async (
     return validated
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error || 'unknown')
-    console.warn('[Ceru Media Gateway] quality resolve failed', {
+    console.warn('[树夏 Media Gateway] quality resolve failed', {
       source: sourceSong.source,
       quality,
       reason
@@ -316,7 +316,7 @@ const resolveOneSource = async (
   const timeoutMs = sourceTimeoutMs + 300
   try {
     const result = await withTimeout(resolveOneSourceInner(options, sourceSong), timeoutMs, `媒体候选 ${source}`)
-    console.info('[Ceru Media Gateway] source attempt', {
+    console.info('[树夏 Media Gateway] source attempt', {
       source,
       ok: Boolean(result),
       elapsedMs: Math.round(performance.now() - startedAt)
@@ -324,7 +324,7 @@ const resolveOneSource = async (
     return result
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error || 'unknown')
-    console.warn('[Ceru Media Gateway] source attempt failed', {
+    console.warn('[树夏 Media Gateway] source attempt failed', {
       source,
       elapsedMs: Math.round(performance.now() - startedAt),
       reason
@@ -359,7 +359,7 @@ export const resolveMediaGateway = async (options: MediaGatewayOptions): Promise
     options.candidateSearchTimeoutMs || DEFAULT_CANDIDATE_SEARCH_TIMEOUT_MS,
     '候选源搜索'
   ).catch((error) => {
-    console.warn('[Ceru Media Gateway] candidate search failed', {
+    console.warn('[树夏 Media Gateway] candidate search failed', {
       elapsedMs: options.candidateSearchTimeoutMs || DEFAULT_CANDIDATE_SEARCH_TIMEOUT_MS,
       reason: error instanceof Error ? error.message : String(error || 'unknown')
     })
@@ -371,7 +371,7 @@ export const resolveMediaGateway = async (options: MediaGatewayOptions): Promise
     const sourceSong = options.normalizeSongForPlayback(candidate)
     if (options.skipSources?.has(sourceSong.source)) continue
     if (!isSameSongCandidate(sourceSong, options.targetSong)) {
-      console.warn('[Ceru Media Gateway] candidate identity rejected before resolve', {
+      console.warn('[树夏 Media Gateway] candidate identity rejected before resolve', {
         source: sourceSong.source,
         name: sourceSong.name,
         singer: sourceSong.singer,
@@ -384,7 +384,7 @@ export const resolveMediaGateway = async (options: MediaGatewayOptions): Promise
   }
 
   const lastFailureReason = firstText(primaryFailureReason, (options as any).__lastFailureReason)
-  throw new Error(lastFailureReason || 'Ceru Media Gateway 未找到验证可播的媒体流')
+  throw new Error(lastFailureReason || '树夏 Media Gateway 未找到验证可播的媒体流')
 }
 
 export const invalidateGatewayValidation = (

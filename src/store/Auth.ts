@@ -4,12 +4,12 @@ import LogtoClient, { UserInfoResponse } from '@logto/browser'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { defaultRequest, Request } from '@renderer/utils/request'
 import { settingsSyncService } from '@renderer/services/SettingsSyncService'
-import { CERU_API_RESOURCE } from '@common/api/resources'
+import { SHUXIA_API_RESOURCE } from '@common/api/resources'
 import config from '../config'
 import router from '@renderer/router'
 
 const { redirectUri } = config
-const ceruRequest = new Request(CERU_API_RESOURCE)
+const shuxiaRequest = new Request(SHUXIA_API_RESOURCE)
 
 export const useAuthStore = defineStore(
   'auth',
@@ -160,7 +160,7 @@ export const useAuthStore = defineStore(
         }
 
         // 使用 uploadFile 方法上传头像
-        const result = await ceruRequest.uploadFile('/user-info/avatar', file, 'file')
+        const result = await shuxiaRequest.uploadFile('/user-info/avatar', file, 'file')
 
         // 上传成功后更新用户信息
         await updateUserInfo()

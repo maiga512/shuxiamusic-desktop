@@ -318,7 +318,7 @@ const exportConfig = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'ceru-music-eq-config.json'
+  a.download = 'shuxia-music-eq-config.json'
   a.click()
   URL.revokeObjectURL(url)
   eqStore.addLog('Exported configuration')

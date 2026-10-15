@@ -156,7 +156,7 @@ function init(): void {
       ensureSongListFlushListeners()
       const persistNow = () => persistUserInfo(userInfo.value)
       window.addEventListener('pagehide', persistNow)
-      window.addEventListener('ceru-sleep', persistNow)
+      window.addEventListener('shuxia-sleep', persistNow)
       watch(
         list,
         (newVal) => {

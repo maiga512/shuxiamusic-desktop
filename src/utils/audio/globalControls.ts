@@ -111,10 +111,10 @@ export function installGlobalMusicControls() {
   // music-control 只是兜底。这里按 payload.action 分发，绝不能一律 toggle。
   try {
     window.electron?.ipcRenderer?.on?.('desktop-lyric-open-change', (_: any, open: boolean) => {
-      ;(window as any).__ceruDesktopLyricOpen = !!open
+      ;(window as any).__shuxiaDesktopLyricOpen = !!open
     })
     window.electron?.ipcRenderer?.invoke?.('get-lyric-open-state')?.then?.((open: boolean) => {
-      ;(window as any).__ceruDesktopLyricOpen = !!open
+      ;(window as any).__shuxiaDesktopLyricOpen = !!open
     }).catch?.(() => {})
 
     removeMusicCtrlListener = (window as any).api?.onMusicCtrl?.((payload?: any) => {
@@ -132,7 +132,7 @@ export function installGlobalMusicControls() {
       if (action === 'toggleDesktopLyric') {
         window.electron?.ipcRenderer?.send?.(
           'change-desktop-lyric',
-          !(window as any).__ceruDesktopLyricOpen
+          !(window as any).__shuxiaDesktopLyricOpen
         )
         return
       }

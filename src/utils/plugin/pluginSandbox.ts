@@ -2,7 +2,7 @@
  * 前端插件沙箱 (Plugin Sandbox)
  *
  * 在 WebView 中直接执行插件 JS 代码，提供与 Electron VM 沙箱兼容的
- * cerumusic API。HTTP 请求和加密操作通过 Tauri invoke 委托给 Rust。
+ * 树夏Music 插件 Host API（兼容名 cerumusic）。HTTP 请求和加密操作通过 Tauri invoke 委托给 Rust。
  *
  * 使用方式：
  *   const sandbox = new PluginSandbox()
@@ -89,10 +89,10 @@ function createNodeCryptoShim() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Cerumusic API Factory                                              */
+/*  树夏Music API Factory                                              */
 /* ------------------------------------------------------------------ */
 
-function createCerumusicApi(pluginId?: string, pluginInfo?: PluginExports['pluginInfo']) {
+function createShuxiumusicApi(pluginId?: string, pluginInfo?: PluginExports['pluginInfo']) {
   const requestQueue = new Map<string, { reason: string; until: number }>()
 
   function isThrottled(): string | null {
@@ -296,7 +296,7 @@ export class PluginSandbox {
     }
 
     const mod = { exports: {} as any }
-    const cerumusic = createCerumusicApi(id)
+    const cerumusic = createShuxiumusicApi(id)
     const timerSet = new Set<number>()
     this.timers.set(id, timerSet)
     const nodeCrypto = createNodeCryptoShim()
@@ -311,6 +311,8 @@ export class PluginSandbox {
       module: mod,
       exports: mod.exports,
       cerumusic,
+      // 新名别名：老插件继续用 cerumusic，新插件可用 shuxiaMusic。
+      shuxiaMusic: cerumusic,
       console,
       Buffer: BufferShim,
       BufferShim,
@@ -361,6 +363,7 @@ export class PluginSandbox {
         'module',
         'exports',
         'cerumusic',
+        'shuxiaMusic',
         'console',
         'setTimeout',
         'clearTimeout',
@@ -385,6 +388,7 @@ export class PluginSandbox {
         globalScope,
         mod,
         mod.exports,
+        cerumusic,
         cerumusic,
         console,
         safeSetTimeout,
@@ -438,8 +442,8 @@ export class PluginSandbox {
     if (!plugin) throw new Error(`插件 ${id} 未加载`)
     const fn = plugin[method]
     if (typeof fn !== 'function') throw new Error(`插件 ${id} 没有导出 ${method} 方法`)
-    const cerumusic = plugin.__cerumusic || createCerumusicApi(id, plugin.pluginInfo)
-    return fn.call({ cerumusic }, ...args) as T
+    const cerumusic = plugin.__cerumusic || createShuxiumusicApi(id, plugin.pluginInfo)
+    return fn.call({ cerumusic, shuxiaMusic: cerumusic }, ...args) as T
   }
 
   /**

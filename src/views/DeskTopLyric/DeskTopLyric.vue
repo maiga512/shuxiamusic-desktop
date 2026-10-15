@@ -327,7 +327,7 @@ const renderLyricLines = computed<RenderLine[]>(() => {
   const lyrics =
     lyricConfig.showYrc && lyricData?.yrcData?.length ? lyricData.yrcData : lyricData.lrcData
   if (!lyricData.playName && !lyrics?.length) {
-    return placeholder('Ceru Desktop Lyric')
+    return placeholder('树夏 Desktop Lyric')
   }
   if (lyricData.lyricLoading) return placeholder('歌词加载中...')
   if (!lyrics?.length) return placeholder('纯音乐，请欣赏')

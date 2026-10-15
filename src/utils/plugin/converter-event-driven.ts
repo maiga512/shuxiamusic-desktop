@@ -25,7 +25,7 @@ export default function convertEventDrivenPlugin(originalCode: string): string {
   const originalCodeLiteral = JSON.stringify(originalCode)
 
   return `/**
- * 由 CeruMusic 插件转换器转换 - @author sqj
+ * 由 ShuxiaMusic 插件转换器转换 - @author sqj
  * @name ${pluginName}
  * @author ${author}
  * @version ${pluginVersion}
@@ -90,7 +90,7 @@ let pluginSources = {};
 let requestHandler = null;
 let updateAlertSent = false;
 
-function handleUpdateAlert(data, cerumusicApi) {
+function handleUpdateAlert(data, shuxiumusicApi) {
   if (updateAlertSent) {
     console.warn(\`[\${pluginInfo.name}] updateAlert 事件每次运行脚本只能调用一次，忽略重复调用\`);
     return;
@@ -124,8 +124,8 @@ function handleUpdateAlert(data, cerumusicApi) {
   updateAlertSent = true;
 
   try {
-    if (cerumusicApi && cerumusicApi.NoticeCenter) {
-      cerumusicApi.NoticeCenter('update', {
+    if (shuxiumusicApi && shuxiumusicApi.NoticeCenter) {
+      shuxiumusicApi.NoticeCenter('update', {
         title: pluginInfo.name + ' 有新版本可用',
         content: log,
         url: updateUrl,
@@ -252,7 +252,7 @@ function initializePlugin() {
 
     isInitialized = true;
   } catch (error) {
-    console.log('[CeruMusic] 插件初始化完成: ' + (error && error.message || error));
+    console.log('[ShuxiaMusic] 插件初始化完成: ' + (error && error.message || error));
     isInitialized = true;
   }
 }

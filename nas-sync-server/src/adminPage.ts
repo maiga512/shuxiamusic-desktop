@@ -618,7 +618,7 @@ export const renderAdminPage = () => `<!doctype html>
       const eyeOffIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 3 18 18"/><path d="M10.7 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.4 18.4 0 0 1-3.1 4.1"/><path d="M6.6 6.6C3.7 8.5 2 12 2 12s3.5 7 10 7a9.8 9.8 0 0 0 4.3-1"/><path d="M9.9 9.9A3 3 0 0 0 14.1 14.1"/></svg>';
       const state = {
         users: [],
-        adminToken: localStorage.getItem('ceru.sync.adminToken') || '',
+        adminToken: localStorage.getItem('shuxia.sync.adminToken') || '',
         adminUsername: 'admin',
       };
 
@@ -804,7 +804,7 @@ export const renderAdminPage = () => `<!doctype html>
           if (!response.ok) throw new Error(data.error || '登录失败');
 
           state.adminToken = data.accessToken;
-          localStorage.setItem('ceru.sync.adminToken', state.adminToken);
+          localStorage.setItem('shuxia.sync.adminToken', state.adminToken);
           $('adminPassword').value = '';
           await loadDashboard();
           showToast(data.admin?.defaultAccount ? '已登录，请尽快修改默认账号或密码' : '已登录');
@@ -819,7 +819,7 @@ export const renderAdminPage = () => `<!doctype html>
 
       $('logoutAdmin').addEventListener('click', () => {
         state.adminToken = '';
-        localStorage.removeItem('ceru.sync.adminToken');
+        localStorage.removeItem('shuxia.sync.adminToken');
         state.users = [];
         renderUsers();
         setView('login');
@@ -869,7 +869,7 @@ export const renderAdminPage = () => `<!doctype html>
           $('confirmAdminPassword').value = '';
           state.adminToken = '';
           state.users = [];
-          localStorage.removeItem('ceru.sync.adminToken');
+          localStorage.removeItem('shuxia.sync.adminToken');
           renderUsers();
           setView('login');
           $('adminUsername').value = state.adminUsername;
@@ -1024,7 +1024,7 @@ export const renderAdminPage = () => `<!doctype html>
       loadBootstrap();
       loadDashboard().catch(() => {
         state.adminToken = '';
-        localStorage.removeItem('ceru.sync.adminToken');
+        localStorage.removeItem('shuxia.sync.adminToken');
         setView('login');
       });
     </script>

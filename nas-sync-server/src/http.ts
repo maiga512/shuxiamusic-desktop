@@ -172,7 +172,7 @@ const getAdminUsername = (database: SyncDatabase) => database.getSetting(ADMIN_U
 
 const requireAdmin = (database: SyncDatabase, request: IncomingMessage) => {
   const token = getAdminToken(request);
-  const envAdminToken = process.env.CERU_SYNC_ADMIN_TOKEN || '';
+  const envAdminToken = process.env.SHUXIA_SYNC_ADMIN_TOKEN || '';
   if (envAdminToken && token === envAdminToken) return;
 
   if (!token || !database.authenticateAdminToken(token)) {
@@ -196,10 +196,10 @@ const getBodyOrQueryId = (body: UnknownRecord, url: URL, names: string[]) => {
 
 const createRouter = (database: SyncDatabase): Record<string, Partial<Record<string, RouteHandler>>> => ({
   '/health': {
-    GET: () => ({status: 'ok', service: 'ceru-nas-sync-server'}),
+    GET: () => ({status: 'ok', service: 'shuxia-nas-sync-server'}),
   },
   '/version': {
-    GET: () => ({name: '@ceru/nas-sync-server', version: '0.1.0'}),
+    GET: () => ({name: '@shuxia/nas-sync-server', version: '0.1.0'}),
   },
   '/auth/register': {
     POST: async ({body}) => {
@@ -361,9 +361,9 @@ const createRouter = (database: SyncDatabase): Record<string, Partial<Record<str
   '/admin/reset-admin': {
     POST: async ({request, body}) => {
       const token = getAdminToken(request);
-      const envAdminToken = process.env.CERU_SYNC_ADMIN_TOKEN || '';
+      const envAdminToken = process.env.SHUXIA_SYNC_ADMIN_TOKEN || '';
       if (!envAdminToken || token !== envAdminToken) {
-        const error = new Error('需要使用 CERU_SYNC_ADMIN_TOKEN 重置管理员账号');
+        const error = new Error('需要使用 SHUXIA_SYNC_ADMIN_TOKEN 重置管理员账号');
         Object.assign(error, {statusCode: 401});
         throw error;
       }
@@ -418,7 +418,7 @@ const createRouter = (database: SyncDatabase): Record<string, Partial<Record<str
     GET: ({request}) => {
       requireAdmin(database, request);
       return {
-        service: {status: 'ok', name: '@ceru/nas-sync-server', version: '0.1.0'},
+        service: {status: 'ok', name: '@shuxia/nas-sync-server', version: '0.1.0'},
         admin: {username: getAdminUsername(database)},
         users: database.listUserSummaries(),
       };
@@ -771,7 +771,7 @@ export const createSyncServer = ({database}: ServerConfig) => {
         abortController.abort();
       };
       response.once('close', close);
-      response.write(': ceru-sync stream connected\n\n');
+      response.write(': shuxia-sync stream connected\n\n');
       try {
         while (!closed && !response.writableEnded) {
           const page = await database.waitForSyncEvents(

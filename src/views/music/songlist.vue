@@ -508,7 +508,7 @@ const createPlaylist = async () => {
         meta: {}
       } as SongList
       addPlaylistState(created)
-      window.dispatchEvent(new Event('ceru-nas-local-change'))
+      window.dispatchEvent(new Event('shuxia-nas-local-change'))
       syncPlaylistInfoToCloud(created).catch((error) => {
         console.error('同步创建歌单到云端失败:', error)
         MessagePlugin.warning('本地歌单已创建，云端同步稍后重试')
@@ -589,7 +589,7 @@ const savePlaylistEdit = async () => {
           name: updatedPlaylist.name,
           description: updatedPlaylist.description
         })
-        window.dispatchEvent(new Event('ceru-nas-local-change'))
+        window.dispatchEvent(new Event('shuxia-nas-local-change'))
         syncPlaylistInfoToCloud(updatedPlaylist).catch((error) => {
           console.error('同步歌单信息到云端失败:', error)
           MessagePlugin.warning('本地歌单已更新，云端同步稍后重试')
@@ -652,7 +652,7 @@ const deletePlaylist = async (playlist: SongList) => {
           success = result.success
           errorMsg = result.error || '删除歌单失败'
           if (result.success) {
-            window.dispatchEvent(new Event('ceru-nas-local-change'))
+            window.dispatchEvent(new Event('shuxia-nas-local-change'))
             syncDeletePlaylistFromCloud(playlist).catch((error) => {
               console.error('同步删除云端歌单失败:', error)
               MessagePlugin.warning('本地歌单已删除，云端删除稍后重试')

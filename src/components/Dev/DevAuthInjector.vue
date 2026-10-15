@@ -2,7 +2,7 @@
 /**
  * 开发期登录回调注入器 —— 仅在 dev 模式可见
  *
- * 解决问题：本地装了生产版 CeruMusic 时，cerumusic:// deeplink 会被生产版抢走，
+ * 解决问题：本地装了生产版 ShuxiaMusic 时，cerumusic:// deeplink 会被生产版抢走，
  * 导致 dev:second 实例（用于一起听等多人功能调试）收不到 OAuth 回调。
  *
  * 工作流：

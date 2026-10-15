@@ -2,7 +2,7 @@
  * 一起听 (Listen Together) 客户端 Store
  *
  * 职责：
- *  1. 管理与 ceru-backend `/lt` 命名空间的 Socket.IO 连接（自动重连 / 鉴权）
+ *  1. 管理与 shuxia-backend `/lt` 命名空间的 Socket.IO 连接（自动重连 / 鉴权）
  *  2. 维护房间状态（成员 / 队列 / pending / 聊天 / 当前播放快照）
  *  3. 暴露控制操作（play / pause / seek / 切歌 / 点歌 / 审批 / 角色 / 聊天）
  *  4. NTP 风格时钟校正 —— 估算 clockOffset 用于 sync 算法
@@ -21,7 +21,7 @@ import { defineStore } from 'pinia'
 import { computed, reactive, ref, watch } from 'vue'
 import { type Socket } from 'socket.io-client'
 import { SocketRequest } from '@renderer/utils/request'
-import { CERU_API_RESOURCE } from '@common/api/resources'
+import { SHUXIA_API_RESOURCE } from '@common/api/resources'
 import { MessagePlugin } from 'tdesign-vue-next'
 
 import { ControlAudioStore } from '@renderer/store/ControlAudio'
@@ -293,7 +293,7 @@ export const useListenTogetherStore = defineStore('listenTogether', () => {
    *  - 首次 AUTH_FAILED 自动刷新 token 重试一次
    * 这里只负责注册业务事件 + 维护 connectionStatus 状态。
    */
-  const socketRequest = new SocketRequest('/lt', CERU_API_RESOURCE)
+  const socketRequest = new SocketRequest('/lt', SHUXIA_API_RESOURCE)
 
   async function connect(): Promise<void> {
     if (socket?.connected) return

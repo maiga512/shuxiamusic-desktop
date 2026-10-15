@@ -519,8 +519,8 @@ const installListeners = () => {
     void syncClockFromMpv()
     if (clockPlaying) startLocalClock()
   }
-  window.addEventListener('ceru-wake', onWindowWake)
-  listenerCleanups.push(() => window.removeEventListener('ceru-wake', onWindowWake))
+  window.addEventListener('shuxia-wake', onWindowWake)
+  listenerCleanups.push(() => window.removeEventListener('shuxia-wake', onWindowWake))
 
   // 真实系统睡眠/唤醒（Rust 侧 NSWorkspace didWake 派发的 app-system-wake）：
   // 唤醒后 CoreAudio AO 常已静默失效，主动重建一次音频输出。
@@ -602,8 +602,8 @@ export const ensureNativePlayback = async (): Promise<boolean> => {
 
 const currentNativeMedia = (url: string): NativeLoadOptions => {
   const media =
-    ((window as any).__ceruCurrentNativeMedia && typeof (window as any).__ceruCurrentNativeMedia === 'object'
-      ? (window as any).__ceruCurrentNativeMedia
+    ((window as any).__shuxiaCurrentNativeMedia && typeof (window as any).__shuxiaCurrentNativeMedia === 'object'
+      ? (window as any).__shuxiaCurrentNativeMedia
       : {}) || {}
   return {
     headers: media.headers && typeof media.headers === 'object' ? media.headers : undefined,

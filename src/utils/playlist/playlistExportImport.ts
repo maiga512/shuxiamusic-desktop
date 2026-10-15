@@ -2,7 +2,7 @@ import type { SongList } from '@renderer/types/audio'
 import CryptoJS from 'crypto-js'
 
 // 加密密钥，实际应用中应该使用更安全的方式存储
-const SECRET_KEY = 'CeruMusic-PlaylistSecretKey'
+const SECRET_KEY = 'ShuxiaMusic-PlaylistSecretKey'
 
 /**
  * 加密播放列表数据
@@ -154,7 +154,7 @@ export async function exportPlaylistToFile(
 
     const encryptedData = encryptPlaylist(playlist)
     const fileName =
-      customFileName || `cerumusic-playlist-${new Date().toISOString().slice(0, 10)}.cmpl`
+      customFileName || `shuxiamusic-playlist-${new Date().toISOString().slice(0, 10)}.cmpl`
 
     const blob = await gzipString(encryptedData)
 

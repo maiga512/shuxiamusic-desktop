@@ -28,10 +28,10 @@ const applyState = (next: Partial<AppWindowState>) => {
     ...next,
     hidden
   }
-  window.dispatchEvent(new CustomEvent('ceru-window-state-change', { detail: state.value }))
+  window.dispatchEvent(new CustomEvent('shuxia-window-state-change', { detail: state.value }))
   const currentVisible = isAppWindowVisible()
   if (previousVisible !== currentVisible) {
-    window.dispatchEvent(new CustomEvent(currentVisible ? 'ceru-wake' : 'ceru-sleep'))
+    window.dispatchEvent(new CustomEvent(currentVisible ? 'shuxia-wake' : 'shuxia-sleep'))
   }
 }
 

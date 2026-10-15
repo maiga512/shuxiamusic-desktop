@@ -78,7 +78,7 @@ const syncNativeNowPlaying = (payload: NativeNowPlayingPayload) => {
 }
 
 /**
- * 媒体控制链路诊断日志（写 /tmp/ceru-media-keys.log，与 Rust 侧媒体键事件同一时间线）。
+ * 媒体控制链路诊断日志（写 /tmp/shuxia-media-keys.log，与 Rust 侧媒体键事件同一时间线）。
  * 打包后的 .app 没有控制台，耳机键这类系统级问题全靠这份日志定位。
  */
 export const mediaDiagLog = (source: string, detail: string) => {

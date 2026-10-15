@@ -8,13 +8,13 @@ import type {
   UpdateUserSongListDto
 } from '@renderer/api/cloudSongList'
 import type {
-  CeruFavoriteMutationResult,
-  CeruFavoriteSyncPage,
-  CeruPodcastFavorite,
-  CeruPodcastFavoriteMutationInput,
-  CeruPlaylistFavorite,
-  CeruPlaylistFavoriteMutationInput
-} from '@ceru/shared-contract'
+  ShuxiaFavoriteMutationResult,
+  ShuxiaFavoriteSyncPage,
+  ShuxiaPodcastFavorite,
+  ShuxiaPodcastFavoriteMutationInput,
+  ShuxiaPlaylistFavorite,
+  ShuxiaPlaylistFavoriteMutationInput
+} from '@shuxia/shared-contract'
 
 export type NasSyncSession = {
   accessToken: string
@@ -170,30 +170,30 @@ export const canUseNasSync = async () => {
 }
 
 export const getNasSyncLastRevision = () => {
-  const raw = localStorage.getItem('ceru_nas_sync_last_revision') || '0'
+  const raw = localStorage.getItem('shuxia_nas_sync_last_revision') || '0'
   const value = Number(raw)
   return Number.isFinite(value) ? value : 0
 }
 
 export const getScopedNasSyncLastRevision = async () => {
   const scope = await getNasSyncScope()
-  const scopedRaw = localStorage.getItem(`ceru_nas_sync_last_revision:${scope}`)
-  const fallbackRaw = localStorage.getItem('ceru_nas_sync_last_revision')
+  const scopedRaw = localStorage.getItem(`shuxia_nas_sync_last_revision:${scope}`)
+  const fallbackRaw = localStorage.getItem('shuxia_nas_sync_last_revision')
   const value = Number(scopedRaw || fallbackRaw || '0')
   return Number.isFinite(value) ? value : 0
 }
 
 export const setNasSyncLastRevision = (revision: number) => {
   if (!Number.isFinite(revision)) return
-  localStorage.setItem('ceru_nas_sync_last_revision', String(Math.max(0, Math.floor(revision))))
+  localStorage.setItem('shuxia_nas_sync_last_revision', String(Math.max(0, Math.floor(revision))))
 }
 
 export const setScopedNasSyncLastRevision = async (revision: number) => {
   if (!Number.isFinite(revision)) return
   const normalized = String(Math.max(0, Math.floor(revision)))
   const scope = await getNasSyncScope()
-  localStorage.setItem(`ceru_nas_sync_last_revision:${scope}`, normalized)
-  localStorage.setItem('ceru_nas_sync_last_revision', normalized)
+  localStorage.setItem(`shuxia_nas_sync_last_revision:${scope}`, normalized)
+  localStorage.setItem('shuxia_nas_sync_last_revision', normalized)
 }
 
 const unwrapNasResponse = async <T>(response: Response): Promise<T> => {
@@ -278,11 +278,11 @@ const requestNas = async <T>(endpoint: string, options: RequestOptions = {}) => 
   throw lastError instanceof Error ? lastError : new Error(String(lastError || 'NAS 同步服务请求失败'))
 }
 
-const normalizePlaylistFavoritePage = (payload: unknown): CeruFavoriteSyncPage<CeruPlaylistFavorite> => {
+const normalizePlaylistFavoritePage = (payload: unknown): ShuxiaFavoriteSyncPage<ShuxiaPlaylistFavorite> => {
   const data = payload as
-    | CeruPlaylistFavorite[]
+    | ShuxiaPlaylistFavorite[]
     | {
-        items?: CeruPlaylistFavorite[]
+        items?: ShuxiaPlaylistFavorite[]
         revision?: number
         updatedAt?: string
       }
@@ -296,12 +296,12 @@ const normalizePlaylistFavoritePage = (payload: unknown): CeruFavoriteSyncPage<C
 
 const coverToString = (cover: string | File | undefined) => (typeof cover === 'string' ? cover : undefined)
 
-const PODCAST_FAVORITES_STORAGE_KEY = 'ceru_podcast_favorites'
-const PODCAST_FAVORITE_PINS_STORAGE_KEY = 'ceru_podcast_favorite_pins'
-const PODCAST_FAVORITE_MUTATIONS_STORAGE_KEY = 'ceru_podcast_favorite_mutations'
+const PODCAST_FAVORITES_STORAGE_KEY = 'shuxia_podcast_favorites'
+const PODCAST_FAVORITE_PINS_STORAGE_KEY = 'shuxia_podcast_favorite_pins'
+const PODCAST_FAVORITE_MUTATIONS_STORAGE_KEY = 'shuxia_podcast_favorite_mutations'
 
 type PendingPodcastFavoriteMutation =
-  | { operation: 'upsert'; key: string; input: CeruPodcastFavoriteMutationInput }
+  | { operation: 'upsert'; key: string; input: ShuxiaPodcastFavoriteMutationInput }
   | { operation: 'delete'; key: string; source?: string; radioId: string; operationId: string; occurredAtMs?: number }
   | { operation: 'reorder'; key: '__order__'; orderedIds: string[]; baseRevision?: number; operationId: string }
 
@@ -327,7 +327,7 @@ const removePodcastFavoriteMutation = (key: string) => {
   writePendingPodcastFavoriteMutations(readPendingPodcastFavoriteMutations().filter((item) => item.key !== key))
 }
 
-const readLocalPodcastFavorites = (): CeruPodcastFavorite[] => {
+const readLocalPodcastFavorites = (): ShuxiaPodcastFavorite[] => {
   try {
     const parsed = JSON.parse(localStorage.getItem(PODCAST_FAVORITES_STORAGE_KEY) || '[]')
     return Array.isArray(parsed) ? parsed.filter((item) => item?.radioId) : []
@@ -336,13 +336,13 @@ const readLocalPodcastFavorites = (): CeruPodcastFavorite[] => {
   }
 }
 
-const writeLocalPodcastFavorites = (items: CeruPodcastFavorite[], notifyLocalChange = true) => {
+const writeLocalPodcastFavorites = (items: ShuxiaPodcastFavorite[], notifyLocalChange = true) => {
   localStorage.setItem(PODCAST_FAVORITES_STORAGE_KEY, JSON.stringify(items))
   // 【新·现在用这个】统一实时同步总线：播客页(podcast.vue)已迁移到这里刷新
   emitPodcastSync('update', notifyLocalChange ? 'local' : 'remote')
   // 【旧·仍保留】radio.vue 等未迁移页面仍靠这个 window 事件刷新
-  window.dispatchEvent(new Event('ceru-podcast-favorites-updated'))
-  if (notifyLocalChange) window.dispatchEvent(new Event('ceru-nas-local-change'))
+  window.dispatchEvent(new Event('shuxia-podcast-favorites-updated'))
+  if (notifyLocalChange) window.dispatchEvent(new Event('shuxia-nas-local-change'))
 }
 
 const podcastFavoriteKey = (source: string | undefined, radioId: string) => `${source || 'wy'}:${radioId}`
@@ -364,9 +364,9 @@ const writePodcastFavoritePins = (items: string[]) => {
 }
 
 const orderPodcastFavorites = (
-  items: CeruPodcastFavorite[],
+  items: ShuxiaPodcastFavorite[],
   pinKeys = readPodcastFavoritePins()
-): CeruPodcastFavorite[] => {
+): ShuxiaPodcastFavorite[] => {
   const pinIndex = new Map(pinKeys.map((key, index) => [key, index]))
   return [...items]
     .map((item, index) => ({
@@ -389,11 +389,11 @@ const orderPodcastFavorites = (
 }
 
 const podcastFavoriteToMutation = (
-  favorite: CeruPodcastFavorite,
+  favorite: ShuxiaPodcastFavorite,
   position: number,
   pinned: boolean,
   operationId?: string
-): CeruPodcastFavoriteMutationInput => ({
+): ShuxiaPodcastFavoriteMutationInput => ({
   operationId,
   radioId: favorite.radioId,
   source: favorite.source,
@@ -408,7 +408,7 @@ const podcastFavoriteToMutation = (
   occurredAtMs: Date.now()
 })
 
-const normalizePodcastFavorite = (payload: any): CeruPodcastFavorite | null => {
+const normalizePodcastFavorite = (payload: any): ShuxiaPodcastFavorite | null => {
   const metadata = payload?.metadata && typeof payload.metadata === 'object' ? payload.metadata : {}
   const entityId = String(payload?.entityId || '').trim()
   const radioIdRaw = String(payload?.radioId || metadata.radioId || entityId).trim()
@@ -436,11 +436,11 @@ const normalizePodcastFavorite = (payload: any): CeruPodcastFavorite | null => {
   }
 }
 
-const normalizePodcastFavoritePage = (payload: unknown): CeruFavoriteSyncPage<CeruPodcastFavorite> => {
+const normalizePodcastFavoritePage = (payload: unknown): ShuxiaFavoriteSyncPage<ShuxiaPodcastFavorite> => {
   const data = payload as { items?: unknown[]; revision?: number; updatedAt?: string } | unknown[]
   const rawItems = Array.isArray(data) ? data : data.items || []
   return {
-    items: rawItems.map(normalizePodcastFavorite).filter((item): item is CeruPodcastFavorite => Boolean(item)),
+    items: rawItems.map(normalizePodcastFavorite).filter((item): item is ShuxiaPodcastFavorite => Boolean(item)),
     revision: Array.isArray(data) ? undefined : data.revision,
     updatedAt: Array.isArray(data) ? undefined : data.updatedAt
   }
@@ -483,10 +483,10 @@ export const nasSyncAPI = {
   me: () => requestNas<NasSyncSession['user']>('/me'),
   pair: (pairCode: string) => requestNas<NasSyncSession>('/auth/pair', { method: 'POST', token: '', body: { pairCode } }),
   registerDevice: async (deviceType = 'desktop') => {
-    let deviceId = localStorage.getItem('ceru_nas_sync_device_id') || ''
+    let deviceId = localStorage.getItem('shuxia_nas_sync_device_id') || ''
     if (!deviceId) {
       deviceId = `desktop-${crypto.randomUUID()}`
-      localStorage.setItem('ceru_nas_sync_device_id', deviceId)
+      localStorage.setItem('shuxia_nas_sync_device_id', deviceId)
     }
     const deviceName = `Mac ${navigator.platform || 'Desktop'}`
     return requestNas<{ success?: boolean; deviceId: string }>('/sync/register', {
@@ -495,7 +495,7 @@ export const nasSyncAPI = {
     })
   },
   updateDeviceRevision: async (revision: number) => {
-    const deviceId = localStorage.getItem('ceru_nas_sync_device_id') || ''
+    const deviceId = localStorage.getItem('shuxia_nas_sync_device_id') || ''
     if (!deviceId || !Number.isFinite(revision)) return null
     return requestNas<{ success?: boolean }>('/sync/device-revision', {
       method: 'POST',
@@ -744,8 +744,8 @@ export const nasPlaylistAPI = {
 
 export const nasPodcastFavoriteAPI = {
   list: async () => normalizePodcastFavoritePage(await requestNas<unknown>('/favorites?entityType=podcast')),
-  favorite: (input: CeruPodcastFavoriteMutationInput) =>
-    requestNas<CeruFavoriteMutationResult>('/favorites', {
+  favorite: (input: ShuxiaPodcastFavoriteMutationInput) =>
+    requestNas<ShuxiaFavoriteMutationResult>('/favorites', {
       method: 'POST',
       body: {
         entityType: 'podcast',
@@ -770,7 +770,7 @@ export const nasPodcastFavoriteAPI = {
       }
     }),
   unfavorite: (source: string | undefined, radioId: string, operationId?: string, occurredAtMs?: number) =>
-    requestNas<CeruFavoriteMutationResult>(
+    requestNas<ShuxiaFavoriteMutationResult>(
       `/favorites/podcast/${encodeURIComponent(podcastFavoriteKey(source, radioId))}`,
       { method: 'DELETE', body: { operationId, occurredAtMs } }
     )
@@ -831,7 +831,7 @@ export const backupLocalPodcastFavoritesToCloud = async () => {
   return {uploaded: ordered.length}
 }
 
-export const listPodcastFavorites = async (): Promise<CeruPodcastFavorite[]> => {
+export const listPodcastFavorites = async (): Promise<ShuxiaPodcastFavorite[]> => {
   const localItems = readLocalPodcastFavorites()
   const localPins = readPodcastFavoritePins()
   if (!(await canUseNasSync())) return orderPodcastFavorites(localItems, localPins)
@@ -878,7 +878,7 @@ export const listPodcastFavorites = async (): Promise<CeruPodcastFavorite[]> => 
   }
 }
 
-export const replaceLocalPodcastFavoritesFromCloud = async (): Promise<CeruPodcastFavorite[]> => {
+export const replaceLocalPodcastFavoritesFromCloud = async (): Promise<ShuxiaPodcastFavorite[]> => {
   if (!(await canUseNasSync())) return readLocalPodcastFavorites()
 
   const pending = readPendingPodcastFavoriteMutations()
@@ -937,10 +937,10 @@ export const setPodcastFavoriteFromSyncEvent = (payload: unknown, deleted = fals
   writeLocalPodcastFavorites(orderPodcastFavorites(items, pins), false)
 }
 
-export const favoritePodcast = async (input: CeruPodcastFavoriteMutationInput) => {
+export const favoritePodcast = async (input: ShuxiaPodcastFavoriteMutationInput) => {
   const pins = readPodcastFavoritePins()
   const currentItems = readLocalPodcastFavorites()
-  const favorite: CeruPodcastFavorite = {
+  const favorite: ShuxiaPodcastFavorite = {
     id: podcastFavoriteKey(input.source, input.radioId),
     ...input,
     pinned: false,
@@ -1025,7 +1025,7 @@ export const togglePodcastFavoritePinned = async (source: string | undefined, ra
     ? readPodcastFavoritePins().filter((item) => item !== key)
     : [key, ...readPodcastFavoritePins().filter((item) => item !== key)]
   const remaining = items.filter((item) => podcastFavoriteKey(item.source, item.radioId) !== key)
-  let nextItems: CeruPodcastFavorite[]
+  let nextItems: ShuxiaPodcastFavorite[]
   if (wasPinned) {
     const firstUnpinned = remaining.findIndex(
       (item) => !pins.includes(podcastFavoriteKey(item.source, item.radioId))
@@ -1069,10 +1069,10 @@ export const togglePodcastFavoritePinned = async (source: string | undefined, ra
 export const nasFavoriteAPI = {
   listPodcastFavorites: async () => ({ items: await listPodcastFavorites() }),
   listPlaylistFavorites: async () => normalizePlaylistFavoritePage(await requestNas<unknown>('/playlist-favorites')),
-  favoritePlaylist: (input: CeruPlaylistFavoriteMutationInput) =>
-    requestNas<CeruFavoriteMutationResult>('/playlist-favorites', { method: 'POST', body: input }),
+  favoritePlaylist: (input: ShuxiaPlaylistFavoriteMutationInput) =>
+    requestNas<ShuxiaFavoriteMutationResult>('/playlist-favorites', { method: 'POST', body: input }),
   unfavoritePlaylist: (playlistId: string) =>
-    requestNas<CeruFavoriteMutationResult>('/playlist-favorites', {
+    requestNas<ShuxiaFavoriteMutationResult>('/playlist-favorites', {
       method: 'DELETE',
       body: { playlistId, occurredAtMs: Date.now() }
     })

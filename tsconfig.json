@@ -27,7 +27,7 @@
       "@assets/*": ["./src/assets/*"],
       "@common/*": ["./src/common/*"],
       "@types/*": ["./src/types/*"],
-      "@ceru/shared-contract": ["./packages/shared-contract/src"]
+      "@shuxia/shared-contract": ["./packages/shared-contract/src"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue", "packages/shared-contract/src/**/*.ts"],

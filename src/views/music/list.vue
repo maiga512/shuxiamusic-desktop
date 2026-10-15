@@ -254,8 +254,8 @@ onMounted(() => {
   // 它们和上面的总线做的是同一件事——nasSyncPoller 现在每次同步都会同时发总线，
   // 所以这里再监听就是重复刷新（多余）。保留注释仅作新旧对照。
   // window.addEventListener('playlist-updated', scheduleRemoteSongsRefresh)
-  // window.addEventListener('ceru-favorites-updated', scheduleRemoteSongsRefresh)
-  // window.addEventListener('ceru-nas-sync-events', scheduleRemoteSongsRefresh)
+  // window.addEventListener('shuxia-favorites-updated', scheduleRemoteSongsRefresh)
+  // window.addEventListener('shuxia-nas-sync-events', scheduleRemoteSongsRefresh)
 
   // 检查是否需要自动同步平台歌单 (从歌单列表页右键菜单触发)
   if (route.query.autoSync === '1') {
@@ -275,8 +275,8 @@ onBeforeUnmount(() => {
   stopPlaylistSyncBus = null
   // 【旧·已停用】对应上面已注释的 window 监听，无需再解绑
   // window.removeEventListener('playlist-updated', scheduleRemoteSongsRefresh)
-  // window.removeEventListener('ceru-favorites-updated', scheduleRemoteSongsRefresh)
-  // window.removeEventListener('ceru-nas-sync-events', scheduleRemoteSongsRefresh)
+  // window.removeEventListener('shuxia-favorites-updated', scheduleRemoteSongsRefresh)
+  // window.removeEventListener('shuxia-nas-sync-events', scheduleRemoteSongsRefresh)
   if (remoteRefreshTimer !== null) {
     window.clearTimeout(remoteRefreshTimer)
     remoteRefreshTimer = null

@@ -1,3 +1,21 @@
+## 2026-10-15 全面清理 ceru 命名（ceru -> shuxia / 树夏Music）
+
+- 用户要求：所有相关 Ceru 全部改为树夏Music。npm 包名不支持中文，用 `@shuxia/`（树夏拼音）。
+- 改动（桌面仓库 57+ 文件 + 独立仓库）：
+  - shared-contract：包名 `@ceru/` → `@shuxia/`，类型 `Ceru*` → `Shuxia*`。
+  - localStorage 26 个键 `ceru_*` → `shuxia_*`；新增 `src/utils/storageMigration.ts` 一次性迁移（读旧键搬新键，数据不丢）。
+  - 全局属性 `__ceru*`、CSS 变量 `--ceru-`、事件 `ceru-*`、函数名/常量名全部改 `shuxia`。
+  - 插件沙箱加 `shuxiaMusic` 别名（与 `cerumusic` 同一对象），新老插件都能用。
+- **保留不动**（改了会破坏外部契约）：
+  - `cerumusic://` 深链（OAuth 回调，Logto 应用注册了该 scheme）
+  - `com.cerumusic.tauri` bundle id（改了 macOS 辅助功能/签名权限全丢）
+  - `api.ceru.shiqianjiang.cn` / `ceru.share.shiqianjiang.cn` 服务端域名
+- 独立仓库（`maiga512/shuxiamusic-nas-sync` + Gitee 镜像）：
+  - 本地 `nas-sync-server/` 为主版，合并独立仓库改进（超时 25s、v0.3.2）。
+  - 新增 `src/env.ts`：`SHUXIA_SYNC_* > CERU_SYNC_* > 默认值` 兼容读取；DB 老文件 `ceru-sync.sqlite` 存在就继续用。
+  - docker-compose 容器名 `shuxia-nas-sync`；插件文件 `shuxia-sync-service.js`（保留 `ceru-nas-sync-service.js` 兼容别名）。
+- 验证：`vue-tsc --noEmit` 通过；`nas-sync-server` node --test 34/34 全过。独立仓库 GitHub + Gitee 已推送（commit d89f9fd）。
+
 ## 2026-10-14 NAS 同步服务器改名 + 下载/部署文档 + Gitee 镜像
 
 - 用户诉求：同步服务器仓库名不要 "Ceru Music"，改叫树夏Music / 拼音；补部署教程；贴安卓 + Mac 下载地址；Gitee 同样处理。

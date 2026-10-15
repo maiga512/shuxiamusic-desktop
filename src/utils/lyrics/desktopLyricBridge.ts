@@ -75,9 +75,9 @@ const needsMenuBarLyric = () => Boolean(settingsStore.settings.macStatusBarLyric
 
   const syncLyricConsumerFlags = () => {
     try {
-      ;(window as any).__CERU_DESKTOP_LYRIC_OPEN__ = isLyricWindowOpen
-      ;(window as any).__CERU_SETTINGS__ = {
-        ...((window as any).__CERU_SETTINGS__ || {}),
+      ;(window as any).__SHUXIA_DESKTOP_LYRIC_OPEN__ = isLyricWindowOpen
+      ;(window as any).__SHUXIA_SETTINGS__ = {
+        ...((window as any).__SHUXIA_SETTINGS__ || {}),
         macStatusBarLyricEnabled: Boolean(settingsStore.settings.macStatusBarLyricEnabled),
       }
     } catch {}
@@ -316,9 +316,9 @@ const needsMenuBarLyric = () => Boolean(settingsStore.settings.macStatusBarLyric
     reschedule(MENU_BAR_VISIBLE_INTERVAL_MS)
   }
   document.addEventListener('visibilitychange', visibilityHandler)
-  window.addEventListener('ceru-window-state-change', visibilityHandler)
-  window.addEventListener('ceru-wake', visibilityHandler)
-  window.addEventListener('ceru-sync-tray-lyric', visibilityHandler)
+  window.addEventListener('shuxia-window-state-change', visibilityHandler)
+  window.addEventListener('shuxia-wake', visibilityHandler)
+  window.addEventListener('shuxia-sync-tray-lyric', visibilityHandler)
 }
 
 export function uninstallDesktopLyricBridge() {
@@ -329,9 +329,9 @@ export function uninstallDesktopLyricBridge() {
 
   if (visibilityHandler) {
     document.removeEventListener('visibilitychange', visibilityHandler)
-    window.removeEventListener('ceru-window-state-change', visibilityHandler)
-    window.removeEventListener('ceru-wake', visibilityHandler)
-    window.removeEventListener('ceru-sync-tray-lyric', visibilityHandler)
+    window.removeEventListener('shuxia-window-state-change', visibilityHandler)
+    window.removeEventListener('shuxia-wake', visibilityHandler)
+    window.removeEventListener('shuxia-sync-tray-lyric', visibilityHandler)
     visibilityHandler = null
   }
 

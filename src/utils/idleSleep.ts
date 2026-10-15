@@ -16,7 +16,7 @@ function _resetIdle(): void {
     // 全屏播放等场景需要持续刷新歌词/频谱，禁止进入全局休眠。
     if (_isIdle) {
       _isIdle = false
-      window.dispatchEvent(new CustomEvent('ceru-wake'))
+      window.dispatchEvent(new CustomEvent('shuxia-wake'))
     }
     if (_idleTimeout !== null) {
       clearTimeout(_idleTimeout)
@@ -28,7 +28,7 @@ function _resetIdle(): void {
   _isIdle = false
   // 从休眠中唤醒，通知各组件
   if (wasIdle) {
-    window.dispatchEvent(new CustomEvent('ceru-wake'))
+    window.dispatchEvent(new CustomEvent('shuxia-wake'))
   }
   if (_idleTimeout !== null) clearTimeout(_idleTimeout)
   _idleTimeout = setTimeout(() => {
@@ -38,7 +38,7 @@ function _resetIdle(): void {
     }
     _isIdle = true
     // 进入休眠，通知各组件
-    window.dispatchEvent(new CustomEvent('ceru-sleep'))
+    window.dispatchEvent(new CustomEvent('shuxia-sleep'))
   }, IDLE_MS)
 }
 

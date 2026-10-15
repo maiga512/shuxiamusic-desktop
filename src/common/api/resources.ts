@@ -9,9 +9,9 @@
  *    `developmentUrl` 自动切换 baseURL。
  *
  * 用法:
- *   import { CERU_API_RESOURCE } from '@common/api/resources'
- *   new Request(CERU_API_RESOURCE)
- *   new SocketRequest('/lt', CERU_API_RESOURCE)
+ *   import { SHUXIA_API_RESOURCE } from '@common/api/resources'
+ *   new Request(SHUXIA_API_RESOURCE)
+ *   new SocketRequest('/lt', SHUXIA_API_RESOURCE)
  *
  * 新增后端:在 config.json 加一条,在此文件加一个 const 导出即可。
  */
@@ -42,5 +42,5 @@ export function getResource(name: string): string {
 
 /* ---------------- 命名导出 —— 业务直接用这些 ---------------- */
 
-/** CeruMusic 主后端(房间/分享/账户同步等都用它) */
-export const CERU_API_RESOURCE = getResource('CeruMusic-Backend')
+/** ShuxiaMusic 主后端(房间/分享/账户同步等都用它) */
+export const SHUXIA_API_RESOURCE = getResource('ShuxiaMusic-Backend')

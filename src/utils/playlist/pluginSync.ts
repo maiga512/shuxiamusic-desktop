@@ -9,14 +9,14 @@ import {
 // 【新】统一实时同步总线：插件页改用它接收刷新通知
 import { emitPluginSync } from '@renderer/utils/sync/realtimeSyncBus'
 
-const DISABLED_MUSIC_SOURCES_KEY = 'ceru_sync_disabled_music_sources'
-const PLUGIN_SYNC_INITIALIZED_KEY = 'ceru_sync_plugins_initialized'
-const DEVICE_ID_KEY = 'ceru_sync_device_id'
-const SEQUENCE_KEY = 'ceru_sync_plugin_sequence'
+const DISABLED_MUSIC_SOURCES_KEY = 'shuxia_sync_disabled_music_sources'
+const PLUGIN_SYNC_INITIALIZED_KEY = 'shuxia_sync_plugins_initialized'
+const DEVICE_ID_KEY = 'shuxia_sync_device_id'
+const SEQUENCE_KEY = 'shuxia_sync_plugin_sequence'
 const MAX_PLUGIN_SCRIPT_BYTES = 2 * 1024 * 1024
-const PENDING_PLUGIN_UPSERTS_KEY = 'ceru_sync_pending_plugin_upserts'
-const PENDING_PLUGIN_DELETES_KEY = 'ceru_sync_pending_plugin_deletes'
-const PLUGIN_IDENTITY_ALIASES_KEY = 'ceru_sync_plugin_identity_aliases'
+const PENDING_PLUGIN_UPSERTS_KEY = 'shuxia_sync_pending_plugin_upserts'
+const PENDING_PLUGIN_DELETES_KEY = 'shuxia_sync_pending_plugin_deletes'
+const PLUGIN_IDENTITY_ALIASES_KEY = 'shuxia_sync_plugin_identity_aliases'
 
 export type LocalSyncedPlugin = {
   identityKey: string
@@ -265,7 +265,7 @@ const uploadLocalPlugin = async (
   })
 }
 
-const KNOWN_PLUGIN_KEYS = 'ceru_sync_known_plugin_keys'
+const KNOWN_PLUGIN_KEYS = 'shuxia_sync_known_plugin_keys'
 
 const readKnownPluginKeys = () => {
   try {
@@ -428,7 +428,7 @@ export const backupLocalPluginsToCloud = async (pruneCloudExtras = false) => {
   return {uploaded, removed}
 }
 
-const APPLIED_PLUGIN_HASHES_KEY = 'ceru_sync_applied_plugin_hashes'
+const APPLIED_PLUGIN_HASHES_KEY = 'shuxia_sync_applied_plugin_hashes'
 
 const readPendingPluginUpserts = (): Map<string, number> => {
   try {
@@ -559,7 +559,7 @@ export const selectLocalMusicSourceForSync = async (selectedIdentityKey: string)
     markLocalPluginUpsert(item.identityKey)
   }
   writeDisabledMusicSources(disabled)
-  window.dispatchEvent(new Event('ceru-nas-local-change'))
+  window.dispatchEvent(new Event('shuxia-nas-local-change'))
 }
 
 export const clearLocalPluginUpsert = (identityKey: string) => {
@@ -625,7 +625,7 @@ export const removeLocalPluginFromCloud = async (
     writePendingPluginDeletes(pending)
     clearLocalPluginUpsert(identityKey)
   }
-  window.dispatchEvent(new Event('ceru-nas-local-change'))
+  window.dispatchEvent(new Event('shuxia-nas-local-change'))
   await flushPendingPluginDeletes()
 }
 

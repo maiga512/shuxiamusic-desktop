@@ -176,13 +176,13 @@ watch(
 )
 
 onMounted(() => {
-  window.addEventListener('ceru-wake', updateSettingsIdleState)
-  window.addEventListener('ceru-sleep', updateSettingsIdleState)
+  window.addEventListener('shuxia-wake', updateSettingsIdleState)
+  window.addEventListener('shuxia-sleep', updateSettingsIdleState)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('ceru-wake', updateSettingsIdleState)
-  window.removeEventListener('ceru-sleep', updateSettingsIdleState)
+  window.removeEventListener('shuxia-wake', updateSettingsIdleState)
+  window.removeEventListener('shuxia-sleep', updateSettingsIdleState)
 })
 
 const handleSearchSelect = async (item: SearchItem) => {

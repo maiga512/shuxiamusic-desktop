@@ -180,7 +180,7 @@ const ensureRealtimeStream = async () => {
 const notifySyncEvents = (events: unknown[], revision: number) => {
   suppressLocalChangeEvents()
   window.dispatchEvent(
-    new CustomEvent('ceru-nas-sync-events', {
+    new CustomEvent('shuxia-nas-sync-events', {
       detail: { events, revision }
     })
   )
@@ -492,7 +492,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
       await songListAPI.removeSongs(existing.id, payload.songIds.map(String))
       window.dispatchEvent(new CustomEvent('playlist-updated', { detail: { remote: true } }))
       if (favoritesList) {
-        window.dispatchEvent(new Event('ceru-favorites-updated'))
+        window.dispatchEvent(new Event('shuxia-favorites-updated'))
         emitFavoritesSync('update', 'remote', payload)
       }
     } else if (event.action === 'upsert' && Array.isArray(payload.songs) && payload.songs.length > 0) {
@@ -503,7 +503,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
         await songListAPI.addSongs(existing.id, immediate)
         window.dispatchEvent(new CustomEvent('playlist-updated', { detail: { remote: true } }))
         if (favoritesList) {
-          window.dispatchEvent(new Event('ceru-favorites-updated'))
+          window.dispatchEvent(new Event('shuxia-favorites-updated'))
           emitFavoritesSync('update', 'remote', payload)
         }
       }
@@ -514,7 +514,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
     if (!Array.isArray(fetched)) {
       window.dispatchEvent(new CustomEvent('playlist-updated', { detail: { remote: true } }))
       if (favoritesList) {
-        window.dispatchEvent(new Event('ceru-favorites-updated'))
+        window.dispatchEvent(new Event('shuxia-favorites-updated'))
         emitFavoritesSync('update', 'remote', payload)
       }
       return
@@ -542,7 +542,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
     if (isFavorites) {
       // 单曲收藏走 playlist-song-ops，服务端发布的事件类型仍是
       // playlistSongs。明确广播收藏事件，让已打开的“我的喜欢”页面立即重读。
-      window.dispatchEvent(new Event('ceru-favorites-updated'))
+      window.dispatchEvent(new Event('shuxia-favorites-updated'))
       emitFavoritesSync('update', 'remote', payload)
     }
     window.dispatchEvent(new CustomEvent('playlist-updated', { detail: { remote: true } }))
@@ -566,7 +566,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
   // 的完整列表，才能同时恢复 pinned 和 position，避免把排序事件当成空收藏。
   if (event.entityType === 'favorite' && event.action === 'reorder' && payload.entityType === 'podcast') {
     await replaceLocalPodcastFavoritesFromCloud()
-    window.dispatchEvent(new Event('ceru-podcast-favorites-updated'))
+    window.dispatchEvent(new Event('shuxia-podcast-favorites-updated'))
     emitPodcastSync('reorder', 'remote', payload)
     return
   }
@@ -574,7 +574,7 @@ const applyRemoteEvent = async (event: NasSyncEvent) => {
   if (event.entityType === 'favorite' && payload.entityType === 'podcast') {
     await replaceLocalPodcastFavoritesFromCloud()
     setPodcastFavoriteFromSyncEvent(payload, event.action === 'delete')
-    window.dispatchEvent(new Event('ceru-podcast-favorites-updated'))
+    window.dispatchEvent(new Event('shuxia-podcast-favorites-updated'))
     emitPodcastSync(event.action === 'delete' ? 'remove' : 'update', 'remote', payload)
     return
   }
@@ -906,7 +906,7 @@ const restoreCloudLibraryToLocal = async (reason: string, snapshotRevision?: num
   )
   suppressLocalChangeEvents()
     window.dispatchEvent(new CustomEvent('playlist-updated', { detail: { remote: true } }))
-  window.dispatchEvent(new Event('ceru-podcast-favorites-updated'))
+  window.dispatchEvent(new Event('shuxia-podcast-favorites-updated'))
   return { restored, removed, removedBridgedCopies, podcasts: podcastItems.length, revision: completedRevision }
 }
 
@@ -1173,8 +1173,8 @@ const handleLocalPlaylistChanged = () => {
 export const startNasSyncPoller = () => {
   if (!stopped) return
   stopped = false
-  window.addEventListener('ceru-window-state-change', reschedule)
-  window.addEventListener('ceru-nas-local-change', handleLocalPlaylistChanged)
+  window.addEventListener('shuxia-window-state-change', reschedule)
+  window.addEventListener('shuxia-nas-local-change', handleLocalPlaylistChanged)
   document.addEventListener('visibilitychange', reschedule)
   scheduleNext(0)
   void ensureRealtimeStream()
@@ -1191,7 +1191,7 @@ export const stopNasSyncPoller = () => {
     streamRetryTimer = null
   }
   streamRetryAttempt = 0
-  window.removeEventListener('ceru-window-state-change', reschedule)
-  window.removeEventListener('ceru-nas-local-change', handleLocalPlaylistChanged)
+  window.removeEventListener('shuxia-window-state-change', reschedule)
+  window.removeEventListener('shuxia-nas-local-change', handleLocalPlaylistChanged)
   document.removeEventListener('visibilitychange', reschedule)
 }

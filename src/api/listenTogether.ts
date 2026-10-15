@@ -1,7 +1,7 @@
 /**
  * 一起听 REST API 客户端
  *
- * 走 ceru-backend 的 /api/listen-together/* 接口，
+ * 走 shuxia-backend 的 /api/listen-together/* 接口，
  * 复用项目自带的 Request 类（已封装 Logto 鉴权 + 错误处理）。
  *
  * 接口：
@@ -20,7 +20,7 @@ import type {
 import config from '@common/api/config.json'
 
 /**
- * ceru-backend 的 API 根地址 —— 与 share.ts 保持一致
+ * shuxia-backend 的 API 根地址 —— 与 share.ts 保持一致
  *
  * 后续如果引入开发模式切换可走 import.meta.env.DEV，
  * 目前先硬编码到生产，与 share.ts 同步处理。

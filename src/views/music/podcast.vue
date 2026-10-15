@@ -696,8 +696,8 @@ const stopPodcastSyncBus = onSyncEvent('podcast', () => {
 
 onMounted(async () => {
   // 【旧·已停用，勿再启用】原来的两个 window 监听，和上面的总线做同一件事（多余）
-  // window.addEventListener('ceru-nas-sync-events', handleNasSyncEvents)
-  // window.addEventListener('ceru-podcast-favorites-updated', handlePodcastFavoritesUpdated)
+  // window.addEventListener('shuxia-nas-sync-events', handleNasSyncEvents)
+  // window.addEventListener('shuxia-podcast-favorites-updated', handlePodcastFavoritesUpdated)
   await refreshLogin()
   await nextTick()
   updateCategoryPageSize()
@@ -731,8 +731,8 @@ onDeactivated(() => {
 
 onUnmounted(() => {
   // 【旧·已停用】对应上面已注释的 window 监听，无需再解绑
-  // window.removeEventListener('ceru-nas-sync-events', handleNasSyncEvents)
-  // window.removeEventListener('ceru-podcast-favorites-updated', handlePodcastFavoritesUpdated)
+  // window.removeEventListener('shuxia-nas-sync-events', handleNasSyncEvents)
+  // window.removeEventListener('shuxia-podcast-favorites-updated', handlePodcastFavoritesUpdated)
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   stopPodcastSyncBus()
   stopPodcastPoll()

@@ -1,7 +1,7 @@
 {
   "baseUrl": [
     {
-      "name": "CeruMusic-Backend",
+      "name": "ShuxiaMusic-Backend",
       "url": "https://api.ceru.shiqianjiang.cn/api",
       "developmentUrl": "http://localhost:8000/api"
     }

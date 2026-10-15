@@ -204,7 +204,7 @@ onMounted(() => {
   }
 
   window.addEventListener('resize', resize)
-  ;(canvas as any).__ceruResize = resize
+  ;(canvas as any).__shuxiaResize = resize
 
   void bootThenEnter()
 })
@@ -242,9 +242,9 @@ onUnmounted(() => {
   if (rafId) cancelAnimationFrame(rafId)
   rafId = 0
   const canvas = canvasRef.value as any
-  if (canvas?.__ceruResize) {
-    window.removeEventListener('resize', canvas.__ceruResize)
-    canvas.__ceruResize = null
+  if (canvas?.__shuxiaResize) {
+    window.removeEventListener('resize', canvas.__shuxiaResize)
+    canvas.__shuxiaResize = null
   }
 })
 </script>

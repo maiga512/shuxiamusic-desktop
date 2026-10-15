@@ -103,7 +103,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>()
 
 const CONSENT_VERSION = 1
-const STORAGE_KEY = 'ceru_share_consent'
+const STORAGE_KEY = 'shuxia_share_consent'
 const LEGAL_DOC_URL =
   'https://ceru.docs.shiqianjiang.cn/#%E6%B3%95%E5%BE%8B%E5%A3%B0%E6%98%8E%E4%B8%8E%E5%85%8D%E8%B4%A3%E6%9D%A1%E6%AC%BE'
 

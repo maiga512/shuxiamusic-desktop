@@ -39,7 +39,7 @@ export const searchValue = defineStore('search', {
     }
   },
   persist: {
-    key: 'ceru-search',
+    key: 'shuxia-search',
     pick: ['history']
   }
 })

@@ -3,12 +3,12 @@ import { base64ToFile, isBase64 } from '@renderer/utils/file'
 import config from '@common/api/config.json'
 
 import type {
-  CeruFavoriteMutationResult,
-  CeruFavoriteSyncPage,
-  CeruMusicSource,
-  CeruPlaylistFavorite,
-  CeruPlaylistFavoriteMutationInput,
-} from '@ceru/shared-contract'
+  ShuxiaFavoriteMutationResult,
+  ShuxiaFavoriteSyncPage,
+  ShuxiaMusicSource,
+  ShuxiaPlaylistFavorite,
+  ShuxiaPlaylistFavoriteMutationInput,
+} from '@shuxia/shared-contract'
 
 // Define types locally or export them
 export interface CloudSongList {
@@ -215,8 +215,8 @@ export const cloudSongListAPI = {
 
 const PLAYLIST_FAVORITES_BASE_URL = '/playlist-favorites'
 
-type BackendPlaylistFavorite = Partial<CeruPlaylistFavorite> & {
-  playlist?: Partial<CeruPlaylistFavorite> & {
+type BackendPlaylistFavorite = Partial<ShuxiaPlaylistFavorite> & {
+  playlist?: Partial<ShuxiaPlaylistFavorite> & {
     id?: string
     name?: string
     title?: string
@@ -232,14 +232,14 @@ type BackendPlaylistFavorite = Partial<CeruPlaylistFavorite> & {
   filePath?: string
 }
 
-const normalizePlaylistFavorite = (item: BackendPlaylistFavorite): CeruPlaylistFavorite => {
+const normalizePlaylistFavorite = (item: BackendPlaylistFavorite): ShuxiaPlaylistFavorite => {
   const playlist = item.playlist || {}
   const playlistId = String(item.playlistId || playlist.id || item.id || '')
   return {
     id: String(item.id || playlistId),
     playlistId,
     sourcePlaylistId: item.sourcePlaylistId || playlist.sourcePlaylistId,
-    source: (item.source || playlist.source) as CeruMusicSource | undefined,
+    source: (item.source || playlist.source) as ShuxiaMusicSource | undefined,
     title: item.title || item.name || playlist.title || playlist.name || '未命名歌单',
     description: item.description || item.describe || playlist.description || playlist.describe || '',
     coverUrl: item.coverUrl || item.cover || item.filePath || playlist.coverUrl || playlist.cover || playlist.filePath,
@@ -251,7 +251,7 @@ const normalizePlaylistFavorite = (item: BackendPlaylistFavorite): CeruPlaylistF
   }
 }
 
-const normalizePlaylistFavoritePage = (payload: unknown): CeruFavoriteSyncPage<CeruPlaylistFavorite> => {
+const normalizePlaylistFavoritePage = (payload: unknown): ShuxiaFavoriteSyncPage<ShuxiaPlaylistFavorite> => {
   const data = payload as
     | BackendPlaylistFavorite[]
     | {
@@ -278,12 +278,12 @@ export const cloudFavoriteAPI = {
     return normalizePlaylistFavoritePage(payload)
   },
 
-  favoritePlaylist: (input: CeruPlaylistFavoriteMutationInput) => {
-    return unwrap<CeruFavoriteMutationResult>(request.post(PLAYLIST_FAVORITES_BASE_URL, input))
+  favoritePlaylist: (input: ShuxiaPlaylistFavoriteMutationInput) => {
+    return unwrap<ShuxiaFavoriteMutationResult>(request.post(PLAYLIST_FAVORITES_BASE_URL, input))
   },
 
   unfavoritePlaylist: (playlistId: string) => {
-    return unwrap<CeruFavoriteMutationResult>(
+    return unwrap<ShuxiaFavoriteMutationResult>(
       request.delete(PLAYLIST_FAVORITES_BASE_URL, {
         data: { playlistId }
       })

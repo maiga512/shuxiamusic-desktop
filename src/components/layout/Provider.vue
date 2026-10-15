@@ -72,8 +72,8 @@ const sponsorPromptVisible = ref(false)
 const usageTotalMs = ref(0)
 const sponsorUrl = 'https://ceru.docs.shiqianjiang.cn/#%E8%B5%9E%E5%8A%A9'
 const sponsorPromptAfterMs = 2.5 * 60 * 60 * 1000 + Math.round(Math.random() * 60 * 60 * 1000)
-const sponsorPromptHiddenKey = 'ceru_sponsor_prompt_hidden_v1'
-const usageTotalMsKey = 'ceru_usage_total_ms_v1'
+const sponsorPromptHiddenKey = 'shuxia_sponsor_prompt_hidden_v1'
+const usageTotalMsKey = 'shuxia_usage_total_ms_v1'
 
 let usageInterval: number | null = null
 let usageActive = false

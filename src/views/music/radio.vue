@@ -188,11 +188,11 @@ const handleScroll = (event: Event) => {
 
 onMounted(() => {
   void refreshFavoriteState()
-  window.addEventListener('ceru-podcast-favorites-updated', handleFavoriteUpdate)
+  window.addEventListener('shuxia-podcast-favorites-updated', handleFavoriteUpdate)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('ceru-podcast-favorites-updated', handleFavoriteUpdate)
+  window.removeEventListener('shuxia-podcast-favorites-updated', handleFavoriteUpdate)
 })
 
 watch(

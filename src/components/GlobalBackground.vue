@@ -43,12 +43,12 @@ watch(
 
 onMounted(() => {
   document.addEventListener('visibilitychange', syncVideoPlayback)
-  window.addEventListener('ceru-window-state-change', syncVideoPlayback)
+  window.addEventListener('shuxia-window-state-change', syncVideoPlayback)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('visibilitychange', syncVideoPlayback)
-  window.removeEventListener('ceru-window-state-change', syncVideoPlayback)
+  window.removeEventListener('shuxia-window-state-change', syncVideoPlayback)
   videoRef.value?.pause()
 })
 

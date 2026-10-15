@@ -296,9 +296,9 @@ const resizeCanvas = () => {
 onMounted(() => {
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('focus', onVisibilityChange)
-  window.addEventListener('ceru-window-state-change', onVisibilityChange)
-  window.addEventListener('ceru-wake', onVisibilityChange)
-  window.addEventListener('ceru-sleep', onVisibilityChange)
+  window.addEventListener('shuxia-window-state-change', onVisibilityChange)
+  window.addEventListener('shuxia-wake', onVisibilityChange)
+  window.addEventListener('shuxia-sleep', onVisibilityChange)
   if (canvasRef.value) {
     resizeCanvas()
 
@@ -362,9 +362,9 @@ onBeforeUnmount(() => {
 
   document.removeEventListener('visibilitychange', onVisibilityChange)
   window.removeEventListener('focus', onVisibilityChange)
-  window.removeEventListener('ceru-window-state-change', onVisibilityChange)
-  window.removeEventListener('ceru-wake', onVisibilityChange)
-  window.removeEventListener('ceru-sleep', onVisibilityChange)
+  window.removeEventListener('shuxia-window-state-change', onVisibilityChange)
+  window.removeEventListener('shuxia-wake', onVisibilityChange)
+  window.removeEventListener('shuxia-sleep', onVisibilityChange)
 
   console.log('AudioVisualizer 组件卸载完成')
 })

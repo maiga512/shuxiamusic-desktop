@@ -743,8 +743,8 @@ onMounted(async () => {
   } catch {}
   window.addEventListener('global-music-control', globalControls)
   window.addEventListener('playlist-updated', handleFavoriteSyncUpdated)
-  window.addEventListener('ceru-window-state-change', syncAppWindowVisibleState)
-  window.addEventListener('ceru-wake', syncAppWindowVisibleState)
+  window.addEventListener('shuxia-window-state-change', syncAppWindowVisibleState)
+  window.addEventListener('shuxia-wake', syncAppWindowVisibleState)
   syncAppWindowVisibleState()
   openPlaylistHandler = () => {
     showPlaylist.value = true
@@ -794,8 +794,8 @@ onUnmounted(() => {
   }
   window.removeEventListener('global-music-control', globalControls)
   window.removeEventListener('playlist-updated', handleFavoriteSyncUpdated)
-  window.removeEventListener('ceru-window-state-change', syncAppWindowVisibleState)
-  window.removeEventListener('ceru-wake', syncAppWindowVisibleState)
+  window.removeEventListener('shuxia-window-state-change', syncAppWindowVisibleState)
+  window.removeEventListener('shuxia-wake', syncAppWindowVisibleState)
   if (openPlaylistHandler) window.removeEventListener('open-playlist', openPlaylistHandler)
   if (closePlaylistHandler) window.removeEventListener('close-playlist', closePlaylistHandler)
   if (unsubSlotSwap) {

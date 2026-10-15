@@ -80,7 +80,7 @@ html.desktop-lyric-window #app {
   width: 100vw;
   height: 100vh;
   transform-origin: center center;
-  animation: ceruWelcomeDissolve 0.72s linear both;
+  animation: shuxiaWelcomeDissolve 0.72s linear both;
   will-change: opacity, transform, filter;
 }
 .welcome-reveal.pagesApp {
@@ -90,10 +90,10 @@ html.desktop-lyric-window #app {
   width: 100vw;
   height: 100vh;
   transform-origin: center center;
-  animation: ceruWelcomeReveal 0.72s linear both;
+  animation: shuxiaWelcomeReveal 0.72s linear both;
   will-change: opacity, transform, filter;
 }
-@keyframes ceruWelcomeDissolve {
+@keyframes shuxiaWelcomeDissolve {
   0% {
     opacity: 1;
     filter: blur(0) saturate(1) brightness(1);
@@ -110,7 +110,7 @@ html.desktop-lyric-window #app {
     transform: scale(1.07);
   }
 }
-@keyframes ceruWelcomeReveal {
+@keyframes shuxiaWelcomeReveal {
   0% {
     opacity: 0.3;
     filter: blur(8px);
@@ -329,12 +329,12 @@ const handleWindowCloseRequest = () => {
   // 关窗（尤其是关到托盘，页面不卸载、不触发 pagehide）前先让播放页把
   // 进度 / 列表强制落盘，否则重启会恢复到上一次 tick 的旧进度。
   try {
-    window.dispatchEvent(new CustomEvent('ceru-persist-playback-state'))
+    window.dispatchEvent(new CustomEvent('shuxia-persist-playback-state'))
   } catch {}
   const settings = settingsStore.settings
   if (!settings.hasConfiguredCloseBehavior) {
     // 未配置过关闭行为，通过自定义事件通知 TitleBarControls 显示对话框
-    window.dispatchEvent(new CustomEvent('ceru-show-close-dialog'))
+    window.dispatchEvent(new CustomEvent('shuxia-show-close-dialog'))
     return
   }
   if (settings.closeToTray) {
@@ -386,15 +386,15 @@ onMounted(async () => {
     const visible = isAppWindowVisible()
     document.body.classList.toggle('window-hidden', !visible)
     if (!visible) {
-      document.documentElement.style.setProperty('--ceru-freeze-w', `${Math.max(1, window.innerWidth)}px`)
-      document.documentElement.style.setProperty('--ceru-freeze-h', `${Math.max(1, window.innerHeight)}px`)
+      document.documentElement.style.setProperty('--shuxia-freeze-w', `${Math.max(1, window.innerWidth)}px`)
+      document.documentElement.style.setProperty('--shuxia-freeze-h', `${Math.max(1, window.innerHeight)}px`)
     }
   }
-  window.addEventListener('ceru-window-state-change', onVisibility)
+  window.addEventListener('shuxia-window-state-change', onVisibility)
   document.addEventListener('visibilitychange', onVisibility)
   onVisibility()
   // 保存引用以便卸载时清理
-  ;(window as any).__ceruVisibilityHandler = onVisibility
+  ;(window as any).__shuxiaVisibilityHandler = onVisibility
 })
 
 onBeforeUnmount(() => {
@@ -413,11 +413,11 @@ onBeforeUnmount(() => {
   destroyAppWindowState()
 
   // 清理可见性监听
-  const h = (window as any).__ceruVisibilityHandler
+  const h = (window as any).__shuxiaVisibilityHandler
   if (h) {
-    window.removeEventListener('ceru-window-state-change', h)
+    window.removeEventListener('shuxia-window-state-change', h)
     document.removeEventListener('visibilitychange', h)
-    ;(window as any).__ceruVisibilityHandler = null
+    ;(window as any).__shuxiaVisibilityHandler = null
   }
 })
 </script>
@@ -446,7 +446,7 @@ html:not(.desktop-lyric-window) body.window-hidden .home-container,
 html:not(.desktop-lyric-window) body.window-hidden .main-container,
 html:not(.desktop-lyric-window) body.window-hidden .global-background-container {
   content-visibility: hidden;
-  contain-intrinsic-size: var(--ceru-freeze-w, 100vw) var(--ceru-freeze-h, 100vh);
+  contain-intrinsic-size: var(--shuxia-freeze-w, 100vw) var(--shuxia-freeze-h, 100vh);
   pointer-events: none;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
