@@ -1,3 +1,25 @@
+## 2026-10-16 听歌识曲修复 + v1.1.4 待发布
+
+- 顶部麦克风按钮进入 `src/views/music/recognize.vue`；`AudioMatch.vue` 当前未挂载。
+- 失败根因：录音格式选择只检查 WebM，失败后仍强制 `audio/webm`。macOS WKWebView 若只支持
+  `audio/mp4`，MediaRecorder 或解码链路会失败。现改为按 WebM Opus / WebM / MP4 AAC / MP4 /
+  Ogg Opus 选择真实支持格式，无支持格式时使用 MediaRecorder 默认值。
+- AFP 脚本使用绝对 `/afp.wasm.js`、`/afp.js`，加载失败会显示明确错误；麦克风权限拒绝会提示并打开
+  系统设置；20 秒无结果会明确提示未识别到歌曲。
+- 专项测试 `npx tsx --test src/utils/audio/recorderMime.test.ts` 3/3 通过；网易识曲接口真实请求
+  HTTP 200，测试指纹返回 `result:null` 属正常无匹配。
+- 版本已准备为 `1.1.4`。**用户要求暂不编译/发布**；收到通知后再创建 `desktop-v1.1.4` 标签并运行
+  公开工作流 `Desktop Release Public`（`source_ref=desktop-v1.1.4`），不要触发私有仓库 Actions。
+
+## 2026-10-16 响度三档方向修正 + 低音谐波激励补齐
+
+- 用户怀疑“响度均衡的轻度/标准/强力标反了”，并认为低音增强没有按 GitHub/参考实现做。
+- `dynaudnorm` 旧参数语义误用：`g=3` 实际是高斯平滑窗口而非最大增益；`s=3/6/10` 的方向与“越强压缩越大”相反（官方说明是 `s` 越小压缩越强）。现在三档用 `g=61/31/15`、`r=0.12/0.18/0.25`、`m=3/6/10` 单调递进，`s=0` 保留局部动态。
+- MPV `@bass` 旧版只有 `lowshelf@200`，缺少 Electron 旧版的并联低频谐波激励。现在改为 `lowshelf + lowpass@160 + tanh asoftclip + highpass@90 + wet mix`，激励量随正向 dB 从 0 线性到 0.6；`audioManager.ts` Web Audio 回退同步补 `WaveShaper` 节点。
+- `AudioEffectSettings.vue` 的低音预设高亮改为跟随当前 gain，避免滑杆已经到 6/9dB 但仍显示“轻度”。
+- 仓库内置 MPV 对新低音图与三档响度滤镜均实际加载成功；FFmpeg 静音素材 RMS 约 `-37.6/-31.5/-27.1 dB`。按用户要求未执行编译；需要之后出包再做听感验收。
+- 索引与 Graphify 产物在本条同步更新；参见 `AI_INDEX.md` 同日条目和 `TOP_GRAPH.md` 的 Playback And Media 音效流。
+
 ## 2026-10-16 发布桌面版 v1.1.3（公开 Runner + GitHub/Gitee + 插件附件）
 
 - 版本 `1.1.2` → `1.1.3`，提交 `23d0fbb`、标签 `desktop-v1.1.3`。
@@ -7,8 +29,9 @@
   `SOURCE_REPO_TOKEN` 私密读取私有源码标签，公开申请 Mac/Windows Runner，产物直传公开 Release。
   本次公开构建 run `38855267488`，prepare / macOS arm64 / Windows x64 / publish 全部 success。
 - GitHub `maiga512/shuxiamusic-release`：`desktop-v1.1.3` 与 `desktop-latest` 均含 Mac 三件套、
-  Windows 安装包+签名、`feiniu-service.js`、`shuxia-sync-service.js`、`ceru-nas-sync-service.js`；
-  `desktop-latest/latest.json` 双平台指向 Release。
+  Windows 安装包+签名、`feiniu-service.js`、`shuxia-sync-service.js`；旧
+  `ceru-nas-sync-service.js` 已按用户要求从两个 Release 删除。`desktop-latest/latest.json`
+  双平台指向 Release。
 - Gitee `songsong2020/shuxiamusic-desktop-release`：总附件配额 1GB，旧版本累计导致 Windows 包
   上传 400。**按用户指示直接删除旧 Release 整体重建**：删除 `desktop-v1.1.1`、混杂旧附件的
   `desktop-latest`、`desktop-v1.1.2`，重建 `desktop-latest` + `desktop-v1.1.3`，八件套完整上传。

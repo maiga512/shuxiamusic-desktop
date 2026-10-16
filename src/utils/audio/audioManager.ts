@@ -13,6 +13,12 @@ class AudioManager {
 
   // Audio Effects Nodes
   private bassBoostFilters = new WeakMap<HTMLAudioElement, BiquadFilterNode>()
+  // Parallel bass harmonic exciter: lowpass -> WaveShaper -> highpass -> gain
+  private bassExciterLowpasses = new WeakMap<HTMLAudioElement, BiquadFilterNode>()
+  private bassExciterShapers = new WeakMap<HTMLAudioElement, WaveShaperNode>()
+  private bassExciterHighpasses = new WeakMap<HTMLAudioElement, BiquadFilterNode>()
+  private bassExciterGains = new WeakMap<HTMLAudioElement, GainNode>()
+  private bassMixNodes = new WeakMap<HTMLAudioElement, GainNode>()
   private convolverNodes = new WeakMap<HTMLAudioElement, ConvolverNode>()
   private surroundGainNodes = new WeakMap<HTMLAudioElement, GainNode>()
   private balanceNodes = new WeakMap<HTMLAudioElement, StereoPannerNode>()
@@ -169,15 +175,50 @@ class AudioManager {
 
         this.equalizers.set(audioElement, filters)
 
-        // 1. Bass Boost
+        // 1. Bass Boost: lowshelf main path + parallel harmonic exciter
+        const eqOut = lastNode
         const bassBoost = ctx.createBiquadFilter()
         bassBoost.type = 'lowshelf'
         bassBoost.frequency.value = 200
         bassBoost.gain.value = 0
         this.bassBoostFilters.set(audioElement, bassBoost)
 
-        lastNode.connect(bassBoost)
-        lastNode = bassBoost
+        const bassMix = ctx.createGain()
+        bassMix.gain.value = 1
+        this.bassMixNodes.set(audioElement, bassMix)
+
+        eqOut.connect(bassBoost)
+        bassBoost.connect(bassMix)
+
+        const excLowpass = ctx.createBiquadFilter()
+        excLowpass.type = 'lowpass'
+        excLowpass.frequency.value = 160
+        excLowpass.Q.value = 0.707
+
+        const excShaper = ctx.createWaveShaper()
+        excShaper.curve = this.createSaturationCurve(2.5)
+        excShaper.oversample = '2x'
+
+        const excHighpass = ctx.createBiquadFilter()
+        excHighpass.type = 'highpass'
+        excHighpass.frequency.value = 90
+        excHighpass.Q.value = 0.707
+
+        const excGain = ctx.createGain()
+        excGain.gain.value = 0
+
+        this.bassExciterLowpasses.set(audioElement, excLowpass)
+        this.bassExciterShapers.set(audioElement, excShaper)
+        this.bassExciterHighpasses.set(audioElement, excHighpass)
+        this.bassExciterGains.set(audioElement, excGain)
+
+        eqOut.connect(excLowpass)
+        excLowpass.connect(excShaper)
+        excShaper.connect(excHighpass)
+        excHighpass.connect(excGain)
+        excGain.connect(bassMix)
+
+        lastNode = bassMix
 
         // 2. Surround (Reverb/Convolver)
         // We need a parallel path for Wet signal
@@ -441,6 +482,42 @@ class AudioManager {
         this.bassBoostFilters.delete(audioElement)
       }
 
+      const excLowpass = this.bassExciterLowpasses.get(audioElement)
+      if (excLowpass) {
+        try {
+          excLowpass.disconnect()
+        } catch {}
+        this.bassExciterLowpasses.delete(audioElement)
+      }
+      const excShaper = this.bassExciterShapers.get(audioElement)
+      if (excShaper) {
+        try {
+          excShaper.disconnect()
+        } catch {}
+        this.bassExciterShapers.delete(audioElement)
+      }
+      const excHighpass = this.bassExciterHighpasses.get(audioElement)
+      if (excHighpass) {
+        try {
+          excHighpass.disconnect()
+        } catch {}
+        this.bassExciterHighpasses.delete(audioElement)
+      }
+      const excGain = this.bassExciterGains.get(audioElement)
+      if (excGain) {
+        try {
+          excGain.disconnect()
+        } catch {}
+        this.bassExciterGains.delete(audioElement)
+      }
+      const bassMix = this.bassMixNodes.get(audioElement)
+      if (bassMix) {
+        try {
+          bassMix.disconnect()
+        } catch {}
+        this.bassMixNodes.delete(audioElement)
+      }
+
       const convolver = this.convolverNodes.get(audioElement)
       if (convolver) {
         try {
@@ -527,17 +604,35 @@ class AudioManager {
 
   // --- Effects Control ---
 
-  setBassBoost(audioElement: HTMLAudioElement, gain: number) {
-    const node = this.bassBoostFilters.get(audioElement)
-    if (node) {
-      // 同 EQ：平滑过渡，避免调节低音增强时的爆破音
-      const ctx = this.audioContexts.get(audioElement)
-      if (ctx) {
-        node.gain.setTargetAtTime(gain, ctx.currentTime, 0.02)
-      } else {
-        node.gain.value = gain
-      }
+  private createSaturationCurve(amount: number): Float32Array<ArrayBuffer> {
+    const curve = new Float32Array(1024)
+    const k = Math.max(0.0001, amount)
+    const norm = Math.tanh(k) || 1
+    for (let i = 0; i < curve.length; i++) {
+      const x = (i / (curve.length - 1)) * 2 - 1
+      curve[i] = Math.tanh(k * x) / norm
     }
+    return curve
+  }
+
+  setBassBoost(audioElement: HTMLAudioElement, gain: number) {
+    const shelf = this.bassBoostFilters.get(audioElement)
+    const excGain = this.bassExciterGains.get(audioElement)
+    const ctx = this.audioContexts.get(audioElement)
+    if (!shelf) return
+
+    // Match Electron: only positive gains excite harmonics; 12 dB maps to 0.6.
+    const exciterAmount = (Math.max(0, gain) / 12) * 0.6
+    if (ctx) {
+      try {
+        shelf.gain.setTargetAtTime(gain, ctx.currentTime, 0.03)
+        excGain?.gain.setTargetAtTime(exciterAmount, ctx.currentTime, 0.03)
+        return
+      } catch {}
+    }
+
+    shelf.gain.value = gain
+    if (excGain) excGain.gain.value = exciterAmount
   }
 
   setBalance(audioElement: HTMLAudioElement, value: number) {

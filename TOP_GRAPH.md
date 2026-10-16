@@ -1,6 +1,6 @@
 # Ceru Music Tauri Top Graph
 
-Last generated: 2026-10-04
+Last generated: 2026-10-16
 Graph source: `graphify-out/graph.json`  
 Generated report: `graphify-out/GRAPH_REPORT.md`
 
@@ -112,10 +112,17 @@ src/utils/audio/globaPlayList.ts
 
 Equalizer and advanced effects no longer go through Web Audio. They sync into
 `mpv_set_audio_filters` via `syncNativeAudioFilters()`, then become labeled mpv
-filters in `mpv_player.rs` (`@eq` peaking, `@bass` lowshelf, `@sur` WebKit-normalized `afir`
-surround with cached float IR, `@bal` pan, `@loud` `dynaudnorm`). Surround is
-dry + wet convolution, not `aecho`. Microphone permission is requested once after
-app ready so device labels and recognize features do not wait for first play.
+filters in `mpv_player.rs` (`@eq` peaking, `@bass`, `@sur` WebKit-normalized
+`afir` surround with cached float IR, `@bal` pan, `@loud` `dynaudnorm`). `@bass`
+is a lowshelf main path plus a parallel low-frequency exciter
+(`lowpass@160 -> tanh asoftclip -> highpass@90 -> wet mix`) matching the
+Electron Web Audio implementation; the Web Audio fallback in `audioManager.ts`
+keeps the equivalent `WaveShaper` branch. `@loud` uses official `dynaudnorm`
+semantics: `g` Gaussian smoothing, `m` max gain, and `r` target RMS increase
+monotonically from gentle to strong while `s=0` preserves local dynamics.
+Surround is dry + wet convolution, not `aecho`. Microphone permission is
+requested once after app ready so device labels and recognize features do not
+wait for first play.
 
 macOS CoreAudio AO silent-death recovery: after a default-output-device switch,
 Bluetooth connect/disconnect, `coreaudiod` restart, or sleep/wake, MPV's audio

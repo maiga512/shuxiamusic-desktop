@@ -7,6 +7,7 @@ import { MicrophoneIcon } from 'tdesign-icons-vue-next'
 import { searchValue } from '@renderer/store/search'
 import { useRouter } from 'vue-router'
 import { generateShazamSignature } from '@renderer/utils/shazam'
+import { selectMediaRecorderMimeType } from '@renderer/utils/audio/recorderMime'
 
 const audioStore = ControlAudioStore()
 const searchStore = searchValue()
@@ -31,7 +32,7 @@ let recognitionInFlight = false
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
     const s = document.createElement('script')
-    s.src = src
+    s.src = src.startsWith('/') ? src : `/${src}`
     s.onload = () => resolve()
     s.onerror = (e) => reject(e)
     document.head.appendChild(s)
@@ -42,16 +43,15 @@ async function ensureAFP() {
   const g = window as any
   if (typeof g.GenerateFP === 'function') return
   if (!g.__afp_wasm_loaded__) {
-    try {
-      await loadScript('afp.wasm.js')
-      g.__afp_wasm_loaded__ = true
-    } catch {}
+    await loadScript('/afp.wasm.js')
+    g.__afp_wasm_loaded__ = true
   }
   if (!g.__afp_runtime_loaded__) {
-    try {
-      await loadScript('afp.js')
-      g.__afp_runtime_loaded__ = true
-    } catch {}
+    await loadScript('/afp.js')
+    g.__afp_runtime_loaded__ = true
+  }
+  if (typeof g.GenerateFP !== 'function') {
+    throw new Error('听歌识曲指纹模块加载失败，请重启应用后重试')
   }
 }
 
@@ -84,6 +84,7 @@ async function start() {
 
     const microphoneGranted = await window.api.permissions.requestMicrophone()
     if (!microphoneGranted) {
+      MessagePlugin.warning('麦克风权限未开启，请在系统设置中允许树夏Music使用麦克风')
       await window.api.permissions.showGuide('microphone')
       reset()
       return
@@ -117,12 +118,9 @@ async function start() {
       wasPlaying.value = false
     }
 
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : 'audio/webm'
-
     const audioStream = new MediaStream(stream.getAudioTracks())
-    recorder = new MediaRecorder(audioStream, { mimeType })
+    const mimeType = selectMediaRecorderMimeType((type) => MediaRecorder.isTypeSupported(type))
+    recorder = new MediaRecorder(audioStream, mimeType ? { mimeType } : undefined)
 
     chunks = []
     running.value = true
@@ -150,7 +148,8 @@ async function start() {
       currentDuration.value = Math.floor(elapsed)
 
       if (elapsed >= MAX_DURATION) {
-        stopRecording(false) // Stop without success (timeout)
+        void stopRecording(false) // Stop without success (timeout)
+        MessagePlugin.warning('20 秒内未识别到歌曲，请靠近音源后重试')
       }
     }, 1000)
   } catch (err: any) {

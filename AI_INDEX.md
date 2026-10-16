@@ -1,9 +1,35 @@
 ---
 
+## 2026-10-16 听歌识曲失败修复 + 桌面版 v1.1.4 发布准备
+
+- **根因**：`src/views/music/recognize.vue` 只探测 `audio/webm;codecs=opus`，失败后仍硬编码回退
+  `audio/webm`；macOS WKWebView 只支持 `audio/mp4` 时，`MediaRecorder`/`decodeAudioData` 链路会直接失败。
+  最小回放已红灯复现：支持集合只有 `audio/mp4` 时旧逻辑仍选 `audio/webm`。
+- **修复**：新增 `src/utils/audio/recorderMime.ts`，按 WebM Opus / WebM / MP4 AAC / MP4 / Ogg Opus
+  顺序选择运行时真正支持的格式；无可用 MIME 时交给 `MediaRecorder` 默认格式，不再强塞 WebM。
+  AFP 脚本改用根路径加载且失败必须抛出可见错误；麦克风权限拒绝会提示并打开系统设置；
+  20 秒无结果会明确提示“未识别到歌曲”，不再静默停在失败态。
+- **验证**：`npx tsx --test src/utils/audio/recorderMime.test.ts` 3/3 通过；网易
+  `audio/match` 接口真实请求返回 HTTP 200（测试指纹 `result:null`，接口与响应结构正常）。
+  包配置已有 `NSMicrophoneUsageDescription`，签名无 App Sandbox；权限是按需申请，不是启动期抢麦。
+- 版本已准备为 `1.1.4`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`）。按用户要求
+  **暂不编译、不创建 `desktop-v1.1.4` 标签、不发布**；公开 Runner 默认源码分支已改为 `main`，
+  接到通知后传 `source_ref=desktop-v1.1.4` 构建，不占私有仓库额度。
+
+## 2026-10-16 响度三档方向修正 + 低音谐波激励补齐
+
+- **根因**：FFmpeg `dynaudnorm` 的 `g` 是高斯平滑窗口、`m` 是最大增益倍数、`s` 是可选传统压缩；旧代码把 `g=3` 误注释成“最多 +9dB”，且轻度/标准/强力的 `s=3/6/10` 方向相反（`s` 越小压缩越强），造成档位听感与标签不一致。
+- **响度修正**：按官方语义改为 `gentle: g=61/r=0.12/m=3`、`standard: g=31/r=0.18/m=6`、`strong: g=15/r=0.25/m=10`，三档 `s=0` 保留局部动态，`r` 直接以 RMS 对齐感知响度。
+- **低音修正**：MPV `@bass` 从单个 `lowshelf` 扩为与 Electron 一致的并联结构：低架主路 + `lowpass@160 -> tanh asoftclip -> highpass@90 -> wet mix`；Web Audio 回退链同步补 `WaveShaper` 激励支路。设置页低音预设高亮会跟随当前 dB，避免滑杆与预设标签脱节。
+- **验证**：仓库内置 MPV 实际加载新低音图与三档 `dynaudnorm` 均 exit 0；FFmpeg 6 秒安静素材输出 RMS 约 `-37.6/-31.5/-27.1 dB`，强度按轻度 < 标准 < 强力递进。按用户要求未执行 Rust/前端编译。
+- 索引：更新音效/低音增强路由别名、Playback And Media 滤镜说明与 handoff；Graphify 增量 + 文档语义合并刷新生成物（7940 nodes / 16759 edges / 458 communities，聚合 HTML 458 社区节点）。外部 Claude/子代理语义通道分别因 403 配额与上游加密消息错误不可用，最终按技能回退由当前 host agent 内联抽取三份改动文档。
+
 ## 2026-10-16 发布桌面版 v1.1.3（GitHub + Gitee，含插件附件）
 
 - 版本号升级为 `1.1.3`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`），准备发布 Mac Apple Silicon 与 Windows x64 桌面安装包。
-- 桌面 Release 附件补充三份可导入插件：`feiniu-service.js`（飞牛音乐服务 v1.2.1）、`shuxia-sync-service.js`（多端同步 v1.0.6）、`ceru-nas-sync-service.js`（旧文件名兼容副本）。
+- 桌面 Release 当前保留两份可导入插件：`feiniu-service.js`（飞牛音乐服务 v1.2.1）、
+  `shuxia-sync-service.js`（多端同步 v1.0.6）。旧文件名 `ceru-nas-sync-service.js` 已从
+  GitHub/Gitee 的 `desktop-v1.1.3` 与 `desktop-latest` 全部删除，不再作为兼容附件分发。
 - 发布目标：GitHub `maiga512/shuxiamusic-release` 的 `desktop-v1.1.3` / `desktop-latest`，以及 Gitee `songsong2020/shuxiamusic-desktop-release` 的同名 Release；插件文件与桌面安装包一起挂在桌面端 Release 下载区。
 - **免额度构建方案**：私有源码仓库 Actions 因账户扣款/额度被停时，使用公开发布仓库的
   `maiga512/shuxiamusic-release:.github/workflows/desktop-release-public.yml`。公开 Runner 通过
@@ -124,6 +150,9 @@ search_aliases:
   - 公开 Runner
   - Actions 扣款
   - Gitee 附件配额
+  - 听歌识曲失败
+  - 麦克风权限
+  - MediaRecorder WebM MP4
   - 桌面歌词
   - 底栏
   - 全屏播放
@@ -365,6 +394,7 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | 快进 CPU、拖进度 CPU、seek 占用 | 拖动只改 UI，松手才 `nativeSeek`；短峰来自 mpv 重新解码 | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` |
 | 音效点一下等一下、环绕房间卡、响度标准延迟 | mpv 带标签滤镜增量替换，换档只换 `@loud`/`@sur` | `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 麦克风权限、启动弹窗、均衡器、高级音效、MPV lavfi | startup microphone permission, mpv audio filters, bass/surround/loudness | `src/App.vue`, `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
+| 响度均衡标反、轻度/标准/强力、dynaudnorm 参数、低音增强不对劲、bass boost、谐波激励 | loudness strength preset mapping (`dynaudnorm g/m/r/s`), lowshelf plus parallel tanh exciter, preset selection follows gain | `src/components/Settings/AudioEffectSettings.vue`, `src/utils/audio/audioManager.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs` |
 | 音量百分比不真实、滑条不灵敏、80%就很小、50%不像一半响度、拖到 0% 弹回去、0% 点不了 | 等比例（线性增益）音量：mpv 的 `volume` 实测是三次曲线 `gain=(volume/100)^3`（50→-18dB、80→-5.8dB），故 `sliderToMpvVolume(p)=100*cbrt(p/100)` 反解它，使最终增益=滑条百分比（100%=设备满刻度即系统音量的完整音量，50%→-6dB，0%=静音；与 Electron `audio.volume=v/100` 一致）。**0% 是合法值**：`nativeLoad`/`nativeSetVolume`/`LocalUserDetail.init`/`PlayMusic.vue` watcher 里所有 `volume<=0 → 80` 的强制改写已移除（只有非数字/越界才回退 80），否则拖到底部会立刻弹回 80%。前端保持百分比域展示/持久化，仅下发 mpv 时换算；Rust `mpv_set_volume` 与前端 IPC 合并去抖阈值 0.25（mpv 音量域）；DLNA 同步仍发原始百分比 | `src/utils/audio/nativePlayback.ts`, `src/store/LocalUserDetail.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue` |
 | 下载完点文件夹图标没反应、打不开下载目录、找不到文件位置 | 下载列表的文件夹图标走 `download.openFileLocation` → Node sidecar `open -R`/`explorer /select`/`xdg-open`；此前 `sidecar/index.mjs` 漏注册该路由（服务实现存在但调用抛 `Unsupported sidecar method`，被 bridge 静默吞掉），已补注册；bridge 改 strict 调用 + store 对空响应/无路径弹提示 | `sidecar/index.mjs`, `sidecar/services/download/index.mjs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/views/download/index.vue` |
 | 下载进缓存目录、下载目录不生效、本地歌曲缓存把下载的歌算缓存、封面/歌词/逐字歌词选了没效果（假菜单）、自动缓存音乐、缓存容量上限 LRU、com.cerumusic 旧路径 | **下载 vs 缓存分目录不变量**：主下载走 Node sidecar（`isCache=false`）→ 配置目录在 `node_sidecar.rs::spawn_sidecar` 以 env `CERU_DOWNLOAD_DIR`/`CERU_CACHE_DIR` 注入、`download/index.mjs::initializeSystem` 优先用（不再依赖打开设置页才同步）；`normalizeTask` 保留 `isCache`、`addTask` 守卫非缓存任务不落入 cacheDir；在线听歌自动缓存受 `autoCacheMusic` 控制走 `musicCachePlaybackCache`（cacheDir/playback，LRU 淘汰见 `evictCacheIfNeeded`）；标签写入由渲染层 `finalizeDownloadedTask`（`utils/audio/download.ts`）在 `onTaskCompleted` 调 Rust `download_finalize_metadata`（复用 `finalize_download_metadata` + exiftool Homebrew PATH 兜底）补写封面/基础信息/标准·逐字歌词；遗留 `com.cerumusic.tauri` 存储路径由 `lib.rs::remap_legacy_storage_dirs` 启动纠正 | `sidecar/services/download/index.mjs`, `src-tauri/src/commands/node_sidecar.rs`, `src-tauri/src/commands/download_engine.rs`, `src-tauri/src/lib.rs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/utils/audio/download.ts`, `src/components/Settings/DirectorySettings.vue`, `src/components/Settings/MusicCache.vue` |
@@ -565,6 +595,7 @@ treating raw edge counts as exact.
 | 2026-09-20 | 全屏退出内存优化：歌词字体 CSS 改按需注入/释放（~12MB）；烘焙缓存 8→4 条目、maxSide 720→480；AMLL DOM 子树主动清空；卸载延迟 400→200ms；lodash 按需引入。 | 不改 Top Graph 主架；更新 Runtime And Cost 验收项。 |
 | 2026-09-20 | 修复 Dock/Now Playing 封面不显示：Rust 端 set_info 收到 artwork_url 但未处理，新增 create_mpmedia_artwork 下载图片并设置 MPMediaItemArtwork。修复状态栏歌词不更新：移除 needsLyricConsumers 守卫、shouldDropNoiseEvent 不再丢弃歌词事件、scheduleNext 自带歌曲切换检测。 | 更新 Runtime And Cost 歌词流与 Now Playing 验收项。 |
 | 2026-09-21 | Mac 插件在线升级校验下载响应，HTML 发布页不再作为脚本安装；失败兜底改用 Tauri shell 打开系统浏览器。 | 更新插件升级检索标签；Graphify 本轮增量刷新。 |
+| 2026-10-16 | 响度三档按 FFmpeg 官方 `dynaudnorm` 语义重设（`g/m/r` 单调、`s=0`）；MPV 低音补回 Electron 的并联 tanh 激励，Web Audio 回退同步，低音预设高亮跟随 dB。 | 未编译（按用户要求）；内置 MPV 滤镜加载与 FFmpeg 三档 RMS 实测通过；Graphify 增量刷新，更新 Playback And Media 音效流。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the
 architecture or ownership map changes.

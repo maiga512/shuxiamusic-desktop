@@ -786,10 +786,15 @@ fn push_bass_filter(filters: &mut Vec<String>, bass_boost: Option<&MpvBassBoostR
     if gain.abs() < 0.05 {
         return;
     }
+    let exciter_amount = (gain.max(0.0) / 12.0) * 0.6;
     filters.push(format!(
-        // Match Electron Web Audio BiquadFilter lowshelf@200Hz, Q=1.
-        "lowshelf=f=200:t=q:w=1:g={}",
-        fmt_db(gain)
+        // Match Electron: lowshelf main path plus a parallel low-frequency
+        // tanh exciter path (lowpass -> soft clip -> highpass -> mix).
+        "lowshelf=f=200:t=q:w=1:g={shelf},asplit=2[dry][src];[src]lowpass=f=160:w=0.707,asoftclip=tanh:param=2.5:oversample=2,highpass=f=90:w=0.707,volume={exciter}[wet];[dry][wet]amix=inputs=2:duration=first:dropout_transition=0:normalize=0",
+        shelf = fmt_db(gain),
+        exciter = format!("{exciter_amount:.3}")
+            .trim_end_matches('0')
+            .trim_end_matches('.'),
     ));
 }
 
@@ -849,12 +854,16 @@ fn push_loudness_filter(filters: &mut Vec<String>, loudness: Option<&MpvLoudness
     }
     // mpv/FFmpeg realtime loudness uses dynaudnorm, not DynamicsCompressor.
     // Downward acompressor + limiter made hot masters quieter than bypass.
-    // f=300ms 用 300ms 帧，增益变化更平滑，避免泵浦声。g=3 最多 +9dB。
-    // g=5(最多+14dB)太猛，和低音/环绕叠加容易削波破音。降到 g=3(+9dB)。
+    // FFmpeg 参数含义：
+    // - g 是高斯平滑窗口（必须为奇数），越大越平滑、响应越慢；
+    // - m 是最大增益倍数，决定安静段最多能被抬多高；
+    // - r 以 RMS 为目标，比只看峰值更接近感知响度；
+    // - s 是可选传统压缩，0 表示保留局部动态，避免“响度均衡”变成压缩器。
+    // 三档只用 g/m/r 单调递进，不再让 s 的反向数值干扰强度标签。
     let params = match loudness.target.as_str() {
-        "gentle" => "f=300:g=3:p=0.95:m=4:s=3:b=1",
-        "strong" => "f=300:g=3:p=0.95:m=16:s=10:b=1",
-        _ => "f=300:g=3:p=0.95:m=8:s=6:b=1",
+        "gentle" => "f=300:g=61:p=0.95:r=0.12:m=3:s=0:b=1",
+        "strong" => "f=300:g=15:p=0.95:r=0.25:m=10:s=0:b=1",
+        _ => "f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1",
     };
     filters.push(format!("dynaudnorm={}", params));
 }
@@ -1797,15 +1806,19 @@ mod tests {
         let filters = build_audio_filters(&sample_request("small"), Some(&dir)).unwrap();
         let graph = filters.join(",");
         assert!(graph.contains("@eq:lavfi=["));
-        assert!(graph.contains("@bass:lowshelf=f=200:t=q:w=1:g=6"));
+        assert!(graph.contains("@bass:lowshelf=f=200:t=q:w=1:g=6,asplit=2[dry][src]"));
+        assert!(graph.contains("lowpass=f=160:w=0.707,asoftclip=tanh:param=2.5:oversample=2"));
+        assert!(graph.contains("highpass=f=90:w=0.707,volume=0.3[wet]"));
         assert!(graph.contains("@sur:lavfi=["));
-        assert!(graph.contains("@loud:dynaudnorm=f=300:g=3:p=0.95:m=8:s=6:b=1"));
+        assert!(graph.contains(
+            "@loud:dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"
+        ));
         assert!(graph.contains("afir=dry=1:wet=0.21:irnorm=-1"));
         assert!(graph.contains("aresample=48000:resampler=soxr:precision=28"));
         assert!(graph.contains("asplit=2[dry][src]"));
-        assert!(graph.contains("lowshelf=f=200:t=q:w=1:g=6"));
+        assert!(graph.contains("lowshelf=f=200:t=q:w=1:g=6,asplit=2[dry][src]"));
         assert!(graph.contains("equalizer=f=31:t=q:w=1:g=3"));
-        assert!(graph.contains("dynaudnorm=f=300:g=3:p=0.95:m=8:s=6:b=1"));
+        assert!(graph.contains("dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"));
         assert!(!graph.contains("acompressor="));
         assert!(graph.contains("amovie="));
         assert!(!graph.contains("aecho="));
@@ -1873,11 +1886,32 @@ mod tests {
             ..MpvAudioFiltersRequest::default()
         };
         let graph = build_audio_filters(&request, None).unwrap().join(",");
-        assert!(graph.contains("dynaudnorm=f=300:g=3:p=0.95:m=16:s=10:b=1"));
+        assert!(graph.contains("dynaudnorm=f=300:g=15:p=0.95:r=0.25:m=10:s=0:b=1"));
         assert!(graph.contains("@loud:dynaudnorm="));
         // 响度单独开也必须有限幅器兜底（旧代码漏掉，是破音根因之一）
         assert!(graph.contains("@lim:alimiter="));
         assert!(!graph.contains("acompressor="));
+    }
+
+    #[test]
+    fn loudness_strength_parameters_are_monotonic() {
+        let graph_for = |target: &str| {
+            let request = MpvAudioFiltersRequest {
+                loudness: Some(MpvLoudnessRequest {
+                    enabled: true,
+                    target: target.to_string(),
+                }),
+                ..MpvAudioFiltersRequest::default()
+            };
+            build_audio_filters(&request, None).unwrap().join(",")
+        };
+
+        assert!(graph_for("gentle")
+            .contains("dynaudnorm=f=300:g=61:p=0.95:r=0.12:m=3:s=0:b=1"));
+        assert!(graph_for("standard")
+            .contains("dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"));
+        assert!(graph_for("strong")
+            .contains("dynaudnorm=f=300:g=15:p=0.95:r=0.25:m=10:s=0:b=1"));
     }
 
     #[test]

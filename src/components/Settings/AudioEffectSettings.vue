@@ -148,6 +148,20 @@ const { bassBoost, surround, balance, loudness } = storeToRefs(store)
 
 const bassPreset = ref('light')
 
+const presetForGain = (gain: number) => {
+  if (gain <= 4.5) return 'light'
+  if (gain <= 7.5) return 'medium'
+  return 'heavy'
+}
+
+watch(
+  () => bassBoost.value.gain,
+  (gain) => {
+    bassPreset.value = presetForGain(gain)
+  },
+  { immediate: true }
+)
+
 const applyEffects = () => {
   if (isNativePlaybackActive()) {
     void syncNativeAudioFilters()
