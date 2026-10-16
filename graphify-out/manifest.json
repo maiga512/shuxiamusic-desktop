@@ -1,7 +1,7 @@
 {
   "package.json": {
-    "mtime": 1792137029.3723962,
-    "ast_hash": "04bfb0a892eee984d8e5098718059791",
+    "mtime": 1792147137.1633124,
+    "ast_hash": "8091a4c771b9f639668eec1152e0f55b",
     "semantic_hash": ""
   },
   "packages/shared-contract/package.json": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792142790.2331069,
+    "mtime": 1792147147.9329214,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792142809.8722262,
+    "mtime": 1792147175.3453052,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1665,8 +1665,8 @@
     "semantic_hash": ""
   },
   "src/views/music/recognize.vue": {
-    "mtime": 1792137029.3719544,
-    "ast_hash": "a982ce90881fcb9d02fdd89e1771eb43",
+    "mtime": 1792147158.051449,
+    "ast_hash": "76888c07622b557c2e665cda2f1af087",
     "semantic_hash": ""
   },
   "src/views/music/search.vue": {
@@ -1685,13 +1685,13 @@
     "semantic_hash": ""
   },
   "src/views/settings/searchIndex.ts": {
-    "mtime": 1790340336.8759122,
-    "ast_hash": "b90e54c63f937b80d766fc2e7801ebbd",
+    "mtime": 1792147091.4512281,
+    "ast_hash": "accaf8733ebf6e730041a57a4d901be1",
     "semantic_hash": ""
   },
   "src/views/settings/sections/AboutSection.vue": {
-    "mtime": 1791097013.5369115,
-    "ast_hash": "bcf23f77c7192f31783769831083f6fb",
+    "mtime": 1792147212.5481668,
+    "ast_hash": "0abc26f57382e1bde78a8fff6232ad14",
     "semantic_hash": ""
   },
   "src/views/settings/sections/AppearanceSection.vue": {
@@ -1760,13 +1760,13 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792144980.5628033,
-    "ast_hash": "bc14728683273496aaeea5160b2f3049",
+    "mtime": 1792147222.726003,
+    "ast_hash": "52e7fc4a4fe641968747e0c58123c919",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792144980.5639253,
-    "ast_hash": "d7f2281bcacdf1dc111b9f75da45d96c",
+    "mtime": 1792147222.7289813,
+    "ast_hash": "ca64b54517ef76c4c3543cea359fbe80",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/RELEASE_DUAL_PLATFORM.md": {
-    "mtime": 1792144748.3625448,
-    "ast_hash": "1ce39e6b060226e0580099831ab4f4c8",
+    "mtime": 1792147222.724639,
+    "ast_hash": "9299dad42c110837e4ec696c0e7812ab",
     "semantic_hash": ""
   },
   "scripts/ci/publish-gitee-local.sh": {

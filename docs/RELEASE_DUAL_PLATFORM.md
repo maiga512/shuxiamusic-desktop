@@ -60,9 +60,9 @@ maiga512/shuxiamusic-release
 gh workflow run "Desktop Release Public" \
   -R maiga512/shuxiamusic-release \
   --ref main \
-  -f version=1.1.4 \
-  -f source_ref=desktop-v1.1.4 \
-  -f release_notes="树夏Music 桌面版 v1.1.4"
+  -f version=1.1.5 \
+  -f source_ref=desktop-v1.1.5 \
+  -f release_notes="树夏Music 桌面版 v1.1.5"
 ```
 
 `source_ref` 默认是 `main`，便于先验证源码；正式发布时显式传入 `desktop-vX.Y.Z` 标签，

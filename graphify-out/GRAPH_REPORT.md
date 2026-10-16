@@ -1,16 +1,16 @@
 # Graph Report - 树夏Music-Desk-tauri  (2026-10-16)
 
 ## Corpus Check
-- 451 files · ~1,167,274 words
+- 451 files · ~1,167,465 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7951 nodes · 16768 edges · 445 communities (285 shown, 160 thin omitted)
+- 7951 nodes · 16768 edges · 446 communities (286 shown, 160 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 277 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `b9ac5b8e`
+- Built from commit: `bd519782`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -274,6 +274,7 @@
 - NAS 免密访问 & 部署说明（给 AI / 自动化）
 - @tauri-apps/plugin-notification
 - node_sidecar.rs
+- app
 - podcast.vue
 - @pixi/filter-bulge-pinch
 - GlobalBackground.vue
@@ -282,6 +283,7 @@
 - Capability
 - Capability
 - SvgIcon.vue
+- Value
 - contrastColor.ts
 - desktop-schema.json
 - macOS-schema.json
@@ -297,7 +299,6 @@
 - components.d.ts
 - analyze_csv
 - PermissionEntry
-- value_string
 - monitor_performance
 - dependencies
 - dependencies
@@ -479,15 +480,15 @@
   src/components/Play/PlayMusic.vue → sidecar/vendor/electron/src/main/utils/musicSdk/kg/vendors/infSign.min.js
 
 ## Import Cycles
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/hotSearch.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/hotSearch.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/musicInfo.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/musicInfo.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/songList.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/album.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
@@ -501,7 +502,7 @@
 - **Audio Effect Strength And Exciter Parity** — ai_index_loudness_strength_route, top_graph_mpv_audio_filter_flow, context_handoff_audio_effect_validation, src_tauri_src_commands_mpv_player_push_loudness_filter, src_tauri_src_commands_mpv_player_push_bass_filter [INFERRED 0.75]
 - **Clean Bass EQ Cross Module Flow** — ai_index_clean_bass_eq_route, top_graph_clean_bass_eq_flow, context_handoff_clean_bass_eq_correction, src_tauri_src_commands_mpv_player_push_bass_filter, src_utils_audio_audiomanager_audiomanager_setbassboost [INFERRED 0.85]
 
-## Communities (445 total, 160 thin omitted)
+## Communities (446 total, 160 thin omitted)
 
 ### Community 0 - "PlayMusic.vue"
 Cohesion: 0.02
@@ -761,11 +762,11 @@ Nodes (34): parseMultipartTextFields(), readBody(), ref_node_crypto, ref_zlib, b
 
 ### Community 64 - "useSmtc.ts"
 Cohesion: 0.10
-Nodes (27): getPic(), filterList(), getList(), getPic(), cancelTipSearch(), handleResult(), search(), tipSearchBySong() (+19 more)
+Nodes (27): getPic(), filterList(), getList(), getPic(), filterComment(), getComment(), getHotComment(), getReplyComment() (+19 more)
 
 ### Community 65 - "normalizeSourceKey"
-Cohesion: 0.07
-Nodes (43): BUILTIN_CATALOG_APIS, BUILTIN_PLAYABLE_SOURCES, createPluginId(), ensurePluginRuntimeForSource(), extractPluginMetaExports(), findInstalledPluginByName(), findNodePluginEntry(), getMusicPluginCandidatesForSource() (+35 more)
+Cohesion: 0.08
+Nodes (39): BUILTIN_CATALOG_APIS, BUILTIN_PLAYABLE_SOURCES, createPluginId(), ensurePluginRuntimeForSource(), extractPluginMetaExports(), findInstalledPluginByName(), findNodePluginEntry(), getMusicPluginCandidatesForSource() (+31 more)
 
 ### Community 66 - "node_sidecar.rs"
 Cohesion: 0.15
@@ -832,8 +833,8 @@ Cohesion: 0.06
 Nodes (107): App, Box, deeplinkext, dlna, Error, Image, Instant, Menu (+99 more)
 
 ### Community 82 - "musicSdk/index.js"
-Cohesion: 0.09
-Nodes (23): bd, filterBDListDetail(), getListDetail(), getReqId(), aggregate, AGGREGATE_ORDER, sidecar_vendor_electron_src_main_utils_musicsdk_index_dateformat2, sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename (+15 more)
+Cohesion: 0.07
+Nodes (34): bd, filterBDListDetail(), getListDetail(), getReqId(), aggregate, AGGREGATE_ORDER, sidecar_vendor_electron_src_main_utils_musicsdk_index_dateformat2, sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename (+26 more)
 
 ### Community 83 - "SyncDatabase"
 Cohesion: 0.09
@@ -844,8 +845,8 @@ Cohesion: 0.12
 Nodes (32): artwork_for(), ArtworkCacheEntry, bundle_identifier(), capture_accelerator(), claim_media_event(), create_mpmedia_artwork(), dict_set_f64(), dict_set_object() (+24 more)
 
 ### Community 85 - "firstText"
-Cohesion: 0.14
-Nodes (30): buildFeiniuAuthHeaders(), buildFeiniuOrigin(), buildFeiniuStreamPlayback(), callFirstPluginMethod(), collectPluginRequestInfo(), extractMusicUrl(), firstText(), getPluginInvocationError() (+22 more)
+Cohesion: 0.12
+Nodes (33): buildFeiniuAuthHeaders(), buildFeiniuOrigin(), buildFeiniuStreamPlayback(), callFirstPluginMethod(), collectPluginRequestInfo(), encodeUrlSafeBase64(), encodeUtf8Base64(), extractMusicUrl() (+25 more)
 
 ### Community 86 - "完整性能优化报告 V2（已补全激进清理）"
 Cohesion: 0.06
@@ -868,8 +869,8 @@ Cohesion: 0.14
 Nodes (14): displayItems, emit, handleKeydown(), handleSelect(), isFocused, query, recentSearches, saveRecent() (+6 more)
 
 ### Community 91 - "plugins/index.mjs"
-Cohesion: 0.10
-Nodes (25): appDataDir, configDir, DEFAULT_CONVERTED_SOURCES, extractAssignedArray(), extractAssignedObject(), extractAssignedString(), extractAssignedValue(), extractBalancedLiteral() (+17 more)
+Cohesion: 0.09
+Nodes (25): convertEventDrivenPlugin(), appDataDir, configDir, DEFAULT_CONVERTED_SOURCES, extractAssignedArray(), extractAssignedObject(), extractAssignedString(), extractAssignedValue() (+17 more)
 
 ### Community 92 - "searchValue"
 Cohesion: 0.09
@@ -928,8 +929,8 @@ Cohesion: 0.14
 Nodes (19): decryptJson(), parseStringArray(), asBoolean(), asPort(), canonicalCapabilityRole(), canonicalizeCapabilityConfig(), capabilityFieldsForRole(), capabilityIdentityKey() (+11 more)
 
 ### Community 106 - "qrcode"
-Cohesion: 0.13
-Nodes (21): emojis, filterHotComment(), filterNewComment(), formatTime(), getComment(), getHotComment(), getSongId(), promises (+13 more)
+Cohesion: 0.46
+Nodes (6): getSearchId(), handleResult(), musicSearch(), randomInt(), search(), signRequest()
 
 ### Community 107 - "LocalUserDetail.ts"
 Cohesion: 0.14
@@ -1052,8 +1053,8 @@ Cohesion: 0.19
 Nodes (22): autoImportConfiguredFeiniuPlaylists(), autoImportFeiniuAfterLogin(), callPluginMethodNodeFirst(), createSongListFromService(), getFeiniuCoverAuthHeaders(), getFeiniuPluginId(), getPluginConfigValue(), getPluginServiceRoleValue() (+14 more)
 
 ### Community 137 - "preparePluginCode"
-Cohesion: 0.20
-Nodes (18): decodePluginDetectionText(), detectImportPluginCompatibility(), ensureNodePluginPrepared(), extractConvertedLxOriginalCode(), injectPluginHeaders(), isConvertedLxPluginCode(), looksLikeHtmlDocument(), looksLikeLxEventPlugin() (+10 more)
+Cohesion: 0.17
+Nodes (21): decodePluginDetectionText(), detectImportPluginCompatibility(), ensureNodePluginPrepared(), extractConvertedLxOriginalCode(), injectPluginHeaders(), isConvertedLxPluginCode(), loadPersistedPluginRuntime(), looksLikeHtmlDocument() (+13 more)
 
 ### Community 138 - "isAppWindowVisible"
 Cohesion: 0.19
@@ -1128,8 +1129,8 @@ Cohesion: 0.11
 Nodes (18): V1 vs V2 对比, V1（不完整）, ❌ V1 的严重缺陷, V2（完整）, V2 补全方案, ✅ "全部给我优化了吗？", 发现的问题（V1 版本）, 回答用户的问题 (+10 more)
 
 ### Community 156 - "value_str"
-Cohesion: 0.16
-Nodes (18): convertEventDrivenPlugin(), convertMusicFreePlugin(), extractMusicFreeMeta(), isConvertedMusicFreePlugin(), looksLikeMusicFreePlugin(), MF_QUALITYS, mfHash(), mfMatch() (+10 more)
+Cohesion: 0.18
+Nodes (17): convertMusicFreePlugin(), extractMusicFreeMeta(), isConvertedMusicFreePlugin(), looksLikeMusicFreePlugin(), MF_QUALITYS, mfHash(), mfMatch(), mfSlug() (+9 more)
 
 ### Community 157 - "kw/songList.js"
 Cohesion: 0.09
@@ -1156,8 +1157,8 @@ Cohesion: 0.13
 Nodes (11): APP_DATA, db, DB_PATH, extractUrl(), feiniuSong, isPlayableUrl(), kwSong, probeUrl() (+3 more)
 
 ### Community 163 - "plugins/index.mjs"
-Cohesion: 0.22
-Nodes (15): appendLog(), commitPluginEntriesCache(), createPluginId(), createWorkerRuntime(), ensureDirs(), getLog(), initializePluginSystem(), installFromCode() (+7 more)
+Cohesion: 0.19
+Nodes (16): appendLog(), commitPluginEntriesCache(), createPluginId(), createWorkerRuntime(), ensureDirs(), getLog(), initializePluginSystem(), inspectPluginFile() (+8 more)
 
 ### Community 164 - "StorageSection.vue"
 Cohesion: 0.19
@@ -1213,7 +1214,7 @@ Nodes (16): definitions, Number, ShellScopeEntryAllowedArg, ShellScopeEntryAllow
 
 ### Community 178 - "definitions"
 Cohesion: 0.12
-Nodes (16): definitions, Number, ShellScopeEntryAllowedArg, ShellScopeEntryAllowedArgs, Target, Value, anyOf, description (+8 more)
+Nodes (16): definitions, Number, PermissionEntry, ShellScopeEntryAllowedArg, ShellScopeEntryAllowedArgs, Target, anyOf, description (+8 more)
 
 ### Community 179 - "songlist.vue"
 Cohesion: 0.17
@@ -1353,7 +1354,7 @@ Nodes (11): addBurst(), pick(), resizeCanvas(), rnd(), scheduleBursts(), shouldR
 
 ### Community 212 - "BaseDialog.vue"
 Cohesion: 0.18
-Nodes (10): app, macOSPrivateApi, security, windows, identifier, mainBinaryName, productName, $schema (+2 more)
+Nodes (10): build, beforeBuildCommand, beforeDevCommand, devUrl, frontendDist, identifier, mainBinaryName, productName (+2 more)
 
 ### Community 213 - "@renderer/components/Settings/PlaylistSettings.vue"
 Cohesion: 0.18
@@ -1412,7 +1413,7 @@ Cohesion: 0.28
 Nodes (8): ref_node_fs_promises, electronPluginsDir, isPluginFile(), migrate(), readPluginId(), tauriConfigDir, tauriPluginsDir, service
 
 ### Community 227 - "scripts"
-Cohesion: 0.33
+Cohesion: 0.36
 Nodes (3): buildConsoleProxy(), PluginWorkerRuntime, serializeLogArg()
 
 ### Community 228 - "plugins/index.mjs"
@@ -1424,12 +1425,12 @@ Cohesion: 0.31
 Nodes (8): configPath(), loadPluginEntriesUncached(), persistRuntimePluginMeta(), readJson(), readRegistry(), schemaSize(), writeJson(), writeRegistry()
 
 ### Community 230 - "In"
-Cohesion: 0.40
-Nodes (5): build, beforeBuildCommand, beforeDevCommand, devUrl, frontendDist
+Cohesion: 0.70
+Nodes (4): cancelTipSearch(), handleResult(), search(), tipSearchBySong()
 
 ### Community 231 - "axios"
-Cohesion: 0.25
-Nodes (11): encodeUrlSafeBase64(), encodeUtf8Base64(), ensureCoverProxyBase(), isFeiniuApiImageUrl(), isLocalCoverProxyUrl(), needsCoverProxy(), rememberCoverProxyUrl(), wrapCoverUrlIfNeeded() (+3 more)
+Cohesion: 0.33
+Nodes (9): ensureCoverProxyBase(), isFeiniuApiImageUrl(), isLocalCoverProxyUrl(), needsCoverProxy(), rememberCoverProxyUrl(), wrapCoverUrlIfNeeded(), wrapCoverUrlSync(), wrapThumbCoverUrlIfNeeded() (+1 more)
 
 ### Community 232 - "CapabilityRemote"
 Cohesion: 0.22
@@ -1539,6 +1540,10 @@ Nodes (6): main, name, private, type, types, version
 Cohesion: 0.43
 Nodes (5): close(), emit, onEsc(), onOverlayClick(), props
 
+### Community 259 - "app"
+Cohesion: 0.40
+Nodes (5): app, macOSPrivateApi, security, windows, csp
+
 ### Community 260 - "podcast.vue"
 Cohesion: 0.29
 Nodes (6): ANTI-PATTERNS, CONVENTIONS, NOTES, OVERVIEW, SRC/RENDERER/SRC/STORE, STRUCTURE
@@ -1570,6 +1575,10 @@ Nodes (6): identifier, permissions, description, required, type, Capability
 ### Community 267 - "SvgIcon.vue"
 Cohesion: 0.40
 Nodes (3): props, svgContainer, svgContent
+
+### Community 268 - "Value"
+Cohesion: 0.67
+Nodes (3): Value, anyOf, description
 
 ### Community 269 - "contrastColor.ts"
 Cohesion: 0.70
@@ -1612,10 +1621,6 @@ Cohesion: 0.50
 Nodes (4): default, description, type, local
 
 ### Community 283 - "PermissionEntry"
-Cohesion: 0.67
-Nodes (3): PermissionEntry, anyOf, description
-
-### Community 284 - "value_string"
 Cohesion: 0.67
 Nodes (3): PermissionEntry, anyOf, description
 

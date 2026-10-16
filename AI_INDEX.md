@@ -1,5 +1,22 @@
 ---
 
+## 2026-10-16 桌面关于页补充项目来源署名
+
+- 在 `src/views/settings/sections/AboutSection.vue` 新增“项目来源”说明：明确树夏Music 桌面版基于澜音 Music（Ceru Music）改进而来，并将原 Electron + Vue 架构迁移为 Tauri 2 + Rust + Vue 3。
+- 附上原项目 GitHub 与项目主页链接，感谢澜音团队的原项目与设计基础；`src/views/settings/searchIndex.ts` 新增“项目来源”搜索入口。
+- `npm run build` 通过；本次仅补充桌面 About UI 与设置搜索索引，不改变播放、插件、同步或发布架构。
+
+## 2026-10-16 听歌识曲权限提示与并发修正 + 桌面版 v1.1.5 发布准备
+
+- **复现**：测试 `1.1.4` 时点击麦克风后同时出现“麦克风权限未开启”和“启动麦克风采集失败”。录音启动函数
+  只检查 `running`，快速点击会并发执行两个 `start()`：一次进入权限拒绝分支，一次进入 `getUserMedia`
+  异常分支，形成两条提示。
+- **修复**：`src/views/music/recognize.vue` 增加 `status === 'initializing'` 启动互斥，细分
+  `NotAllowedError`、设备占用/不可用和其它采集错误；已重置 `com.shuxiamusic.tauri` 的 macOS 麦克风
+  TCC 记录，下次点击应重新弹出系统授权。
+- 版本准备为 `1.1.5`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`）；按既有要求
+  **暂不编译、不创建 `desktop-v1.1.5` 标签、不发布**，公开 Runner 发布命令已更新到 `1.1.5`。
+
 ## 2026-10-16 源码可见性调整：桌面公开、安卓源码收回
 
 - `maiga512/shuxiamusic-desktop` 已改为 **public**，描述改为公开桌面端 Tauri 源码；真实更新签名私钥和密码仍在
@@ -384,7 +401,7 @@ details are in `graphify-out/GRAPH_REPORT.md`.
 | Local music | `src/views/music/local.vue` | `src-tauri/src/commands/local_music.rs`, `src-tauri/src/db.rs` |
 | Listen together | `src/store/ListenTogether.ts` | `src/api/listenTogether.ts`, `src/components/ListenTogether/*` |
 | NAS/cloud sync | `src/api/nasSync.ts` | `src/services/nasSyncPoller.ts`, `src/utils/playlist/cloudLibrarySync.ts` |
-| Settings | `src/views/settings/index.vue` | `src/components/Settings/*`, `src/store/Settings.ts` |
+| Settings | `src/views/settings/index.vue` | `src/components/Settings/*`, `src/store/Settings.ts`; About includes 澜音 Music project attribution |
 | Global hotkeys and media keys | `src-tauri/src/hotkeys.rs`, `src-tauri/src/now_playing.rs` | `src/components/Settings/HotkeySettings.vue`, `src/utils/hotkeys/recording.ts`, `src/utils/audio/useSmtc.ts` |
 | 赞赏码、打赏码、请我喝杯咖啡、关于我图片 | reward QR image asset ownership | `public/about_author_reward_qr.jpg`, `src/views/settings/sections/AboutSection.vue` |
 
@@ -421,6 +438,7 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | 音效点一下等一下、环绕房间卡、响度标准延迟 | mpv 带标签滤镜增量替换，换档只换 `@loud`/`@sur` | `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 麦克风权限、启动弹窗、均衡器、高级音效、MPV lavfi | startup microphone permission, mpv audio filters, bass/surround/loudness | `src/App.vue`, `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 响度均衡标反、轻度/标准/强力、dynaudnorm 参数、低音增强不对劲、低音假、低音闷、低音轰、bass boost | loudness strength preset mapping (`dynaudnorm g/m/r/s`), 80Hz lowshelf with real dB gain plus 170Hz mud cut, no saturation | `src/components/Settings/AudioEffectSettings.vue`, `src/utils/audio/audioManager.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs` |
+| 项目来源、澜音 Music、Ceru Music、Electron 改成 Tauri、架构迁移署名 | About page project attribution and settings search route | `src/views/settings/sections/AboutSection.vue`, `src/views/settings/searchIndex.ts` |
 | 音量百分比不真实、滑条不灵敏、80%就很小、50%不像一半响度、拖到 0% 弹回去、0% 点不了 | 等比例（线性增益）音量：mpv 的 `volume` 实测是三次曲线 `gain=(volume/100)^3`（50→-18dB、80→-5.8dB），故 `sliderToMpvVolume(p)=100*cbrt(p/100)` 反解它，使最终增益=滑条百分比（100%=设备满刻度即系统音量的完整音量，50%→-6dB，0%=静音；与 Electron `audio.volume=v/100` 一致）。**0% 是合法值**：`nativeLoad`/`nativeSetVolume`/`LocalUserDetail.init`/`PlayMusic.vue` watcher 里所有 `volume<=0 → 80` 的强制改写已移除（只有非数字/越界才回退 80），否则拖到底部会立刻弹回 80%。前端保持百分比域展示/持久化，仅下发 mpv 时换算；Rust `mpv_set_volume` 与前端 IPC 合并去抖阈值 0.25（mpv 音量域）；DLNA 同步仍发原始百分比 | `src/utils/audio/nativePlayback.ts`, `src/store/LocalUserDetail.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue` |
 | 下载完点文件夹图标没反应、打不开下载目录、找不到文件位置 | 下载列表的文件夹图标走 `download.openFileLocation` → Node sidecar `open -R`/`explorer /select`/`xdg-open`；此前 `sidecar/index.mjs` 漏注册该路由（服务实现存在但调用抛 `Unsupported sidecar method`，被 bridge 静默吞掉），已补注册；bridge 改 strict 调用 + store 对空响应/无路径弹提示 | `sidecar/index.mjs`, `sidecar/services/download/index.mjs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/views/download/index.vue` |
 | 下载进缓存目录、下载目录不生效、本地歌曲缓存把下载的歌算缓存、封面/歌词/逐字歌词选了没效果（假菜单）、自动缓存音乐、缓存容量上限 LRU、com.cerumusic 旧路径 | **下载 vs 缓存分目录不变量**：主下载走 Node sidecar（`isCache=false`）→ 配置目录在 `node_sidecar.rs::spawn_sidecar` 以 env `CERU_DOWNLOAD_DIR`/`CERU_CACHE_DIR` 注入、`download/index.mjs::initializeSystem` 优先用（不再依赖打开设置页才同步）；`normalizeTask` 保留 `isCache`、`addTask` 守卫非缓存任务不落入 cacheDir；在线听歌自动缓存受 `autoCacheMusic` 控制走 `musicCachePlaybackCache`（cacheDir/playback，LRU 淘汰见 `evictCacheIfNeeded`）；标签写入由渲染层 `finalizeDownloadedTask`（`utils/audio/download.ts`）在 `onTaskCompleted` 调 Rust `download_finalize_metadata`（复用 `finalize_download_metadata` + exiftool Homebrew PATH 兜底）补写封面/基础信息/标准·逐字歌词；遗留 `com.cerumusic.tauri` 存储路径由 `lib.rs::remap_legacy_storage_dirs` 启动纠正 | `sidecar/services/download/index.mjs`, `src-tauri/src/commands/node_sidecar.rs`, `src-tauri/src/commands/download_engine.rs`, `src-tauri/src/lib.rs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/utils/audio/download.ts`, `src/components/Settings/DirectorySettings.vue`, `src/components/Settings/MusicCache.vue` |
@@ -622,6 +640,7 @@ treating raw edge counts as exact.
 | 2026-09-20 | 修复 Dock/Now Playing 封面不显示：Rust 端 set_info 收到 artwork_url 但未处理，新增 create_mpmedia_artwork 下载图片并设置 MPMediaItemArtwork。修复状态栏歌词不更新：移除 needsLyricConsumers 守卫、shouldDropNoiseEvent 不再丢弃歌词事件、scheduleNext 自带歌曲切换检测。 | 更新 Runtime And Cost 歌词流与 Now Playing 验收项。 |
 | 2026-09-21 | Mac 插件在线升级校验下载响应，HTML 发布页不再作为脚本安装；失败兜底改用 Tauri shell 打开系统浏览器。 | 更新插件升级检索标签；Graphify 本轮增量刷新。 |
 | 2026-10-16 | 低音增强去“假”：移除 200Hz 宽低架、tanh 谐波和会相位抵消的并联低通，改为 80Hz 真实 dB 低架 + 170Hz 轻度 mud cut。 | 未编译（按用户要求）；Rust 断言与内置 MPV 建图通过；更新 Playback And Media 音效流并重跑 Graphify。 |
+| 2026-10-16 | 桌面 About 页新增项目来源署名：树夏Music 基于澜音 Music 改进，原 Electron + Vue 迁移为 Tauri 2 + Rust + Vue 3，并补设置搜索入口。 | `npm run build` 通过；更新 About UI 路由与 Graphify 索引。 |
 | 2026-10-16 | 响度三档按 FFmpeg 官方 `dynaudnorm` 语义重设（`g/m/r` 单调、`s=0`）；MPV 低音补回 Electron 的并联 tanh 激励，Web Audio 回退同步，低音预设高亮跟随 dB。 | 未编译（按用户要求）；内置 MPV 滤镜加载与 FFmpeg 三档 RMS 实测通过；Graphify 增量刷新，更新 Playback And Media 音效流。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the

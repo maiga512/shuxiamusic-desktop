@@ -1,3 +1,13 @@
+## 2026-10-16 听歌识曲权限/并发提示修正 + v1.1.5 待发布
+
+- `1.1.4` 实测两条提示叠加，根因是快速点击时 `recognize.vue` 的 `start()` 没有 `initializing` 互斥，
+  两个调用并发进入权限和 `getUserMedia` 分支。现在启动阶段互斥，并区分权限拒绝、设备占用/不可用、
+  其它采集异常。
+- 已执行 `tccutil reset Microphone com.shuxiamusic.tauri`，下次点击麦克风应重新触发系统授权；
+  权限被拒绝后仍需用户在系统设置中允许，应用不能绕过 macOS TCC。
+- 版本准备为 `1.1.5`，继续遵守“未通知前不编译、不打标签、不发布”；公开构建命令已改为
+  `source_ref=desktop-v1.1.5`。
+
 ## 2026-10-16 源码可见性调整
 
 - `maiga512/shuxiamusic-desktop` 已公开，桌面源码包含 Tauri/Rust/Vue；更新签名私钥与密码仍只存在本地

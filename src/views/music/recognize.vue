@@ -76,7 +76,7 @@ async function resampleTo8kMono(audioBuffer: AudioBuffer): Promise<Float32Array>
 }
 
 async function start() {
-  if (running.value) return
+  if (running.value || status.value === 'initializing') return
 
   try {
     status.value = 'initializing'
@@ -155,12 +155,17 @@ async function start() {
   } catch (err: any) {
     console.error('启动录音失败', err)
     if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-      const opened = await window.api.permissions.showGuide('microphone')
-      if (!opened) {
-        MessagePlugin.error('麦克风权限被拒绝，请检查系统设置后重试')
-      }
+      MessagePlugin.error('麦克风权限被拒绝，请在系统设置中开启后重试')
+      await window.api.permissions.showGuide('microphone')
+    } else if (
+      err?.name === 'NotReadableError' ||
+      err?.name === 'DevicesNotFoundError' ||
+      err?.name === 'TrackStartError'
+    ) {
+      MessagePlugin.error('麦克风设备被占用或不可用，请检查输入设备后重试')
     } else {
-      MessagePlugin.error(err?.message || '启动麦克风采集失败')
+      const suffix = err?.name ? `（${err.name}）` : ''
+      MessagePlugin.error(`${err?.message || '启动麦克风采集失败'}${suffix}`)
     }
     reset()
   }
