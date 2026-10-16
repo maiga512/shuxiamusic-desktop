@@ -1,5 +1,5 @@
 <template>
-  <div class="splash-root">
+  <div class="splash-root" :class="{ 'is-worker': starfieldActive }">
     <canvas ref="canvasRef" class="splash-canvas"></canvas>
     <div class="splash-title">树夏Music</div>
   </div>
@@ -10,12 +10,20 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { initPlayback } from '@renderer/utils/audio/globaPlayList'
 import {
+  WELCOME_DISSOLVE_MS,
   WELCOME_HOME_MOUNT_MS,
+  WELCOME_MAIN_PREPARE_MS,
   WELCOME_OVERLAY_LEAVE_MS
 } from '@renderer/utils/navigation/welcomeTransition'
+import {
+  mountWelcomeStarfield,
+  type WelcomeStarfieldHandle
+} from '@renderer/utils/welcome/welcomeStarfield'
 
 const router = useRouter()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const starfieldActive = ref(false)
+let starfieldHandle: WelcomeStarfieldHandle | null = null
 
 // ── 启动动画：移植自安卓端 GlitterWrap 星空穿梭（GlitterWrapBackdrop.kt）──
 // 参数与安卓启动遮罩 StartupPreloadOverlay 完全一致：
@@ -89,8 +97,26 @@ function makeStars() {
 
 onMounted(() => {
   const canvas = canvasRef.value
-  const ctx = canvas?.getContext('2d')
-  if (!canvas || !ctx) {
+  if (!canvas) {
+    void bootThenEnter()
+    return
+  }
+
+  starfieldHandle = mountWelcomeStarfield(canvas)
+  if (starfieldHandle) {
+    starfieldActive.value = true
+    const resize = () => {
+      starfieldHandle?.resize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    ;(canvas as any).__shuxiaResize = resize
+    void bootThenEnter()
+    return
+  }
+
+  const ctx = canvas.getContext('2d')
+  if (!ctx) {
     void bootThenEnter()
     return
   }
@@ -248,6 +274,9 @@ async function bootThenEnter() {
   // Home 在星空遮罩下面完成首帧；遮罩再保持 1s，随后 560ms 线性淡出并多留 90ms。
   // 这段时间主页已经在下面稳定，星空层的淡出不会再被首帧构图卡住。
   window.setTimeout(() => {
+    starfieldHandle?.startFade(WELCOME_DISSOLVE_MS)
+  }, WELCOME_MAIN_PREPARE_MS)
+  window.setTimeout(() => {
     void initPlayback().catch((e) => {
       console.error('[welcome] initPlayback failed', e)
     })
@@ -256,6 +285,9 @@ async function bootThenEnter() {
 
 onUnmounted(() => {
   disposed = true
+  starfieldHandle?.destroy()
+  starfieldHandle = null
+  starfieldActive.value = false
   if (rafId) cancelAnimationFrame(rafId)
   rafId = 0
   const canvas = canvasRef.value as any
@@ -276,6 +308,10 @@ onUnmounted(() => {
   overflow: hidden;
   z-index: 30000;
   opacity: 1;
+}
+
+.splash-root.is-worker {
+  background: transparent;
 }
 
 .splash-canvas {
@@ -304,6 +340,10 @@ onUnmounted(() => {
     -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Segoe UI', Roboto, 'Helvetica Neue',
     Arial, sans-serif;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+
+.splash-root.is-worker .splash-title {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

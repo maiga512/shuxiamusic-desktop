@@ -265,7 +265,6 @@
   "263": "@tauri-apps/plugin-notification",
   "264": "node_sidecar.rs",
   "265": "podcast.vue",
-  "266": "node_sidecar.rs",
   "267": "GlobalBackground.vue",
   "268": "PLAYBACK-01：上一首/下一首切换耗时定位与优化",
   "269": "给其他 Agent 的标准提示词",
@@ -273,7 +272,6 @@
   "271": "Capability",
   "272": "Capability",
   "273": "About Origin Statement",
-  "274": "Settings.ts",
   "275": "SvgIcon.vue",
   "276": "app",
   "277": "contrastColor.ts",
@@ -290,8 +288,6 @@
   "288": "BufferShim",
   "289": "components.d.ts",
   "290": "analyze_csv",
-  "291": "PermissionEntry",
-  "292": "definitions",
   "293": "monitor_performance",
   "294": "dependencies",
   "295": "dependencies",
@@ -308,7 +304,6 @@
   "306": "socket.io-client",
   "307": "three",
   "308": "dependencies",
-  "309": "dependencies",
   "310": "dependencies",
   "311": "dependencies",
   "312": "shazamio-core",
@@ -460,8 +455,5 @@
   "458": "typescript",
   "459": "unplugin-auto-import",
   "460": "@vueuse/core",
-  "461": "permissions_request_microphone",
-  "462": "globalControls.ts",
-  "463": "animate.css",
-  "464": "Value"
+  "461": "permissions_request_microphone"
 }

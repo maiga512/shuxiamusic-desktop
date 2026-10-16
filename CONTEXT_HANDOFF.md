@@ -2,8 +2,9 @@
 
 - 对照安卓 `MainActivity.StartupPreloadOverlay` 后确认：问题不是单纯把淡出提前，而是桌面端让主页
   首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下给主页 1s 首帧准备；2.2s 开始
-  560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空层的透明度只做线性变化，不在主页首帧期间做
-  复杂 transform/filter 动画。`initPlayback()` 等遮罩卸载后恢复。
+  560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
+  `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
+  `initPlayback()` 等遮罩卸载后恢复。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
   获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
   返回识别搜索结果。

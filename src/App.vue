@@ -85,6 +85,10 @@ html.desktop-lyric-window #app {
   animation: shuxiaWelcomeHoldDissolve 1.65s linear both;
   will-change: opacity;
 }
+:root.shuxia-welcome-worker-active .welcome-hold-dissolve.pagesApp {
+  opacity: 1;
+  animation: none;
+}
 @keyframes shuxiaWelcomeHoldDissolve {
   0%,
   60.606% {

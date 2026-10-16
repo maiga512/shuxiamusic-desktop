@@ -660,8 +660,8 @@
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1792160016.820247,
-    "ast_hash": "5f4ad854a2ad4d0d51f67325efc8d017",
+    "mtime": 1792161314.3601518,
+    "ast_hash": "befe88b8025a3b8444a66395bc853333",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792160127.1538315,
+    "mtime": 1792161471.5000095,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792160150.349629,
+    "mtime": 1792161485.2588775,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792160016.8192103,
-    "ast_hash": "3111ce74086ad13c04cf83431bdac74c",
+    "mtime": 1792161314.3594906,
+    "ast_hash": "e2c7796546d667ececf446dc091af491",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792160800.7466376,
-    "ast_hash": "405f6064a95d826428b010d72c31b52d",
+    "mtime": 1792162098.8359146,
+    "ast_hash": "ead5f9cd6f0a65c2ffbb24807e8557d4",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792160800.7490485,
-    "ast_hash": "f9bb01066c6cd93d8f64f11e77058591",
+    "mtime": 1792162098.8388758,
+    "ast_hash": "5fb892d7775fb09f5fceb3049fb76a26",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792160800.750296,
-    "ast_hash": "0911c884dc72be052d31a5f1cc15f357",
+    "mtime": 1792162098.8395932,
+    "ast_hash": "d175efefd26350324a837987cca7ed99",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3142,6 +3142,16 @@
   "src-tauri/src/permissions.rs": {
     "mtime": 1792152595.507451,
     "ast_hash": "891038f14de090d8a39682c254159fc8",
+    "semantic_hash": ""
+  },
+  "src/utils/welcome/welcomeStarfield.ts": {
+    "mtime": 1792161258.3189797,
+    "ast_hash": "b5d11a2a64e40a9442e1be3346bb2c98",
+    "semantic_hash": ""
+  },
+  "src/workers/welcomeStarfield.worker.ts": {
+    "mtime": 1792161225.3518038,
+    "ast_hash": "907eb07a902cfb9da492df82e30eb3c4",
     "semantic_hash": ""
   }
 }
