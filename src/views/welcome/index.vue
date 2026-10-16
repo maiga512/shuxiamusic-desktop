@@ -9,7 +9,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { initPlayback } from '@renderer/utils/audio/globaPlayList'
-import { WELCOME_DISSOLVE_MS } from '@renderer/utils/navigation/welcomeTransition'
+import {
+  WELCOME_DISSOLVE_MS,
+  WELCOME_TRANSITION_START_MS
+} from '@renderer/utils/navigation/welcomeTransition'
 
 const router = useRouter()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -18,7 +21,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 // 参数与安卓启动遮罩 StartupPreloadOverlay 完全一致：
 // particleCount 150 / speed 5.2 / density 96 / starSize 20 / focalDepth 5 /
 // turbulence 3.6 / brightness 100 / glitter 4.5 / trails 42 / reverse false。
-const STARTUP_MIN_MS = 1500
 const CFG = {
   particleCount: 150,
   speed: 5.2,
@@ -221,8 +223,8 @@ function preloadHomeEntry() {
 async function bootThenEnter() {
   if (entered) return
   const startAt = Date.now()
-  // 插件系统仍在欢迎页预热，但播放恢复必须等正式界面挂载后再开始。
-  const pluginReady = window.electron?.ipcRenderer
+  // 插件系统在后台预热，不能延后星空到主页的连续溶解。
+  void window.electron?.ipcRenderer
     ?.invoke?.('service-plugin-initialize-system')
     .catch((e: unknown) => {
       console.warn('[welcome] plugin init failed', e)
@@ -231,20 +233,23 @@ async function bootThenEnter() {
     console.warn('[welcome] home preload failed', e)
   })
 
-  const wait = Math.max(0, STARTUP_MIN_MS - (Date.now() - startAt))
-  await Promise.all([
-    new Promise<void>((resolve) => window.setTimeout(resolve, wait)),
-    pluginReady,
-    homeReady
-  ])
+  const waitForTransition = () =>
+    new Promise<void>((resolve) => {
+      const remaining = Math.max(0, WELCOME_TRANSITION_START_MS - (Date.now() - startAt))
+      window.setTimeout(resolve, remaining)
+    })
+
+  // 正常情况下主页分片先预热完成；即使分片异常变慢，也不能让插件或加载把
+  // 星空停在原地等待，到点后仍由 router 开始同一段交叉溶解。
+  await Promise.race([homeReady, waitForTransition()])
+  await waitForTransition()
   if (entered) return
   entered = true
   await router.replace('/home/find')
   // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
   // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
-  // 星空遮罩的化开交给 App.vue 的路由 Transition：主页先在下面挂好，
-  // 启动层再放大模糊淡出，避免先淡成黑再突然切界面。
-  // 恢复播放再等一帧过渡，避免 home 挂载和本地状态读取跟化开动画抢主线程。
+  // 星空后段与主页首帧同时交叉溶解，不等星空停住再切换。
+  // 播放恢复仍等溶解结束，避免 home 挂载和本地状态读取抢化开动画的主线程。
   window.setTimeout(() => {
     void initPlayback().catch((e) => {
       console.error('[welcome] initPlayback failed', e)

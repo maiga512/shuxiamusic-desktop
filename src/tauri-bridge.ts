@@ -5424,6 +5424,8 @@ export function createTauriBridge() {
       prepareMediaCapture: () => Promise.resolve(true),
       requestMicrophone: async () => {
         try {
+          const nativeGranted = await invoke<boolean>('permissions_request_microphone')
+          if (!nativeGranted) return false
           const status = await navigator.permissions
             .query({ name: 'microphone' as PermissionName })
             .then((permission) => permission.state)

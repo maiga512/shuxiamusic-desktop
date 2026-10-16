@@ -1,14 +1,16 @@
 ---
 
-## 2026-10-16 启动动画衔接去停顿
+## 2026-10-16 启动动画提前化开 + macOS 原生麦克风授权
 
-- **现象**：星空开场结束后有一段停顿，再出现主界面。
-- **根因**：`welcome/index.vue` 跳转 `/home` 后由路由重定向到 `/home/find`，且 Home/Find 是懒加载分片；
-  动画结束后才开始第二段导航/挂载，视觉上形成停顿。
-- **修复**：启动阶段预加载 `home/index.vue` 与 `find.vue`，直接跳转 `/home/find`，取消二次重定向；
-  启动层与主页改为同步 `0.8s cubic-bezier(0.22,1,0.36,1)` 交叉溶解，主页首次内部过渡关闭，
-  `prefers-reduced-motion` 保持直接切换。
-- 本次只改启动衔接与共享过渡状态，不改变主页布局、路由结构或播放初始化顺序；暂不发布。
+- **现象**：用户要求星空尚未结束就开始“化开”，但实测仍在开场结束后停顿约 1–2 秒才出现主页。
+- **根因**：`welcome/index.vue` 仍等待 `service-plugin-initialize-system` 完成才执行 `router.replace`；
+  插件初始化慢时会把交叉溶解整体拖到开场结束之后。Home/Find 已预热并直接进入 `/home/find`，
+  不是二次重定向造成的。
+- **修复**：插件初始化改为后台预热；固定在启动序列 1.4s 开始 0.8s 交叉溶解，使 2.2s 时主页完整显露。
+  Home/Find 分片继续提前加载，加载异常也不能延后切换；`initPlayback()` 仍在溶解结束后恢复。
+- **权限**：新增 `permissions_request_microphone`，先调用 macOS `AVCaptureDevice` 原生授权，再进入
+  WKWebView `getUserMedia`。Preview 实测已获得 MacBook Pro 麦克风、完成录音并返回搜索结果。
+- 本次只改启动衔接、共享过渡时间与麦克风权限边界；已编译唯一 Preview 测试包，暂不发布。
 
 ## 2026-10-16 发布中心补充项目来源署名
 
@@ -436,6 +438,7 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | Dock、底栏、全屏播放、卡顿 | dock layout, full player transition, visualizer, background | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` |
 | 全屏手势、双指滑、捏合全屏、封面模式、黑胶、手势闪退 | two-finger cover/vinyl swipe, pinch window fullscreen, frontend-only | `src/components/Play/FullPlay.vue`, `src/store/playSetting.ts` |
 | 启动动画、欢迎页化开、星空衔接、进主页动画 | welcome dissolve overlay, home reveal | `src/views/welcome/index.vue`, `src/App.vue` |
+| 听歌识曲权限、麦克风授权、macOS microphone permission | native AVCaptureDevice permission before WKWebView getUserMedia | `src-tauri/src/permissions.rs`, `src/tauri-bridge.ts` |
 | 底栏进度一格一格、进度条跳、匀速进度 | dock bar compositor remaining-duration animation; Pinia/mpv clock stays 1s | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` |
 | 全屏内存不回落、退出全屏内存、最小化内存、回主页内存、板块切换不重载 | hide/minimize release FullPlay heavy tree; list covers keep hot layer decoded, drop cold decoded bitmaps; KeepAlive group stays cached while the window is only occluded/backgrounded (shrinks to current page only after 1h off-screen) | `src/components/Play/FullPlay.vue`, `src/components/sImage.vue`, `src/views/home/index.vue` |
 | 全屏底栏要点两下、Dock 唤醒、自动隐藏底栏 | idle dock wake strip, pointerdown, WKWebView transform hit-testing | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` |
@@ -652,6 +655,7 @@ treating raw edge counts as exact.
 | 2026-10-16 | 低音增强去“假”：移除 200Hz 宽低架、tanh 谐波和会相位抵消的并联低通，改为 80Hz 真实 dB 低架 + 170Hz 轻度 mud cut。 | 未编译（按用户要求）；Rust 断言与内置 MPV 建图通过；更新 Playback And Media 音效流并重跑 Graphify。 |
 | 2026-10-16 | 发布中心 README 新增项目来源署名：树夏Music 基于澜音 Music 改进，原 Electron + Vue 迁移为 Tauri 2 + Rust + Vue 3；GitHub/Gitee 发布页同步。 | 仅发布文档变更；更新发布页路由与 Graphify 索引。 |
 | 2026-10-16 | 响度三档按 FFmpeg 官方 `dynaudnorm` 语义重设（`g/m/r` 单调、`s=0`）；MPV 低音补回 Electron 的并联 tanh 激励，Web Audio 回退同步，低音预设高亮跟随 dB。 | 未编译（按用户要求）；内置 MPV 滤镜加载与 FFmpeg 三档 RMS 实测通过；Graphify 增量刷新，更新 Playback And Media 音效流。 |
+| 2026-10-16 | 开场动画改为 1.4s 起与主页交叉溶解，插件初始化不再阻塞进主页；新增 macOS 原生麦克风授权命令并实测识曲链路。 | 编译唯一 Preview 测试包；更新启动/权限路由与 Graphify 索引。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the
 architecture or ownership map changes.

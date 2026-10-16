@@ -4,6 +4,7 @@ mod db;
 mod hotkeys;
 mod models;
 mod now_playing;
+mod permissions;
 mod process_util;
 mod system_power;
 mod windowed_fs;
@@ -24,6 +25,7 @@ use db::Database;
 use hotkeys::{apply_global_hotkeys, handle_shortcut};
 use now_playing::{hotkeys_set_recording, init_now_playing, now_playing_update};
 use now_playing::media_diag_log;
+use permissions::permissions_request_microphone;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -1778,6 +1780,7 @@ pub fn run() {
             hotkeys::hotkeys_accessibility,
             now_playing_update,
             media_diag_log,
+            permissions_request_microphone,
             // Directory settings
             directory_settings_get_directories,
             directory_settings_save_directories,

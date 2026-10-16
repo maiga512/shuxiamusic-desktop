@@ -1,10 +1,12 @@
-## 2026-10-16 启动动画衔接修复（待用户确认后发布）
+## 2026-10-16 启动动画提前化开 + macOS 原生麦克风授权（待发布）
 
-- 开场动画结束后停顿的来源是 `router.replace('/home')` 经过 `/home/find` 重定向，且 Home/Find
-  懒加载；现在启动阶段预热两个分片并直接进入 `/home/find`，不再产生二次导航。
-- `App.vue` 的启动层与主页统一为 0.8s 缓动交叉溶解；`home/index.vue` 首次进入时关闭内部页面滑入，
-  确保视觉上只有一段连续“化开”。`prefers-reduced-motion` 仍然直接切换。
-- `vue-tsc --noEmit` 通过；当前仅做开发态验证，不更新版本、不发布。
+- 上一轮只消除二次路由和懒加载，仍错误地等待插件初始化完成才进入主页，因此用户继续看到开场结束
+  后停顿。现在插件初始化只在后台预热；1.4s 开始 0.8s 星空/主页交叉溶解，2.2s 主页完整显露，
+  分片加载失败也不能延后切换。`initPlayback()` 仍在溶解结束后恢复。
+- 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
+  获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
+  返回识别搜索结果。
+- `vue-tsc --noEmit` 与本地 App 编译通过；`/Applications` 仅保留一个 Preview 测试包，暂不发布。
 
 ## 2026-10-16 发布中心补充项目来源署名
 
