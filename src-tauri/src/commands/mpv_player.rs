@@ -786,16 +786,21 @@ fn push_bass_filter(filters: &mut Vec<String>, bass_boost: Option<&MpvBassBoostR
     if gain.abs() < 0.05 {
         return;
     }
-    let exciter_amount = (gain.max(0.0) / 12.0) * 0.6;
-    filters.push(format!(
-        // Match Electron: lowshelf main path plus a parallel low-frequency
-        // tanh exciter path (lowpass -> soft clip -> highpass -> mix).
-        "lowshelf=f=200:t=q:w=1:g={shelf},asplit=2[dry][src];[src]lowpass=f=160:w=0.707,asoftclip=tanh:param=2.5:oversample=2,highpass=f=90:w=0.707,volume={exciter}[wet];[dry][wet]amix=inputs=2:duration=first:dropout_transition=0:normalize=0",
-        shelf = fmt_db(gain),
-        exciter = format!("{exciter_amount:.3}")
-            .trim_end_matches('0')
-            .trim_end_matches('.'),
-    ));
+    // Mature bass EQ shape: a narrow 80Hz shelf carries the requested dB gain,
+    // while a light 170Hz cut prevents the 150-200Hz "mud" that made the old
+    // 200Hz shelf sound broad and artificial. No saturation/harmonic exciter.
+    if gain > 0.0 {
+        filters.push(format!(
+            "lavfi=[lowshelf=f=80:t=q:w=0.75:g={},equalizer=f=170:t=q:w=1.1:g={}]",
+            fmt_db(gain),
+            fmt_db(-gain * 0.12)
+        ));
+    } else {
+        filters.push(format!(
+            "lowshelf=f=80:t=q:w=0.75:g={}",
+            fmt_db(gain)
+        ));
+    }
 }
 
 fn surround_wet_gain(mode: &str) -> Option<f64> {
@@ -1806,9 +1811,10 @@ mod tests {
         let filters = build_audio_filters(&sample_request("small"), Some(&dir)).unwrap();
         let graph = filters.join(",");
         assert!(graph.contains("@eq:lavfi=["));
-        assert!(graph.contains("@bass:lowshelf=f=200:t=q:w=1:g=6,asplit=2[dry][src]"));
-        assert!(graph.contains("lowpass=f=160:w=0.707,asoftclip=tanh:param=2.5:oversample=2"));
-        assert!(graph.contains("highpass=f=90:w=0.707,volume=0.3[wet]"));
+        assert!(graph.contains(
+            "@bass:lavfi=[lowshelf=f=80:t=q:w=0.75:g=6,equalizer=f=170:t=q:w=1.1:g=-0.72]"
+        ));
+        assert!(!graph.contains("asoftclip"));
         assert!(graph.contains("@sur:lavfi=["));
         assert!(graph.contains(
             "@loud:dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"
@@ -1816,7 +1822,7 @@ mod tests {
         assert!(graph.contains("afir=dry=1:wet=0.21:irnorm=-1"));
         assert!(graph.contains("aresample=48000:resampler=soxr:precision=28"));
         assert!(graph.contains("asplit=2[dry][src]"));
-        assert!(graph.contains("lowshelf=f=200:t=q:w=1:g=6,asplit=2[dry][src]"));
+        assert!(graph.contains("lowshelf=f=80:t=q:w=0.75:g=6"));
         assert!(graph.contains("equalizer=f=31:t=q:w=1:g=3"));
         assert!(graph.contains("dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"));
         assert!(!graph.contains("acompressor="));
@@ -1912,6 +1918,38 @@ mod tests {
             .contains("dynaudnorm=f=300:g=31:p=0.95:r=0.18:m=6:s=0:b=1"));
         assert!(graph_for("strong")
             .contains("dynaudnorm=f=300:g=15:p=0.95:r=0.25:m=10:s=0:b=1"));
+    }
+
+    #[test]
+    fn positive_bass_gain_uses_natural_low_shelf_with_mud_control() {
+        let request = MpvAudioFiltersRequest {
+            bass_boost: Some(MpvBassBoostRequest {
+                enabled: true,
+                gain: 6.0,
+            }),
+            ..MpvAudioFiltersRequest::default()
+        };
+        let graph = build_audio_filters(&request, None).unwrap().join(",");
+
+        assert!(graph.contains("@in:volume=volume=-6dB"));
+        assert!(graph.contains("lowshelf=f=80:t=q:w=0.75:g=6"));
+        assert!(graph.contains("equalizer=f=170:t=q:w=1.1:g=-0.72"));
+        assert!(!graph.contains("asoftclip"));
+    }
+
+    #[test]
+    fn negative_bass_gain_uses_a_narrow_low_shelf() {
+        let request = MpvAudioFiltersRequest {
+            bass_boost: Some(MpvBassBoostRequest {
+                enabled: true,
+                gain: -6.0,
+            }),
+            ..MpvAudioFiltersRequest::default()
+        };
+        let graph = build_audio_filters(&request, None).unwrap().join(",");
+
+        assert!(graph.contains("@bass:lowshelf=f=80:t=q:w=0.75:g=-6"));
+        assert!(!graph.contains("asoftclip"));
     }
 
     #[test]

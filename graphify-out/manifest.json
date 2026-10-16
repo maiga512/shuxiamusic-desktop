@@ -605,8 +605,8 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/mpv_player.rs": {
-    "mtime": 1792136173.7739508,
-    "ast_hash": "9b67d1a8b90a68965032c5ca4bb8573f",
+    "mtime": 1792142153.203379,
+    "ast_hash": "64866ecc8278ce8fa991df17c0060814",
     "semantic_hash": ""
   },
   "src-tauri/src/commands/music_search.rs": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "src/utils/audio/audioManager.ts": {
-    "mtime": 1792136122.3306084,
-    "ast_hash": "89bc1eafca4a7c1072dcd5f4cdf44de0",
+    "mtime": 1792142171.0934732,
+    "ast_hash": "5161317088e3c07da255e15652c7102b",
     "semantic_hash": ""
   },
   "src/utils/audio/candidateIdentity.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792137313.3079288,
-    "ast_hash": "ef4d4390cad0459dbab8182c2f55c1df",
+    "mtime": 1792142188.2061956,
+    "ast_hash": "dbe50e8f66ef430042c409b04f6d82cb",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792137313.3089623,
-    "ast_hash": "9d46e9e5a63c424898979dd521e9860e",
+    "mtime": 1792142195.8055458,
+    "ast_hash": "8415de470b35a1765a7f326d27cdedc9",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792137010.3783545,
-    "ast_hash": "410471efd14e0a448548f6c97d7f10ed",
+    "mtime": 1792142239.731876,
+    "ast_hash": "0fd8536953749006e6ab966166cc3219",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {

@@ -1,5 +1,13 @@
 ---
 
+## 2026-10-16 低音增强去“假”：收窄低架 + 低中频防糊
+
+- **用户反馈**：上一版低音增强听感发假、泛轰，不如成熟方案自然。根因是 `lowshelf@200Hz` 连 150–200Hz 一起抬高，再叠加 `tanh` 谐波，容易形成低中频淤积和人工染色。
+- **公开方案对照**：GitHub `AnonymousV73X/WINDOWS-MUSIC-PLAYER` 的 EQ 引擎用低架和 headroom 做 Bass Boost；`Gomtanga/timbredock` 的 CircuitBass 把 shelf 收在约 68–92Hz、单独控制 body，并显式做 headroom/output protection。并联低通干湿支路经频率响应实测会产生相位抵消，不能交付。
+- **本版实现**：用 `lowshelf@80Hz` 承担滑杆的真实 dB 增益，再在 `170Hz` 做 `-12%` 的轻度回撤，专门压住 150–200Hz 泛轰；不再使用 `asoftclip/tanh/WaveShaper` 或相位敏感的并联低通。
+- **验证**：`+6dB` 对 80Hz 以下保留 +6dB 低架关系，170Hz 只回撤约 0.72dB；Rust 测试覆盖正/负增益、mud control 与无饱和滤镜，内置 MPV 实际建图检查通过。已执行本地 `v1.1.4` 编译并验证 Mac 包。
+- 索引：路由别名、Playback And Media 低音图和 handoff 同步更新，Graphify 重新索引。
+
 ## 2026-10-16 听歌识曲失败修复 + 桌面版 v1.1.4 发布准备
 
 - **根因**：`src/views/music/recognize.vue` 只探测 `audio/webm;codecs=opus`，失败后仍硬编码回退
@@ -12,9 +20,9 @@
 - **验证**：`npx tsx --test src/utils/audio/recorderMime.test.ts` 3/3 通过；网易
   `audio/match` 接口真实请求返回 HTTP 200（测试指纹 `result:null`，接口与响应结构正常）。
   包配置已有 `NSMicrophoneUsageDescription`，签名无 App Sandbox；权限是按需申请，不是启动期抢麦。
-- 版本已准备为 `1.1.4`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`）。按用户要求
-  **暂不编译、不创建 `desktop-v1.1.4` 标签、不发布**；公开 Runner 默认源码分支已改为 `main`，
-  接到通知后传 `source_ref=desktop-v1.1.4` 构建，不占私有仓库额度。
+- 版本已准备为 `1.1.4`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`）。收到发布授权后，
+  已本地编译并验证麦克风声明、录音格式与稳定自签 Mac 包；创建 `desktop-v1.1.4` 标签后传
+  `source_ref=desktop-v1.1.4` 给公开 Runner，不占私有仓库额度。
 
 ## 2026-10-16 响度三档方向修正 + 低音谐波激励补齐
 
@@ -22,7 +30,7 @@
 - **响度修正**：按官方语义改为 `gentle: g=61/r=0.12/m=3`、`standard: g=31/r=0.18/m=6`、`strong: g=15/r=0.25/m=10`，三档 `s=0` 保留局部动态，`r` 直接以 RMS 对齐感知响度。
 - **低音修正**：MPV `@bass` 从单个 `lowshelf` 扩为与 Electron 一致的并联结构：低架主路 + `lowpass@160 -> tanh asoftclip -> highpass@90 -> wet mix`；Web Audio 回退链同步补 `WaveShaper` 激励支路。设置页低音预设高亮会跟随当前 dB，避免滑杆与预设标签脱节。
 - **验证**：仓库内置 MPV 实际加载新低音图与三档 `dynaudnorm` 均 exit 0；FFmpeg 6 秒安静素材输出 RMS 约 `-37.6/-31.5/-27.1 dB`，强度按轻度 < 标准 < 强力递进。按用户要求未执行 Rust/前端编译。
-- 索引：更新音效/低音增强路由别名、Playback And Media 滤镜说明与 handoff；Graphify 增量 + 文档语义合并刷新生成物（7940 nodes / 16759 edges / 458 communities，聚合 HTML 458 社区节点）。外部 Claude/子代理语义通道分别因 403 配额与上游加密消息错误不可用，最终按技能回退由当前 host agent 内联抽取三份改动文档。
+- 索引：更新音效/低音增强路由别名、Playback And Media 滤镜说明与 handoff；Graphify 增量 + 文档语义合并刷新生成物（7951 nodes / 16768 edges / 447 communities，聚合 HTML 447 社区节点）。外部 Claude/子代理语义通道分别因 403 配额与上游加密消息错误不可用，最终按技能回退由当前 host agent 内联抽取三份改动文档。
 
 ## 2026-10-16 发布桌面版 v1.1.3（GitHub + Gitee，含插件附件）
 
@@ -39,6 +47,9 @@
   `desktop-v1.1.1`、混杂 `desktop-latest`、`desktop-v1.1.2` 三个 Release 后重建，完整上传 Mac/Windows/签名/插件。
 - GitHub 与 Gitee 的 `desktop-v1.1.3` / `desktop-latest` 均已发布；Gitee `latest.json` 已校验
   `version=1.1.3`，`darwin-aarch64` 与 `windows-x86_64` URL 均指向 Gitee。
+- 发布中心 README 已同步 Windows/macOS 标注、桌面插件与 `.fpk` 安装说明；Gitee 镜像此前缺
+  `screenshots/product` 目录，现已通过 Git 推送 8 个文件。README 引用的音乐、播客、播放器三张
+  界面图从 Gitee 原始地址实测均返回 HTTP 200，SHA 与 GitHub 对齐。
 - 索引更新记录发布边界、公开 Runner、Gitee 配额清理、版本与插件附件归属，不改变桌面运行时架构。
 
 ## 2026-10-16 存储管理审计 + 封面缓存纳入管理（查看/清除）
@@ -394,7 +405,7 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | 快进 CPU、拖进度 CPU、seek 占用 | 拖动只改 UI，松手才 `nativeSeek`；短峰来自 mpv 重新解码 | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` |
 | 音效点一下等一下、环绕房间卡、响度标准延迟 | mpv 带标签滤镜增量替换，换档只换 `@loud`/`@sur` | `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 麦克风权限、启动弹窗、均衡器、高级音效、MPV lavfi | startup microphone permission, mpv audio filters, bass/surround/loudness | `src/App.vue`, `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
-| 响度均衡标反、轻度/标准/强力、dynaudnorm 参数、低音增强不对劲、bass boost、谐波激励 | loudness strength preset mapping (`dynaudnorm g/m/r/s`), lowshelf plus parallel tanh exciter, preset selection follows gain | `src/components/Settings/AudioEffectSettings.vue`, `src/utils/audio/audioManager.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs` |
+| 响度均衡标反、轻度/标准/强力、dynaudnorm 参数、低音增强不对劲、低音假、低音闷、低音轰、bass boost | loudness strength preset mapping (`dynaudnorm g/m/r/s`), 80Hz lowshelf with real dB gain plus 170Hz mud cut, no saturation | `src/components/Settings/AudioEffectSettings.vue`, `src/utils/audio/audioManager.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs` |
 | 音量百分比不真实、滑条不灵敏、80%就很小、50%不像一半响度、拖到 0% 弹回去、0% 点不了 | 等比例（线性增益）音量：mpv 的 `volume` 实测是三次曲线 `gain=(volume/100)^3`（50→-18dB、80→-5.8dB），故 `sliderToMpvVolume(p)=100*cbrt(p/100)` 反解它，使最终增益=滑条百分比（100%=设备满刻度即系统音量的完整音量，50%→-6dB，0%=静音；与 Electron `audio.volume=v/100` 一致）。**0% 是合法值**：`nativeLoad`/`nativeSetVolume`/`LocalUserDetail.init`/`PlayMusic.vue` watcher 里所有 `volume<=0 → 80` 的强制改写已移除（只有非数字/越界才回退 80），否则拖到底部会立刻弹回 80%。前端保持百分比域展示/持久化，仅下发 mpv 时换算；Rust `mpv_set_volume` 与前端 IPC 合并去抖阈值 0.25（mpv 音量域）；DLNA 同步仍发原始百分比 | `src/utils/audio/nativePlayback.ts`, `src/store/LocalUserDetail.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue` |
 | 下载完点文件夹图标没反应、打不开下载目录、找不到文件位置 | 下载列表的文件夹图标走 `download.openFileLocation` → Node sidecar `open -R`/`explorer /select`/`xdg-open`；此前 `sidecar/index.mjs` 漏注册该路由（服务实现存在但调用抛 `Unsupported sidecar method`，被 bridge 静默吞掉），已补注册；bridge 改 strict 调用 + store 对空响应/无路径弹提示 | `sidecar/index.mjs`, `sidecar/services/download/index.mjs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/views/download/index.vue` |
 | 下载进缓存目录、下载目录不生效、本地歌曲缓存把下载的歌算缓存、封面/歌词/逐字歌词选了没效果（假菜单）、自动缓存音乐、缓存容量上限 LRU、com.cerumusic 旧路径 | **下载 vs 缓存分目录不变量**：主下载走 Node sidecar（`isCache=false`）→ 配置目录在 `node_sidecar.rs::spawn_sidecar` 以 env `CERU_DOWNLOAD_DIR`/`CERU_CACHE_DIR` 注入、`download/index.mjs::initializeSystem` 优先用（不再依赖打开设置页才同步）；`normalizeTask` 保留 `isCache`、`addTask` 守卫非缓存任务不落入 cacheDir；在线听歌自动缓存受 `autoCacheMusic` 控制走 `musicCachePlaybackCache`（cacheDir/playback，LRU 淘汰见 `evictCacheIfNeeded`）；标签写入由渲染层 `finalizeDownloadedTask`（`utils/audio/download.ts`）在 `onTaskCompleted` 调 Rust `download_finalize_metadata`（复用 `finalize_download_metadata` + exiftool Homebrew PATH 兜底）补写封面/基础信息/标准·逐字歌词；遗留 `com.cerumusic.tauri` 存储路径由 `lib.rs::remap_legacy_storage_dirs` 启动纠正 | `sidecar/services/download/index.mjs`, `src-tauri/src/commands/node_sidecar.rs`, `src-tauri/src/commands/download_engine.rs`, `src-tauri/src/lib.rs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/utils/audio/download.ts`, `src/components/Settings/DirectorySettings.vue`, `src/components/Settings/MusicCache.vue` |
@@ -595,6 +606,7 @@ treating raw edge counts as exact.
 | 2026-09-20 | 全屏退出内存优化：歌词字体 CSS 改按需注入/释放（~12MB）；烘焙缓存 8→4 条目、maxSide 720→480；AMLL DOM 子树主动清空；卸载延迟 400→200ms；lodash 按需引入。 | 不改 Top Graph 主架；更新 Runtime And Cost 验收项。 |
 | 2026-09-20 | 修复 Dock/Now Playing 封面不显示：Rust 端 set_info 收到 artwork_url 但未处理，新增 create_mpmedia_artwork 下载图片并设置 MPMediaItemArtwork。修复状态栏歌词不更新：移除 needsLyricConsumers 守卫、shouldDropNoiseEvent 不再丢弃歌词事件、scheduleNext 自带歌曲切换检测。 | 更新 Runtime And Cost 歌词流与 Now Playing 验收项。 |
 | 2026-09-21 | Mac 插件在线升级校验下载响应，HTML 发布页不再作为脚本安装；失败兜底改用 Tauri shell 打开系统浏览器。 | 更新插件升级检索标签；Graphify 本轮增量刷新。 |
+| 2026-10-16 | 低音增强去“假”：移除 200Hz 宽低架、tanh 谐波和会相位抵消的并联低通，改为 80Hz 真实 dB 低架 + 170Hz 轻度 mud cut。 | 未编译（按用户要求）；Rust 断言与内置 MPV 建图通过；更新 Playback And Media 音效流并重跑 Graphify。 |
 | 2026-10-16 | 响度三档按 FFmpeg 官方 `dynaudnorm` 语义重设（`g/m/r` 单调、`s=0`）；MPV 低音补回 Electron 的并联 tanh 激励，Web Audio 回退同步，低音预设高亮跟随 dB。 | 未编译（按用户要求）；内置 MPV 滤镜加载与 FFmpeg 三档 RMS 实测通过；Graphify 增量刷新，更新 Playback And Media 音效流。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the

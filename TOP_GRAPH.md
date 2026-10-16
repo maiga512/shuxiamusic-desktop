@@ -114,10 +114,11 @@ Equalizer and advanced effects no longer go through Web Audio. They sync into
 `mpv_set_audio_filters` via `syncNativeAudioFilters()`, then become labeled mpv
 filters in `mpv_player.rs` (`@eq` peaking, `@bass`, `@sur` WebKit-normalized
 `afir` surround with cached float IR, `@bal` pan, `@loud` `dynaudnorm`). `@bass`
-is a lowshelf main path plus a parallel low-frequency exciter
-(`lowpass@160 -> tanh asoftclip -> highpass@90 -> wet mix`) matching the
-Electron Web Audio implementation; the Web Audio fallback in `audioManager.ts`
-keeps the equivalent `WaveShaper` branch. `@loud` uses official `dynaudnorm`
+uses an 80Hz lowshelf for the real user-selected dB gain plus a light 170Hz
+mud cut (12% of positive gain). It intentionally avoids broad 150–200Hz
+lifting, phase-sensitive parallel lowpasses, and tanh/WaveShaper coloration.
+The Web Audio fallback in
+`audioManager.ts` keeps the equivalent lowshelf/mud-cut path. `@loud` uses official `dynaudnorm`
 semantics: `g` Gaussian smoothing, `m` max gain, and `r` target RMS increase
 monotonically from gentle to strong while `s=0` preserves local dynamics.
 Surround is dry + wet convolution, not `aecho`. Microphone permission is

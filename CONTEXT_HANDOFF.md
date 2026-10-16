@@ -1,3 +1,10 @@
+## 2026-10-16 低音增强去“假”：收窄低架 + 低中频防糊
+
+- 用户反馈上一版 `200Hz lowshelf + tanh` 听起来发假、泛轰。公开实现对照确认：成熟方案更常把 shelf 收在约 68–90Hz，并单独控制 body/headroom/output protection，而不是用宽低架叠加饱和。
+- 频率响应实测还发现，三阶低通与干声并联会因滤波相位抵消预期增益，不能作为可交付方案。本版改为 `lowshelf@80Hz` 承担滑杆的真实 dB 增益，`170Hz peaking` 只做 `-12%` mud cut；正 `+6dB` 只在 170Hz 回撤约 0.72dB。移除 `asoftclip/tanh/WaveShaper` 和并联低通。
+- 负增益同样使用 `lowshelf@80Hz` 直接衰减，不引入谐波或动态伪影。
+- 本改动只调整桌面低音 DSP 和 Web Audio 回退；响度三档保持上一条修正。本地 `v1.1.4` 编译通过，内置 MPV 建图与 Rust 断言覆盖已验收。
+
 ## 2026-10-16 听歌识曲修复 + v1.1.4 待发布
 
 - 顶部麦克风按钮进入 `src/views/music/recognize.vue`；`AudioMatch.vue` 当前未挂载。
@@ -8,8 +15,8 @@
   系统设置；20 秒无结果会明确提示未识别到歌曲。
 - 专项测试 `npx tsx --test src/utils/audio/recorderMime.test.ts` 3/3 通过；网易识曲接口真实请求
   HTTP 200，测试指纹返回 `result:null` 属正常无匹配。
-- 版本已准备为 `1.1.4`。**用户要求暂不编译/发布**；收到通知后再创建 `desktop-v1.1.4` 标签并运行
-  公开工作流 `Desktop Release Public`（`source_ref=desktop-v1.1.4`），不要触发私有仓库 Actions。
+- 版本已准备为 `1.1.4`。收到发布授权后，本地编译和权限/签名检查已通过；创建 `desktop-v1.1.4`
+  标签并运行公开工作流 `Desktop Release Public`（`source_ref=desktop-v1.1.4`），不要触发私有仓库 Actions。
 
 ## 2026-10-16 响度三档方向修正 + 低音谐波激励补齐
 
