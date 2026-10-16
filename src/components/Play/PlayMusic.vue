@@ -1479,8 +1479,10 @@ const moreMenuOptions = computed(() => {
    * 在房间中时显示"前往房间"+"离开房间"两个子项；
    * 不在房间则显示"创建房间"+"加入房间"。
    */
+  /* 一起听入口 —— 暂时停用（恢复：把 LISTEN_TOGETHER_ENTRY_ENABLED 改为 true）*/
+  const LISTEN_TOGETHER_ENTRY_ENABLED: boolean = false
   const lt = useListenTogetherStore()
-  if (lt.isInRoom) {
+  if (LISTEN_TOGETHER_ENTRY_ENABLED && lt.isInRoom) {
     opts.push({
       label: `一起听 · ${lt.meta?.name ?? '房间'}`,
       key: 'listen-together-go',
@@ -1498,7 +1500,7 @@ const moreMenuOptions = computed(() => {
         }
       ]
     })
-  } else {
+  } else if (LISTEN_TOGETHER_ENTRY_ENABLED) {
     opts.push({
       label: '一起听',
       key: 'listen-together',
@@ -2392,7 +2394,7 @@ watch(showFullPlay, (val) => {
         </div>
 
         <div class="extra-controls">
-          <!-- 一起听房间面板入口 —— 仅在房间内显示,点击直接展开房间浮层 -->
+          <!-- 一起听房间面板入口 —— 暂时停用
           <t-tooltip
             v-if="listenTogetherStore.isInRoom"
             :content="`一起听 · ${listenTogetherStore.meta?.name ?? '房间'} · 点击进入面板`"
@@ -2406,6 +2408,7 @@ watch(showFullPlay, (val) => {
               <UsergroupIcon size="20" />
             </t-button>
           </t-tooltip>
+          -->
 
           <!-- 播放模式按钮 -->
           <t-tooltip :content="playModeTip">
@@ -2536,8 +2539,9 @@ watch(showFullPlay, (val) => {
   <!-- 分享对话框 -->
   <ShareSongDialog v-model="shareDialogVisible" />
 
-  <!-- 一起听入口对话框 -->
+  <!-- 一起听入口对话框 —— 暂时停用
   <ListenTogetherEntryDialog v-model="listenTogetherEntryVisible" :mode="listenTogetherEntryMode" />
+  -->
 </template>
 
 <style lang="scss" scoped>

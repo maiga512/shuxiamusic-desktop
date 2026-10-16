@@ -20,6 +20,19 @@ try {
   console.error('[bootstrap] Tauri bridge 初始化失败:', error)
 }
 
+// window.api 已就绪后尽早实例化更新服务：挂载事件监听器（先于 15s 后台检查/任意更新事件），
+// 并读取持久化状态——若上一轮已“下载完成、待安装”，弹出“重启安装”对话框由用户确认。
+// 动态 import 避免在上方 createTauriBridge() 之前触发模块副作用。
+void (async () => {
+  try {
+    const { autoUpdateService } = await import('./services/autoUpdateService')
+    autoUpdateService.startListening()
+    await autoUpdateService.initFromPersistedState()
+  } catch (error) {
+    console.warn('[auto-update] 初始化更新服务失败:', error)
+  }
+})()
+
 // 只预热插件目录和注册表，不把全部洛雪 worker 拉进内存。真正切歌/搜源时再起对应 worker。
 
 if (window.location.hash.startsWith('#/desktop-lyric')) {
@@ -135,7 +148,12 @@ config.instance = logtoClient as InstanceType<typeof BrowserLogtoClient>
 installMessageBehavior()
 
 const AUTO_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+const AUTO_UPDATE_FIRST_DELAY_MS = 15_000
 let autoUpdateCheckTimer: number | undefined
+// 首次延迟定时器（与循环定时器分开，隐藏窗口时可一并取消）。
+let autoUpdateFirstTimer: number | undefined
+// 是否已处于“已排程”状态，避免每次窗口重新可见都重排一次 15s 检查。
+let autoUpdateScheduled = false
 let autoUpdateCheckInFlight = false
 
 async function checkForUpdatesInBackground() {
@@ -143,6 +161,7 @@ async function checkForUpdatesInBackground() {
   autoUpdateCheckInFlight = true
   try {
     // 走更新服务并标记为静默：后台检查不提示“已是最新”、检查报错也不弹窗。
+    // 有新版时由更新服务弹“发现新版本”对话框并自动下载（带进度），安装仍需用户点击确认。
     const { autoUpdateService } = await import('./services/autoUpdateService')
     await autoUpdateService.checkForUpdates({ silent: true })
   } catch (error) {
@@ -152,22 +171,45 @@ async function checkForUpdatesInBackground() {
   }
 }
 
-function stopBackgroundUpdateCheck() {
+function clearAutoUpdateTimers() {
+  if (autoUpdateFirstTimer) {
+    window.clearTimeout(autoUpdateFirstTimer)
+    autoUpdateFirstTimer = undefined
+  }
   if (autoUpdateCheckTimer) {
     window.clearInterval(autoUpdateCheckTimer)
     autoUpdateCheckTimer = undefined
   }
 }
 
+function scheduleFirstUpdateCheck() {
+  if (autoUpdateFirstTimer) return
+  autoUpdateFirstTimer = window.setTimeout(() => {
+    autoUpdateFirstTimer = undefined
+    void checkForUpdatesInBackground()
+    // 首轮完成后进入循环；循环已存在则不重复建。
+    if (!autoUpdateCheckTimer) {
+      autoUpdateCheckTimer = window.setInterval(() => {
+        void checkForUpdatesInBackground()
+      }, AUTO_UPDATE_CHECK_INTERVAL_MS)
+    }
+  }, AUTO_UPDATE_FIRST_DELAY_MS)
+}
+
+function stopBackgroundUpdateCheck() {
+  clearAutoUpdateTimers()
+  autoUpdateScheduled = false
+}
+
 function startBackgroundUpdateCheck() {
   if (window.location.hash.startsWith('#/desktop-lyric')) return
   if (settingsStore.settings.autoUpdate === false) return
-  window.setTimeout(() => {
-    void checkForUpdatesInBackground()
-    autoUpdateCheckTimer = window.setInterval(() => {
-      void checkForUpdatesInBackground()
-    }, AUTO_UPDATE_CHECK_INTERVAL_MS)
-  }, 15_000)
+  // 幂等：已排程就不再重排。否则每次窗口从隐藏恢复都会重排一次 15s 检查，
+  // 频繁切换窗口就会反复触发检查（表现为“一直弹检查更新”）。
+  if (autoUpdateScheduled) return
+  autoUpdateScheduled = true
+  // 隐藏再显示时若循环定时器仍在（短暂隐藏），只确保排程在，不重启 15s 首检。
+  if (!autoUpdateCheckTimer && !autoUpdateFirstTimer) scheduleFirstUpdateCheck()
 }
 
 const app = createApp(App)

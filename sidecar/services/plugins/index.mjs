@@ -7,7 +7,7 @@ import os from 'node:os'
 import crypto from 'node:crypto'
 import { Worker } from 'node:worker_threads'
 
-const APP_IDENTIFIER = 'com.cerumusic.tauri'
+const APP_IDENTIFIER = 'com.shuxiamusic.tauri'
 const MAX_LOG_LINES = 500
 const SOURCE_NAME_MAP = {
   kw: '酷我音乐',

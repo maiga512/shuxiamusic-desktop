@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { MessagePlugin } from 'tdesign-vue-next'
+import { finalizeDownloadedTask } from '@renderer/utils/audio/download'
 
 export enum DownloadStatus {
   Queued = 'queued',
@@ -67,6 +68,11 @@ export const useDownloadStore = defineStore('download', {
 
       window.api.download.onTaskCompleted((_event, updatedTask) => {
         this.updateTask(updatedTask)
+
+        // 下载完成后按"下载标签写入设置"真正写入封面/歌词/基础信息（fire-and-forget）。
+        // Node 下载引擎只落盘音频，标签写入在此补做，避免选项变成空菜单。
+        void finalizeDownloadedTask(updatedTask as any).catch(() => undefined)
+
         try {
           // 应用更新任务完成后推送系统通知，点击直接安装
           if (updatedTask?.songInfo?.source === 'update') {

@@ -412,7 +412,9 @@ const buildDownloadTask = (
       ? { ...songInfoWithTemplate, typeUrl: { [quality]: (songInfo as any).url } }
       : (songInfoWithTemplate as any),
     tagWriteOptions: toRaw(settingsStore.settings.tagWriteOptions),
-    isCache: true,
+    // 用户主动下载 = 永久保存到"下载目录"，不进缓存目录。
+    // 缓存目录只承接在线播放的自动缓存（见 getSongRealUrl 的 playback cache）。
+    isCache: false,
     lazy: true
   }
 }
@@ -611,7 +613,8 @@ async function downloadSingleSong(songInfo: MusicItem): Promise<void> {
       quality,
       songInfo: songInfoWithTemplate as any,
       tagWriteOptions: toRaw(settingsStore.settings.tagWriteOptions),
-      isCache: true,
+      // 用户主动下载 = 永久保存到"下载目录"，不进缓存目录（缓存目录只承接在线播放自动缓存）。
+      isCache: false,
       lazy: hasDirectUrl
     })
 
@@ -648,6 +651,61 @@ async function downloadSingleSong(songInfo: MusicItem): Promise<void> {
         content: msg || '未知错误'
       })
     }
+  }
+}
+
+/**
+ * 按"下载标签写入设置"抓歌词（标准 LRC / 逐字歌词）。
+ * Node 下载引擎落盘时不取歌词，这里在完成后按需补一次，供 Rust 侧写进文件。
+ */
+async function fetchDownloadLyric(
+  source: string,
+  songInfo: any,
+  format: string
+): Promise<string> {
+  try {
+    const data: any = await window.api.music.requestSdk('getLyric', {
+      source,
+      songInfo,
+      // 开 grep 才会返回 crlyric（逐字），标准用 lyric
+      grepLyricInfo: true,
+      useStrictMode: false
+    })
+    if (!data) return ''
+    if (typeof data === 'string') return data
+    if (format === 'word-by-word') return data.crlyric || data.lyric || ''
+    return data.lyric || data.crlyric || ''
+  } catch {
+    return ''
+  }
+}
+
+/**
+ * 下载完成后真正执行"下载标签写入设置"：内嵌封面、写基础信息、写入/单独下载歌词。
+ * Node sidecar 下载引擎本身只把音频字节写到磁盘，标签写入统一交给 Rust 的
+ * `download_finalize_metadata`（复用引擎的 exiftool 逻辑），否则这些选项就是空菜单。
+ * 全程静默，任何失败都不影响下载成功本身。
+ */
+export async function finalizeDownloadedTask(task: any): Promise<void> {
+  try {
+    const opts = task?.tagWriteOptions || {}
+    const needTags = !!opts.basicInfo || !!opts.cover || !!opts.lyrics
+    const needLrcFile = !!opts.downloadLyrics
+    if (!needTags && !needLrcFile) return
+    if (!task?.filePath) return
+
+    let lrc = typeof task.songInfo?.lrc === 'string' ? task.songInfo.lrc : ''
+    if ((opts.lyrics || opts.downloadLyrics) && !lrc) {
+      lrc = await fetchDownloadLyric(task.source, task.songInfo, opts.lyricFormat)
+    }
+
+    await window.api.download.finalizeMetadata({
+      filePath: task.filePath,
+      songInfo: { ...(task.songInfo || {}), lrc: lrc || '' },
+      tagWriteOptions: opts
+    })
+  } catch (error) {
+    console.warn('[download] 写入下载元数据失败:', error)
   }
 }
 

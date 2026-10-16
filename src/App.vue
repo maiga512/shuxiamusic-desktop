@@ -19,6 +19,8 @@
 
     <!-- 一起听 Toast —— 全屏播放器未展开时新聊天走这里(节流) -->
     <LtChatToast />
+    <!-- 全局更新对话框：发现新版本 → 下载进度条 → 下载完成 → 用户点“重启安装” -->
+    <UpdateDialog />
   </Provider>
   <router-view v-else />
   <GlobalContextMenu />
@@ -135,6 +137,7 @@ import { onMounted, onBeforeUnmount, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { useSettingsStore } from '@renderer/store/Settings'
+import UpdateDialog from '@renderer/components/UpdateDialog.vue'
 import shareAPI from '@renderer/api/share'
 import { startNasSyncPoller, stopNasSyncPoller } from '@renderer/services/nasSyncPoller'
 import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'

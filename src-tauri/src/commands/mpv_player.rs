@@ -706,11 +706,20 @@ fn ensure_surround_ir(cache_dir: &Path, mode: &str) -> Result<PathBuf, String> {
     let mut state: u64 = 0xC0FF_EE5E_ED00_0001;
     let mut frames = Vec::with_capacity(frame_count);
     let mut sum_sq = 0.0f64;
+    let mut lp_l = 0.0f64;
+    let mut lp_r = 0.0f64;
     for index in 0..frame_count {
         let progress = index as f64 / frame_count as f64;
         let volume = (1.0 - progress).powf(decay);
-        let left = ((lcg_unit(&mut state) * 2.0 - 1.0) * volume) as f32;
-        let right = ((lcg_unit(&mut state) * 2.0 - 1.0) * volume) as f32;
+        // 时间变化一阶低通：高频随时间衰减更快，模拟空气吸收。
+        // 纯噪声 IR 听感"金属感"，加低通后混响更像真实空间。
+        let lp_coeff = 1.0 - progress * 0.85;
+        let raw_l = lcg_unit(&mut state) * 2.0 - 1.0;
+        let raw_r = lcg_unit(&mut state) * 2.0 - 1.0;
+        lp_l += lp_coeff * (raw_l - lp_l);
+        lp_r += lp_coeff * (raw_r - lp_r);
+        let left = (lp_l * volume) as f32;
+        let right = (lp_r * volume) as f32;
         sum_sq += f64::from(left) * f64::from(left) + f64::from(right) * f64::from(right);
         frames.push((left, right));
     }
@@ -797,11 +806,14 @@ fn surround_enabled(request: &MpvAudioFiltersRequest) -> bool {
 
 fn surround_graph_fragment(cache_dir: &Path, mode: &str, wet: f64) -> Result<String, String> {
     let ir_path = ensure_surround_ir(cache_dir, mode)?;
+    // 湿信号额外降 3dB：干+湿直接混合(amix normalize=0)会让整体变响，
+    // 叠加低音增强/响度均衡后容易削波破音。降 3dB 后仍有环绕感但不炸。
+    let wet_safe = wet * 0.707; // -3dB 的线性等价值（旧代码 wet-3.0 会产生负增益/相位反转）
     Ok(format!(
-        "aformat=sample_fmts=fltp:channel_layouts=stereo,aresample={},asplit=2[dry][src];amovie={}[ir];[src][ir]afir=dry=1:wet={}:irnorm=-1:irfmt=input:minp=256:maxp=8192[wet];[dry][wet]amix=inputs=2:duration=first:dropout_transition=0:normalize=0",
+        "aformat=sample_fmts=fltp:channel_layouts=stereo,stereotools=slev=1.3:mlev=1,aresample={}:resampler=soxr:precision=28,asplit=2[dry][src];amovie={}[ir];[src][ir]afir=dry=1:wet={}:irnorm=-1:irfmt=input:minp=256:maxp=8192[wet];[dry][wet]amix=inputs=2:duration=first:dropout_transition=0:normalize=0",
         SURROUND_IR_SAMPLE_RATE,
         lavfi_escape_path(&ir_path),
-        fmt_db(wet)
+        fmt_db(wet_safe)
     ))
 }
 
@@ -837,28 +849,62 @@ fn push_loudness_filter(filters: &mut Vec<String>, loudness: Option<&MpvLoudness
     }
     // mpv/FFmpeg realtime loudness uses dynaudnorm, not DynamicsCompressor.
     // Downward acompressor + limiter made hot masters quieter than bypass.
-    // Delay is (g-1)/2*f ms; f=80,g=5 stays around 160ms.
+    // f=300ms 用 300ms 帧，增益变化更平滑，避免泵浦声。g=3 最多 +9dB。
+    // g=5(最多+14dB)太猛，和低音/环绕叠加容易削波破音。降到 g=3(+9dB)。
     let params = match loudness.target.as_str() {
-        "gentle" => "f=80:g=5:p=0.95:m=4:s=3:b=1",
-        "strong" => "f=80:g=5:p=0.95:m=16:s=10:b=1",
-        _ => "f=80:g=5:p=0.95:m=8:s=6:b=1",
+        "gentle" => "f=300:g=3:p=0.95:m=4:s=3:b=1",
+        "strong" => "f=300:g=3:p=0.95:m=16:s=10:b=1",
+        _ => "f=300:g=3:p=0.95:m=8:s=6:b=1",
     };
     filters.push(format!("dynaudnorm={}", params));
 }
 
-fn has_energy_boosting_effects(request: &MpvAudioFiltersRequest) -> bool {
-    let eq_boost = request.equalizer.as_ref().is_some_and(|equalizer| {
-        equalizer.enabled
-            && equalizer
-                .gains
-                .iter()
-                .any(|value| value.is_finite() && *value > 0.05)
-    });
-    let bass_boost = request
+/// 任何音效开启都需要限幅器兜底。
+/// 旧逻辑只在 EQ/低音有提升时启用，漏掉了环绕音和响度均衡——
+/// 单开环绕或单开响度时信号被推过 0dBFS 却没有限幅，就是破音根因。
+fn has_any_audio_effect(request: &MpvAudioFiltersRequest) -> bool {
+    let eq_on = request
+        .equalizer
+        .as_ref()
+        .is_some_and(|eq| eq.enabled);
+    let bass_on = request
         .bass_boost
         .as_ref()
-        .is_some_and(|bass| bass.enabled && bass.gain.is_finite() && bass.gain > 0.05);
-    eq_boost || bass_boost
+        .is_some_and(|bass| bass.enabled);
+    let surround_on = surround_enabled(request);
+    let loudness_on = request
+        .loudness
+        .as_ref()
+        .is_some_and(|loud| loud.enabled);
+    let balance_on = request
+        .balance
+        .as_ref()
+        .is_some_and(|bal| bal.enabled && bal.value.is_finite() && bal.value.abs() > 0.01);
+    eq_on || bass_on || surround_on || loudness_on || balance_on
+}
+
+/// 计算滤镜链可预期的最大增益提升（dB），用于输入端余量补偿。
+fn max_expected_boost_db(request: &MpvAudioFiltersRequest) -> f64 {
+    let mut max_boost = 0.0f64;
+    if let Some(eq) = &request.equalizer {
+        if eq.enabled {
+            for &gain in &eq.gains {
+                if gain.is_finite() && gain > max_boost {
+                    max_boost = gain;
+                }
+            }
+        }
+    }
+    if let Some(bass) = &request.bass_boost {
+        if bass.enabled && bass.gain.is_finite() && bass.gain > max_boost {
+            max_boost = bass.gain;
+        }
+    }
+    // 环绕干+湿混合约 +3dB
+    if surround_enabled(request) {
+        max_boost += 3.0;
+    }
+    max_boost.clamp(0.0, 15.0)
 }
 
 fn build_audio_filters(
@@ -866,18 +912,40 @@ fn build_audio_filters(
     cache_dir: Option<&Path>,
 ) -> Result<Vec<String>, String> {
     let mut filters = Vec::new();
+
+    // ---- 输入余量补偿（链头）----
+    // 按预期最大增益提升等量衰减输入，给 EQ/低音/环绕留余量。
+    // 这比"限幅"正确：限幅会把波形削平变形，后续 dynaudnorm 拿到的是
+    // 变形波形、处理结果不可预测；衰减只是等比缩小，波形完全不变。
+    let headroom = max_expected_boost_db(request);
+    if headroom > 0.05 {
+        filters.push(format!("@in:volume=volume=-{}dB", fmt_db(headroom)));
+    }
+
+    // @eq
     let mut eq = Vec::new();
     push_eq_filters(&mut eq, request.equalizer.as_ref());
     if !eq.is_empty() {
         filters.push(format!("@eq:lavfi=[{}]", eq.join(",")));
     }
 
+    // @bass
     let mut bass = Vec::new();
     push_bass_filter(&mut bass, request.bass_boost.as_ref());
     if let Some(spec) = bass.first() {
         filters.push(format!("@bass:{}", spec));
     }
 
+    // @loud（响度均衡放在混响之前）----
+    // 旧代码把 dynaudnorm 放在环绕混响后面，它会把混响尾巴也当信号去归一化，
+    // 产生"泵浦效应"（声音一涨一缩）。先做响度均衡，再加混响。
+    let mut loudness = Vec::new();
+    push_loudness_filter(&mut loudness, request.loudness.as_ref());
+    if let Some(spec) = loudness.first() {
+        filters.push(format!("@loud:{}", spec));
+    }
+
+    // @sur（环绕混响，在响度均衡之后）
     if surround_enabled(request) {
         let surround = request
             .surround
@@ -893,20 +961,18 @@ fn build_audio_filters(
         filters.push(format!("@sur:lavfi=[{}]", surround_fragment));
     }
 
+    // @bal
     let mut balance = Vec::new();
     push_balance_filter(&mut balance, request.balance.as_ref());
     if let Some(spec) = balance.first() {
         filters.push(format!("@bal:lavfi=[{}]", spec));
     }
 
-    let mut loudness = Vec::new();
-    push_loudness_filter(&mut loudness, request.loudness.as_ref());
-    if let Some(spec) = loudness.first() {
-        filters.push(format!("@loud:{}", spec));
-    }
-
-    if has_energy_boosting_effects(request) {
-        filters.push("@lim:alimiter=limit=0.95:attack=5:release=80".to_string());
+    // ---- 输出限幅 + 补偿增益（链尾兜底）----
+    // level=enabled 让 alimiter 自动补偿因限幅损失的响度（makeup gain），
+    // 避免"开了音效反而变小声"。limit=0.89 留 1dB 余量防 DAC 溢出。
+    if has_any_audio_effect(request) {
+        filters.push("@lim:alimiter=limit=0.89:attack=2:release=60:level=enabled".to_string());
     }
 
     filters.extend(request.filters.iter().cloned());
@@ -1733,13 +1799,13 @@ mod tests {
         assert!(graph.contains("@eq:lavfi=["));
         assert!(graph.contains("@bass:lowshelf=f=200:t=q:w=1:g=6"));
         assert!(graph.contains("@sur:lavfi=["));
-        assert!(graph.contains("@loud:dynaudnorm=f=80:g=5:p=0.95:m=8:s=6:b=1"));
-        assert!(graph.contains("afir=dry=1:wet=0.3:irnorm=-1"));
-        assert!(graph.contains("aresample=48000"));
+        assert!(graph.contains("@loud:dynaudnorm=f=300:g=3:p=0.95:m=8:s=6:b=1"));
+        assert!(graph.contains("afir=dry=1:wet=0.21:irnorm=-1"));
+        assert!(graph.contains("aresample=48000:resampler=soxr:precision=28"));
         assert!(graph.contains("asplit=2[dry][src]"));
         assert!(graph.contains("lowshelf=f=200:t=q:w=1:g=6"));
         assert!(graph.contains("equalizer=f=31:t=q:w=1:g=3"));
-        assert!(graph.contains("dynaudnorm=f=80:g=5:p=0.95:m=8:s=6:b=1"));
+        assert!(graph.contains("dynaudnorm=f=300:g=3:p=0.95:m=8:s=6:b=1"));
         assert!(!graph.contains("acompressor="));
         assert!(graph.contains("amovie="));
         assert!(!graph.contains("aecho="));
@@ -1784,9 +1850,13 @@ mod tests {
             ..MpvAudioFiltersRequest::default()
         };
         let graph = build_audio_filters(&request, Some(&dir)).unwrap().join(",");
-        assert!(graph.contains("afir=dry=1:wet=0.5:irnorm=-1"));
+        // wet=0.5*0.707=0.3535 -> "0.35"
+        assert!(graph.contains("afir=dry=1:wet=0.35:irnorm=-1"));
         assert!(graph.contains("@sur:lavfi=["));
-        assert!(!graph.contains("alimiter="));
+        // 环绕单独开也必须有限幅器兜底（旧代码漏掉，是破音根因之一）
+        assert!(graph.contains("@lim:alimiter="));
+        // 输入余量补偿（环绕干湿叠加约 +3dB）
+        assert!(graph.contains("@in:volume=volume=-3dB"));
         assert!(build_audio_filters(&request, Some(&dir))
             .unwrap()
             .iter()
@@ -1794,7 +1864,7 @@ mod tests {
     }
 
     #[test]
-    fn loudness_uses_dynaudnorm_without_limiter() {
+    fn loudness_uses_dynaudnorm_with_limiter() {
         let request = MpvAudioFiltersRequest {
             loudness: Some(MpvLoudnessRequest {
                 enabled: true,
@@ -1803,9 +1873,10 @@ mod tests {
             ..MpvAudioFiltersRequest::default()
         };
         let graph = build_audio_filters(&request, None).unwrap().join(",");
-        assert!(graph.contains("dynaudnorm=f=80:g=5:p=0.95:m=16:s=10:b=1"));
+        assert!(graph.contains("dynaudnorm=f=300:g=3:p=0.95:m=16:s=10:b=1"));
         assert!(graph.contains("@loud:dynaudnorm="));
-        assert!(!graph.contains("alimiter="));
+        // 响度单独开也必须有限幅器兜底（旧代码漏掉，是破音根因之一）
+        assert!(graph.contains("@lim:alimiter="));
         assert!(!graph.contains("acompressor="));
     }
 

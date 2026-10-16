@@ -43,7 +43,7 @@ const resolveProjectRoot = () => {
   return candidates[0]
 }
 const projectRoot = resolveProjectRoot()
-const APP_IDENTIFIER = 'com.cerumusic.tauri'
+const APP_IDENTIFIER = 'com.shuxiamusic.tauri'
 const electronRoot =
   process.env.CERU_ELECTRON_ROOT || path.join(projectRoot, 'sidecar/vendor/electron')
 const electronSrcRoot = path.join(electronRoot, 'src')

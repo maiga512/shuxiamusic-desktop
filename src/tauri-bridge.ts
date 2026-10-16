@@ -18,7 +18,7 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { open as openUrl } from '@tauri-apps/plugin-shell'
 import { exit as exitApp, relaunch as relaunchApp } from '@tauri-apps/plugin-process'
 import { BaseDirectory, remove } from '@tauri-apps/plugin-fs'
-import { checkUpdate, onUpdaterEvent, type UpdaterEvent } from './stubs/tauri-plugin-updater'
+import { checkUpdate, onUpdaterEvent, type UpdaterEvent, type UpdateResult } from './stubs/tauri-plugin-updater'
 import { pluginSandbox } from './utils/plugin/pluginSandbox'
 import convertEventDrivenPlugin from './utils/plugin/converter-event-driven'
 import convertMusicFreePlugin, {
@@ -3386,6 +3386,11 @@ function normalizeUpdaterProgress(input: any) {
 
 const updaterListenerDisposers = new Set<() => void>()
 
+// 缓存最近一次 checkUpdate 的结果（含 rid 与绑定好的 downloadAndInstall 闭包）。
+// 目的是下载/安装时复用 rid，避免 downloadUpdate/quitAndInstall 再跑一次 checkUpdate
+// （那会重复发 CHECKING 事件、重复“正在检查更新”，并多一次网络探测）。
+let lastCheckResult: UpdateResult | null = null
+
 function onUpdaterStatus(status: UpdaterEvent['status'], cb: (event: UpdaterEvent) => void): () => void {
   let disposed = false
   let innerDispose: (() => void) | null = null
@@ -4769,6 +4774,57 @@ export function createTauriBridge() {
         ])
         return Number(nodeSize || 0) > 0 ? nodeSize : rustSize
       },
+      getLimit: async () => {
+        return safeInvoke('music_cache_get_limit', undefined, { bytes: 5 * 1024 * 1024 * 1024, formatted: '5 GB' })
+      },
+      setLimit: async (bytes: number) => {
+        const rustResult = await safeInvoke('music_cache_set_limit', { bytes })
+        // 同步给 sidecar，让它按新上限执行 LRU 淘汰
+        try {
+          await invokeNodeMusicCache('setLimit', { bytes })
+        } catch (error) {
+          console.warn('[musicCache] 同步缓存上限到 sidecar 失败:', error)
+        }
+        return rustResult
+      },
+      touch: async (filePath: string) => {
+        try {
+          await invokeNodeMusicCache('touch', { path: filePath })
+        } catch { /* touch 失败不影响播放 */ }
+      },
+      // 在线播放音频文件缓存：命中返回 file:// 本地文件（第二次听直接播本地）
+      playbackGet: async (key: string) => {
+        try {
+          const res = await invokeNodeMusicCache('playback.get', { key })
+          return res || { hit: false }
+        } catch {
+          return { hit: false }
+        }
+      },
+      // 未命中时后台把在线歌曲音频落盘到缓存目录（fire-and-forget，调用方不 await 结果）
+      playbackCache: async (payload: {
+        key: string
+        url: string
+        headers?: Record<string, string>
+        referrer?: string
+        userAgent?: string
+        name?: string
+        artist?: string
+        quality?: string
+      }) => {
+        try {
+          await invokeNodeMusicCache('playback.cache', payload)
+        } catch { /* 落盘失败不影响播放 */ }
+      },
+    },
+
+    // ---- Cover Cache (封面缓存) ----
+    // 封面代理(cover_proxy)的磁盘缓存，独立于"歌曲缓存"：走自己的 200MB 上限 + 30 天淘汰。
+    // 纳入"存储管理"以便查看占用、手动清除。
+    coverCache: {
+      getInfo: async () =>
+        safeInvoke('cover_cache_info', undefined, { size: 0, count: 0, maxBytes: 0 }),
+      clear: async () => safeInvoke('cover_cache_clear', undefined, { success: false }),
     },
 
     // ---- URL Cache ----
@@ -4830,6 +4886,9 @@ export function createTauriBridge() {
       setDownloadDir: async (dir: string) => {
         return invokeNodeDownload('setDownloadDir', { dir })
       },
+      setCacheDir: async (dir: string) => {
+        return invokeNodeDownload('setCacheDir', { dir })
+      },
       getMaxConcurrent: async () => {
         const nodeResult = await invokeNodeDownload('getMaxConcurrent')
         if (typeof nodeResult === 'number') return nodeResult
@@ -4854,6 +4913,10 @@ export function createTauriBridge() {
           }
         }
       },
+      // 下载完成后按"下载标签写入设置"真正写入封面/歌词/基础信息。
+      // Node 下载引擎只落盘音频字节，标签写入统一走 Rust 侧 exiftool。
+      finalizeMetadata: async (payload: any) =>
+        safeInvoke('download_finalize_metadata', { args: payload }, null),
 
       onTaskAdded: (cb: (event: null, task: any) => void) => onElectronEvent('download:task-added', (event, task) => cb(event, normalizeDownloadTaskEvent(task))),
       onTaskProgress: (cb: (event: null, task: any) => void) => onElectronEvent('download:task-progress', (event, task) => cb(event, normalizeDownloadTaskEvent(task))),
@@ -5036,6 +5099,8 @@ export function createTauriBridge() {
       async checkForUpdates() {
         await recordAutoUpdateState('recordChecking')
         const result = await checkUpdate()
+        lastCheckResult = result ?? null
+
         // 必须在写 recordCheckResult 之前读旧状态：recordCheckResult 会把 status
         // 改成 update-available，从而把 pending 覆盖掉，守卫就永远失效、
         // 每次后台检查（6 小时一轮）都重新下载整包。
@@ -5055,45 +5120,46 @@ export function createTauriBridge() {
           shouldUpdate: Boolean(result?.shouldUpdate),
           manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
         })
-        if (result?.shouldUpdate && result.manifest) {
-          await (result.manifest as any).downloadAndInstall()
-          await recordAutoUpdateState('recordPending')
-        }
+        // 只负责“检查 + 记录”，不下载、不重启：
+        //   下载由前端对话框在“发现新版本”后触发（带进度条），
+        //   安装（重启）由用户点“重启安装”触发，避免自动覆盖应用。
         return result
       },
       async downloadUpdate(mode?: 'differential' | 'full') {
+        // 复用最近一次检查的 rid，不再重复 checkUpdate（避免二次“正在检查更新”与多余网络探测）。
+        let result = lastCheckResult
+        if (!result?.shouldUpdate) result = await checkUpdate()
+        lastCheckResult = result ?? null
+
         await recordAutoUpdateState('recordDownloadStarted', { mode })
-        const result = await checkUpdate()
-        await recordAutoUpdateState('recordCheckResult', {
-          shouldUpdate: Boolean(result?.shouldUpdate),
-          manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
-        })
         if (result?.shouldUpdate && result.manifest) {
+          await recordAutoUpdateState('recordCheckResult', {
+            shouldUpdate: true,
+            manifest: normalizeUpdateManifest(result.manifest),
+          })
+          // download_and_install 会下载并就地替换 .app；进度经 DOWNLOAD_PROGRESS 事件上报，
+          // 完成时发 DOWNLOADED。这里不重启——重启交给用户点“重启安装”(quitAndInstall)。
           await (result.manifest as any).downloadAndInstall()
-          await recordAutoUpdateState('recordDownloaded', { mode })
-          // macOS 是就地替换 .app，必须重启进程才能跑上新版本。
-          // 用户点「在线升级」预期是升级完直接用新版，这里装完自动重启。
-          try {
-            await relaunchApp()
-          } catch (error) {
-            console.warn('[updater] 自动重启失败，请手动重启:', error)
-          }
+          await recordAutoUpdateState('recordPending')
         } else {
           await recordAutoUpdateState('recordCheckResult', { shouldUpdate: false })
         }
       },
       async quitAndInstall() {
+        // 用户已确认安装。若尚未下载完成，先补下载；随后重启进程跑上新版本。
         const prev = await invokeNodeAutoUpdate('getState') as any
-        if (prev?.data?.status !== 'pending') {
-          const result = await checkUpdate()
-          await recordAutoUpdateState('recordCheckResult', {
-            shouldUpdate: Boolean(result?.shouldUpdate),
-            manifest: result?.manifest ? normalizeUpdateManifest(result.manifest) : null,
-          })
+        const pending = prev?.data?.status === 'pending'
+        if (!pending) {
+          let result = lastCheckResult
+          if (!result?.shouldUpdate) result = await checkUpdate()
+          lastCheckResult = result ?? null
           if (result?.shouldUpdate && result.manifest) {
+            await recordAutoUpdateState('recordCheckResult', {
+              shouldUpdate: true,
+              manifest: normalizeUpdateManifest(result.manifest),
+            })
             await recordAutoUpdateState('recordDownloadStarted', { mode: 'full' })
             await (result.manifest as any).downloadAndInstall()
-            await recordAutoUpdateState('recordDownloaded', { mode: 'full' })
           }
         }
         // macOS 的安装是就地替换 .app 包，必须重启进程才能跑上新版本。
@@ -5164,6 +5230,15 @@ export function createTauriBridge() {
             await invokeNodeDownload('setDownloadDir', { dir: normalized.downloadDir })
           } catch (error) {
             console.warn('[download] 同步下载目录到 sidecar 失败:', error)
+          }
+        }
+        // 缓存目录也要同步：sidecar 的 isCache 任务写 state.cacheDir，
+        // 不同步的话缓存文件写进默认 appDataDir/music-cache，设置页改的缓存目录不生效。
+        if (result?.success !== false && normalized.cacheDir) {
+          try {
+            await invokeNodeDownload('setCacheDir', { dir: normalized.cacheDir })
+          } catch (error) {
+            console.warn('[download] 同步缓存目录到 sidecar 失败:', error)
           }
         }
         return result

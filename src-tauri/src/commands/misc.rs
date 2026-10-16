@@ -4538,18 +4538,23 @@ fn is_audio_cache_file(path: &std::path::Path) -> bool {
 #[tauri::command]
 pub fn music_cache_clear(app: tauri::AppHandle, db: State<'_, Database>) -> Result<(), String> {
     let cache_dir = cache_storage_dir(&app, &db);
-    let Ok(entries) = std::fs::read_dir(&cache_dir) else {
-        return Ok(());
-    };
+    clear_audio_cache_recursive(std::path::Path::new(&cache_dir));
+    Ok(())
+}
 
+/// 递归清除缓存目录里的音频文件（旧代码只删顶层，子目录里的缓存删不掉）。
+fn clear_audio_cache_recursive(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.is_file() && is_audio_cache_file(&path) {
-            let _ = std::fs::remove_file(path);
+        if path.is_dir() {
+            clear_audio_cache_recursive(&path);
+        } else if path.is_file() && is_audio_cache_file(&path) {
+            let _ = std::fs::remove_file(&path);
         }
     }
-
-    Ok(())
 }
 
 // ==================== File System ====================

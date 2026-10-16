@@ -3,7 +3,7 @@ import path from 'node:path'
 import os from 'node:os'
 import { randomUUID } from 'node:crypto'
 
-const DEFAULT_IDENTIFIER = 'com.cerumusic.tauri'
+const DEFAULT_IDENTIFIER = 'com.shuxiamusic.tauri'
 const HISTORY_LIMIT = 120
 const DEFAULT_POLICY = {
   enabled: true,

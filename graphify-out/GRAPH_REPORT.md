@@ -1,16 +1,16 @@
-# Graph Report - 树夏Music-Desk-tauri  (2026-10-15)
+# Graph Report - 树夏Music-Desk-tauri  (2026-10-16)
 
 ## Corpus Check
-- 446 files · ~1,154,889 words
+- 449 files · ~1,165,792 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 7840 nodes · 15488 edges · 548 communities (304 shown, 244 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 281 edges (avg confidence: 0.68)
+- 7928 nodes · 16740 edges · 466 communities (292 shown, 174 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 284 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a0426b10`
+- Built from commit: `e1ea8060`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -312,39 +312,40 @@
 - @pixi/app
 - definitions
 - QueuePanel.vue
-- @tauri-apps/api
-- @tauri-apps/plugin-fs
+- qrcode
+- nsfwjs
+- @pixi/app
 - @tauri-apps/plugin-notification
 - LYRIC-01：桌面歌词窗口立刻显示
 - PLUGIN-LX：洛雪插件完整兼容
 - @tauri-apps/plugin-process
 - tauri
-- addToPlaylistAndPlay
+- @tauri-apps/plugin-dialog
 - SvgIcon.vue
 - onExtraMenuClick
+- @tauri-apps/cli
 - @tauri-apps/plugin-global-shortcut
 - ref_hpagent
-- @types/dompurify
-- tdesign-icons-vue-next
-- @types/qrcode
+- @tauri-apps/plugin-fs
+- @tauri-apps/plugin-notification
 - models.rs
-- @types/uuid
-- typescript
-- unplugin-auto-import
+- @tauri-apps/plugin-process
+- tdesign-vue-next
+- virtua
 - macOS 应用公证指南
-- @vueuse/core
+- @tauri-apps/cli
 - 树夏Music 性能测试指南
-- .migrate
-- songlist
-- PermissionEntry
+- @types/dompurify
+- @types/qrcode
+- @types/uuid
 - converter-musicfree.mjs
-- db.rs
+- unplugin-auto-import
 - @pixi/filter-color-matrix
 - socket.io-client
 - three
-- @types/uuid
+- @vueuse/core
 - applyFullPlayGesture
-- typescript
+- addToPlaylistAndPlay
 - unplugin-auto-import
 - 树夏Music 六状态功耗测试指南
 - 已识别的性能热点
@@ -353,21 +354,23 @@
 - 滚动修复验证清单
 - properties
 - properties
-- music_sdk_request
-- @vueuse/core
-- db.rs
-- array_at
+- onExtraMenuClick
+- LyricExtras.ts
+- windowDrag.ts
+- createWorkerRuntime
+- iconfont.js
+- searchValue
+- PermissionEntry
 - isAppWindowActive
+- sass-embedded
 - ref_node_crypto
 - sidecar/index.mjs
 - webviews
 - 树夏Music 六状态功耗验证计划
 - webviews
-- handle_get_leaderboards
 - NAS 多端同步成熟方案对照
 - 桌面版双平台发布（GitHub + Gitee）
 - Windows Packaging
-- tx_get_music_url
 - desktop-schema.json
 - macOS-schema.json
 - @renderer/components/Settings/EqualizerSettings.vue
@@ -375,10 +378,7 @@
 - local
 - local
 - analyze_csv
-- PermissionEntry
-- EmptyStrExt
 - monitor_performance
-- marked
 - analyze-webview-memory.sh
 - publish-gitee-local.sh
 - shazamio-core
@@ -392,23 +392,6 @@
 - collect-windows.sh
 - trace-localhost-process.sh
 - users_songsong_movies_ceru_tauri_sidecar_vendor_electron_src_main_utils_utils
-- Path
-- AppHandle
-- Arc
-- Client
-- HashMap
-- Mutex
-- Option
-- Path
-- PathBuf
-- Result
-- Runtime
-- Self
-- SocketAddr
-- String
-- TcpStream
-- Value
-- Vec
 - AppHandle
 - Arc
 - Mutex
@@ -419,17 +402,6 @@
 - SocketAddr
 - String
 - TcpStream
-- Vec
-- AppHandle
-- Arc
-- DownloadTask
-- HashMap
-- Mutex
-- Option
-- Result
-- Sender
-- String
-- Value
 - Vec
 - AppHandle
 - HashMap
@@ -458,17 +430,6 @@
 - String
 - TcpStream
 - Vec
-- AppHandle
-- Client
-- DownloadTask
-- Map
-- Option
-- Path
-- Result
-- State
-- String
-- Value
-- Vec
 - Result
 - String
 - Value
@@ -487,52 +448,11 @@
 - Value
 - Vec
 - AppHandle
-- Arc
-- Child
-- HashMap
-- Mutex
-- Option
-- Path
-- PathBuf
-- Result
-- Self
-- Sender
-- String
-- Value
-- Vec
-- AppHandle
 - HashMap
 - Option
 - PluginInfo
 - Result
 - State
-- String
-- Value
-- Vec
-- AppHandle
-- DownloadTask
-- Option
-- Path
-- Result
-- SongList
-- SongListStatistics
-- Songs
-- SongStatistics
-- State
-- String
-- Value
-- Vec
-- DownloadTask
-- Mutex
-- Option
-- PathBuf
-- PluginInfo
-- Result
-- Self
-- SongList
-- SongListStatistics
-- Songs
-- SongStatistics
 - String
 - Value
 - Vec
@@ -557,12 +477,12 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `httpFetch()` - 162 edges
-2. `vue` - 121 edges
-3. `createTauriBridge()` - 112 edges
-4. `@renderer/components/Settings/plugins.vue` - 95 edges
-5. `SyncDatabase` - 89 edges
-6. `Database` - 75 edges
-7. `e()` - 73 edges
+2. `Database` - 153 edges
+3. `vue` - 122 edges
+4. `createTauriBridge()` - 112 edges
+5. `@renderer/components/Settings/plugins.vue` - 95 edges
+6. `SyncDatabase` - 89 edges
+7. `e()` - 74 edges
 8. `isNativePlaybackActive()` - 58 edges
 9. `LocalUserDetailStore` - 54 edges
 10. `createRouter()` - 50 edges
@@ -576,19 +496,19 @@
   src/utils/AGENTS.md → sidecar/vendor/electron/src/main/utils/musicSdk/AGENTS.md
 - `submit()` --indirect_call--> `e()`  [INFERRED]
   src/components/Dev/DevAuthInjector.vue → sidecar/vendor/electron/src/main/utils/musicSdk/kg/vendors/infSign.min.js
-- `preloadRoutes()` --indirect_call--> `e()`  [INFERRED]
-  src/router/index.ts → sidecar/vendor/electron/src/main/utils/musicSdk/kg/vendors/infSign.min.js
+- `handleSearch()` --indirect_call--> `e()`  [INFERRED]
+  src/components/Music/LocalTagEditor.vue → sidecar/vendor/electron/src/main/utils/musicSdk/kg/vendors/infSign.min.js
 
 ## Import Cycles
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/hotSearch.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kg/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/wy/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
-- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/leaderboard.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
+- 3-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/songList.js -> sidecar/vendor/electron/src/main/utils/musicSdk/kw/album.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/comment.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/musicInfo.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
 - 4-file cycle: `sidecar/vendor/electron/src/main/utils/musicSdk/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/index.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/lyric.js -> sidecar/vendor/electron/src/main/utils/musicSdk/tx/musicInfo.js -> sidecar/vendor/electron/src/main/utils/musicSdk/index.js`
@@ -600,19 +520,19 @@
 - **Renderer To Native Sidecar Boundary Flow** — top_graph_flow_renderer_native, top_graph_community_ipc_bridge, top_graph_community_node_sidecar, top_graph_community_plugin_service, top_graph_community_music_sdk [EXTRACTED 1.00]
 - **Tauri Platform Boundary** — context_handoff_tauri_architecture, context_handoff_async_sidecar_ipc [EXTRACTED 1.00]
 
-## Communities (548 total, 244 thin omitted)
+## Communities (466 total, 174 thin omitted)
 
 ### Community 0 - "native_audio.rs"
 Cohesion: 0.06
 Nodes (69): audiodecoderoptions, cpal, Device, error_as_symphoniaerror, FnMut, formats, hint, mediasourcestream (+61 more)
 
 ### Community 1 - "misc.rs"
-Cohesion: 0.03
-Nodes (38): downloadengine, timezone, app_flag_get(), app_flag_set(), AudioUrlInfo, cache_storage_dir(), default_media_user_agent(), dir_size_recursive() (+30 more)
+Cohesion: 0.12
+Nodes (69): DirectorySettings, downloadengine, cache_directory_info(), cache_storage_dir(), default_cache_dir(), default_download_dir(), directory_settings_get_directories(), directory_settings_reset_directories() (+61 more)
 
 ### Community 2 - "PlayMusic.vue"
 Cohesion: 0.02
-Nodes (128): ref_applemusic_like_lyrics_core_style_css, applyDockProgressVisual(), applyVolumeFromClientY(), appWindowVisible, { Audio }, bg, blobOrUrlToDataUrl(), canSwitchQuality (+120 more)
+Nodes (113): ref_applemusic_like_lyrics_core_style_css, applyVolumeFromClientY(), appWindowVisible, { Audio }, bg, blobOrUrlToDataUrl(), canSwitchQuality, contrastTextColor (+105 more)
 
 ### Community 3 - "packages/shared-contract/src/index.ts"
 Cohesion: 0.02
@@ -624,11 +544,11 @@ Nodes (24): filterBDListDetail(), filterInfoHotTag(), filterList(), filterList2(
 
 ### Community 5 - "list.vue"
 Cohesion: 0.04
-Nodes (75): bgImageFromRoute, bgImageLoaded, checkCloudSync(), clearLocateBtnTimer(), clearLocateScrollTimers(), cloudNextPos, currentPage, currentPlayingSongInfo (+67 more)
+Nodes (77): bgImageFromRoute, bgImageLoaded, clearLocateBtnTimer(), clearLocateScrollTimers(), cloudNextPos, currentPage, currentPlayingSongInfo, currentSong (+69 more)
 
 ### Community 6 - "http.ts"
-Cohesion: 0.21
-Nodes (23): buildValidatedMedia(), buildValidationKey(), firstText(), getMediaRequest(), invalidateGatewayValidation(), MediaGatewayCache, MediaGatewayOptions, MediaProxyRequest (+15 more)
+Cohesion: 0.11
+Nodes (41): autoSwitchSource(), createSourceSwitchDialog(), getCandidateSongs(), NON_SEARCHABLE_SOURCES, parseInterval(), SEARCHABLE_SOURCE_ORDER, strSim(), SWITCH_DIALOG_SOURCE_LABELS (+33 more)
 
 ### Community 7 - "time"
 Cohesion: 0.29
@@ -636,7 +556,7 @@ Nodes (9): uuid, api(), ensure_release(), find_release(), publish_tag(), Path, �
 
 ### Community 8 - "FullPlay.vue"
 Cohesion: 0.03
-Nodes (72): activeLayer, actualCoverImage, { Audio }, backdropInputKey, backdropScrim, bakedBackdropKey, bgBaseColorA, bgBaseColorB (+64 more)
+Nodes (73): activeLayer, actualCoverImage, { Audio }, backdropInputKey, backdropScrim, bakedBackdropKey, bgBaseColorA, bgBaseColorB (+65 more)
 
 ### Community 9 - "createHttpFetch"
 Cohesion: 0.21
@@ -644,63 +564,63 @@ Nodes (17): getAlbumDetail(), getAlbumInfo(), createGetMusicInfosTask(), filterM
 
 ### Community 10 - "songlist.vue"
 Cohesion: 0.04
-Nodes (85): ref_default_cover_png, getAutoSyncSongListAPI(), getPreferredSongListAPI(), songListAPI, isNasSyncApplyingRemoteEvents(), useAuthStore, mapCloudSongToLocal(), extractCoverUrl() (+77 more)
+Nodes (73): getAutoSyncSongListAPI(), getPreferredSongListAPI(), isNasSyncApplyingRemoteEvents(), SyncEvent, addPlaylistState(), closeContextMenu(), confirmNetworkImport(), contextMenuOptions (+65 more)
 
 ### Community 11 - "SongVirtualList.vue"
 Cohesion: 0.03
-Nodes (68): calculateMenuPosition(), acquireSlot(), addSelectedToSongList(), contextMenuItems, contextMenuPosition, contextMenuSong, contextMenuVisible, coverControllers (+60 more)
+Nodes (64): calculateMenuPosition(), acquireSlot(), addSelectedToSongList(), contextMenuItems, contextMenuPosition, contextMenuSong, contextMenuVisible, coverControllers (+56 more)
 
 ### Community 12 - "LocalUserDetail.ts"
-Cohesion: 0.14
-Nodes (21): ensureSongListFlushListeners(), flushPendingSongList(), flushPendingUserInfo(), persistSongList(), persistUserInfo(), scheduleCurrentTimePersist(), scheduleSongListPersist(), scheduleUserInfoPersist() (+13 more)
+Cohesion: 0.07
+Nodes (38): podcastApi, Comment, CommentResponse, DEFAULT_SONG_INFO, getBlobUrlFromUrl(), isRemoteCoverUrl(), Player, resolveCoverDisplayUrl() (+30 more)
 
 ### Community 13 - "Database"
-Cohesion: 0.04
-Nodes (3): HashSet, Row, Database
+Cohesion: 0.05
+Nodes (23): Connection, HashSet, Row, rusqlite, hotkeys_get(), local_music_get_list(), Database, DownloadTask (+15 more)
 
 ### Community 14 - "@renderer/components/Settings/plugins.vue"
 Cohesion: 0.04
-Nodes (57): buildNasSyncServerUrl(), parseNasSyncServerUrl(), @renderer/components/Settings/plugins.vue, ApiResult, buildPluginConfigForSave(), collapsedGroups, configDialogVisible, configPluginId (+49 more)
+Nodes (61): @renderer/components/Settings/plugins.vue, ApiResult, buildPluginConfigForSave(), collapsedGroups, configDialogVisible, configPluginId, configPluginName, configSaving (+53 more)
 
 ### Community 15 - "local.vue"
 Cohesion: 0.04
-Nodes (55): addAllToPlaylist(), addToPlaylistAndPlay(), batchState, clearLocateBtnTimer(), clearLocateScrollTimers(), clearScan(), contextMenuItems, contextMenuPosition (+47 more)
+Nodes (31): batchState, contextMenuItems, contextMenuPosition, contextMenuSong, contextMenuVisible, currentPlayingSongInfo, displaySongs, globalPlayStatus (+23 more)
 
 ### Community 16 - "database"
-Cohesion: 0.05
-Nodes (73): database, DirectorySettings, cache_directory_info(), cache_storage_dir(), default_cache_dir(), default_download_dir(), directory_settings_get_directories(), directory_settings_reset_directories() (+65 more)
+Cohesion: 0.16
+Nodes (20): asNumber(), asOptionalString(), asString(), durationTextFrom(), formatDurationText(), normalizeQualities(), normalizeSong(), normalizeTrackKey() (+12 more)
 
 ### Community 17 - "globaPlayList.ts"
-Cohesion: 0.06
-Nodes (67): applyCurrentSongInfo(), armStallWatchdog(), { Audio }, autoNextCount, buildPlaybackFailureMessage(), buildShuffleOrder(), cancelPendingAutoNext(), controlAudio (+59 more)
+Cohesion: 0.05
+Nodes (96): resolve(), isPodcastProgram(), verifyPlayableUrl(), applyCurrentSongInfo(), applyPlayableUrl(), armStallWatchdog(), { Audio }, autoNextCount (+88 more)
 
 ### Community 18 - "SyncDatabase"
 Cohesion: 0.09
-Nodes (12): applyGlobalEffects(), applyGlobalEQ(), @renderer/components/Settings/AudioEffectSettings.vue, applyEffects(), audioStore, { bassBoost, surround, balance, loudness }, bassPreset, store (+4 more)
+Nodes (31): filterListDetail(), getAlbumListDetail(), kw, boardList, filterBoardsData(), filterData(), getBoards(), getBoardsData() (+23 more)
 
 ### Community 19 - "nasSync.ts"
-Cohesion: 0.09
-Nodes (49): ShuxiaPlaylistFavorite, ShuxiaPodcastFavorite, ShuxiaPodcastFavoriteMutationInput, backupLocalPodcastFavoritesToCloud(), canUseNasSync(), enqueuePodcastFavoriteMutation(), favoritePodcast(), findNasSyncPluginId() (+41 more)
+Cohesion: 0.06
+Nodes (66): ShuxiaFavoriteMutationResult, ShuxiaFavoriteSyncPage, ShuxiaPlaylistFavorite, ShuxiaPlaylistFavoriteMutationInput, ShuxiaPodcastFavorite, ShuxiaPodcastFavoriteMutationInput, BackendPlaylistFavorite, cloudFavoriteAPI (+58 more)
 
 ### Community 20 - "podcastOfficial.js"
 Cohesion: 0.09
 Nodes (56): augmentCookie(), buildApiHeader(), categoryTotalCache, categoryTotalPending, checkQrLogin(), clearLogin(), cloudmusicDllEncodeId(), cookieJar (+48 more)
 
 ### Community 21 - "HeroLogo.vue"
-Cohesion: 0.08
-Nodes (30): adminToken, auth(), baseUrl, request(), results, song(), renderAdminPage(), createSyncServer() (+22 more)
+Cohesion: 0.10
+Nodes (24): adminToken, auth(), baseUrl, request(), results, renderAdminPage(), createSyncServer(), DynamicRoute (+16 more)
 
 ### Community 22 - "kg/songList.js"
-Cohesion: 0.14
-Nodes (33): createGetListDetail2Task(), createHttp(), createTask(), decodeGcid(), deDuplication(), filterData(), filterInfoHotTag(), filterList() (+25 more)
+Cohesion: 0.11
+Nodes (39): filterComment(), getComment(), getHotComment(), getReplyComment(), replaceAt(), createGetListDetail2Task(), createHttp(), createTask() (+31 more)
 
 ### Community 23 - "wrapCoverUrlIfNeeded"
-Cohesion: 0.03
-Nodes (117): onUpdaterEvent(), aiStreamListenerDisposers, applyWindowProgressBar(), appWindow, AppWindowStatePayload, buildDialogNoticeFromRaw(), BUILTIN_METADATA_APIS, clearAiStreamListeners() (+109 more)
+Cohesion: 0.40
+Nodes (6): mergeDownloadTaskLists(), normalizeDownloadStatus(), normalizeDownloadTask(), normalizeDownloadTaskEvent(), normalizeDownloadTaskList(), parseDownloadTimestamp()
 
 ### Community 24 - "tauri-bridge.ts"
-Cohesion: 0.14
-Nodes (13): appContainerStyle, bgBlur, bgBrightness, bgOpacity, bgSettings, bgType, bgUrl, isEnabled (+5 more)
+Cohesion: 0.07
+Nodes (67): ai_ask_stream(), app_flag_get(), app_flag_set(), build_file_path(), cache_storage_dir(), clipboard_read_text(), create_download_task(), dialog_open_file() (+59 more)
 
 ### Community 25 - "nasSyncPoller.ts"
 Cohesion: 0.09
@@ -708,35 +628,35 @@ Nodes (61): getNasConfig(), getNasSyncMode(), getNasSyncScope(), getScopedNasSyn
 
 ### Community 26 - "ChatPanel.vue"
 Cohesion: 0.04
-Nodes (45): src_components_contextmenu_index_contextmenu, authStore, autoResize(), ContentSegment, copyMessage(), ctxMenuItems, ctxMenuPosition, ctxMenuVisible (+37 more)
+Nodes (47): src_components_contextmenu_index_contextmenu, authStore, autoResize(), ChatRow, ContentSegment, copyMessage(), ctxMenuItems, ctxMenuPosition (+39 more)
 
 ### Community 27 - "更新日志 (Changelog)"
-Cohesion: 0.10
-Nodes (17): ref_tauri_apps_api_window, controlsClass, ControlStyle, handleClose(), handleCloseChoice(), handleMiniMode(), isAppFullscreen, props (+9 more)
+Cohesion: 0.12
+Nodes (14): controlsClass, ControlStyle, handleClose(), handleCloseChoice(), handleMiniMode(), isAppFullscreen, props, rememberChoice (+6 more)
 
 ### Community 28 - "ListenTogether.ts"
-Cohesion: 0.11
-Nodes (25): ChatRow, actionsFor(), buildOptions(), handleAction(), lt, sortedMembers, ClientEvents, ErrorCodes (+17 more)
+Cohesion: 0.04
+Nodes (73): probeDownloadUrl(), createRoom(), CreateRoomPayload, getMyCurrentRoom(), getRoomPreview(), request, ResolveCodePayload, resolveRoom() (+65 more)
 
 ### Community 29 - "tx/lyric.js"
-Cohesion: 0.12
-Nodes (29): createMusicuFetch(), filterAlbumList(), filterMusicInfoItem(), filterSongList(), getAlbumList(), getInfo(), getSongList(), formatSingerName() (+21 more)
+Cohesion: 0.07
+Nodes (52): ref_crypto, formatSingerName(), applyEmoji(), cursorTools, emojis, filterComment(), getComment(), getHotComment() (+44 more)
 
 ### Community 30 - "PlaylistDrawer.vue"
 Cohesion: 0.05
-Nodes (51): autoScrollTimer, cleanupDragListeners(), currentOperatingSong, displayList, dragCurrentY, draggedIndex, draggedSong, dragOverIndex (+43 more)
+Nodes (50): autoScrollTimer, cleanupDragListeners(), currentOperatingSong, displayList, dragCurrentY, draggedIndex, draggedSong, dragOverIndex (+42 more)
 
 ### Community 31 - "ShareSongDialog.vue"
 Cohesion: 0.05
 Nodes (39): authStore, availableTemplates, consented, defaultSteps(), doShare(), emit, ensurePluginUploaded(), expiryText (+31 more)
 
 ### Community 32 - "value"
-Cohesion: 0.09
-Nodes (30): filterListDetail(), getAlbumListDetail(), boardList, filterBoardsData(), filterData(), getBoards(), getBoardsData(), getData() (+22 more)
+Cohesion: 0.10
+Nodes (14): downloadSpeed, ensureSpeedTimer(), indeterminate, isDownloading, notes, percentText, phaseEmoji, phaseTitle (+6 more)
 
 ### Community 33 - "mg/songList.js"
-Cohesion: 0.09
-Nodes (35): getAlbumDetail(), getAlbumInfo(), boardList, getBoardsData(), getData(), getList(), getUrl(), createGetMusicInfosTask() (+27 more)
+Cohesion: 0.08
+Nodes (36): getAlbumDetail(), getAlbumInfo(), boardList, getBoardsData(), getData(), getList(), getUrl(), createGetMusicInfosTask() (+28 more)
 
 ### Community 34 - "scripts"
 Cohesion: 0.18
@@ -748,31 +668,31 @@ Nodes (40): activeSubmenu, adjustSubmenuPosition(), canScrollDown, canScrollUp, 
 
 ### Community 36 - "nativePlayback.ts"
 Cohesion: 0.12
-Nodes (53): applyPlaybackRate(), applyPlayableUrl(), applyMpvVolumeNow(), applyProgressToStore(), applyStateToStore(), armClock(), currentNativeMedia(), disableNativePlayback() (+45 more)
+Nodes (52): applyMpvVolumeNow(), applyProgressToStore(), applyStateToStore(), armClock(), attachNativePlaybackStore(), currentNativeMedia(), disableNativePlayback(), ensureNativePlayback() (+44 more)
 
 ### Community 37 - "SharePlaylistDialog.vue"
 Cohesion: 0.05
-Nodes (39): renderSharePoster(), allowWebPlayback, availableTemplates, buildPoster(), consented, defaultSteps(), doShare(), emit (+31 more)
+Nodes (43): downloadDataUrl(), renderSharePoster(), allowWebPlayback, availableTemplates, buildPoster(), consented, defaultSteps(), doShare() (+35 more)
 
 ### Community 38 - "podcast.vue"
 Cohesion: 0.04
-Nodes (59): blockStates, BlockViewState, canTogglePodcastFavorites, categories, Category, categoryCols, categoryError, categoryEstimatedPages (+51 more)
+Nodes (66): blockStates, BlockViewState, canTogglePodcastFavorites, categories, Category, categoryCols, categoryError, categoryEstimatedPages (+58 more)
 
 ### Community 39 - "dependencies"
 Cohesion: 0.05
-Nodes (41): color-extraction, iconv-lite, lodash, @lrc-player/core, @lrc-player/parse, naive-ui, nsfwjs, dependencies (+33 more)
+Nodes (41): animate.css, @applemusic-like-lyrics/lyric, @applemusic-like-lyrics/vue, axios, color-extraction, lodash, @lrc-player/core, marked (+33 more)
 
 ### Community 40 - "DeskTopLyric.vue"
 Cohesion: 0.05
-Nodes (26): cachedBounds, computedFontSize, computeHoverCursor(), contentRefs, currentLyricIndex, cursorStyle, debouncedSaveConfig, dragState (+18 more)
+Nodes (29): cachedBounds, computedFontSize, computeHoverCursor(), contentRefs, currentLyricIndex, cursorStyle, debouncedSaveConfig, dragState (+21 more)
 
 ### Community 41 - "Provider.vue"
 Cohesion: 0.05
-Nodes (40): appInteractiveReady, applyTheme(), audioOutputStore, audioSelectorVisible, authStore, closeSponsorPrompt(), confirmImportPrompt(), confirmImportPromptPath() (+32 more)
+Nodes (46): appInteractiveReady, applyTheme(), audioOutputStore, audioSelectorVisible, authStore, clearUsageInterval(), closeSponsorPrompt(), confirmImportPrompt() (+38 more)
 
 ### Community 42 - "kw/songList.js"
-Cohesion: 0.13
-Nodes (23): ShuxiaFavoriteMutationResult, ShuxiaFavoriteSyncPage, ShuxiaPlaylistFavoriteMutationInput, BackendPlaylistFavorite, cloudFavoriteAPI, CloudSongDto, CloudSongList, cloudSongListAPI (+15 more)
+Cohesion: 0.18
+Nodes (19): e(), toggleDesktopLyric(), base64ToFile(), isBase64(), CloudSyncHelperOptions, createCloudPlaylistFromLocal(), getSongListSyncAPI(), handleSyncToCloudHelper() (+11 more)
 
 ### Community 43 - "LyricAdapter.vue"
 Cohesion: 0.12
@@ -783,48 +703,48 @@ Cohesion: 0.14
 Nodes (9): useContextMenu(), useListItemContextMenu(), useSongContextMenu(), useTextSelectionContextMenu(), createMenuItem(), createSeparator(), groupMenuItems(), validateMenuItem() (+1 more)
 
 ### Community 45 - "mpv_player.rs"
-Cohesion: 0.07
-Nodes (106): command, process, apply_error(), apply_http_options(), apply_labeled_audio_filters(), apply_mpv_command_env(), build_audio_filters(), command() (+98 more)
+Cohesion: 0.08
+Nodes (103): apply_error(), apply_http_options(), apply_labeled_audio_filters(), apply_mpv_command_env(), build_audio_filters(), command(), current_generation(), current_ipc_path() (+95 more)
 
 ### Community 46 - "dlna.rs"
-Cohesion: 0.12
-Nodes (31): AtomicBool, TcpListener, UdpSocket, DeviceServices, dlna_get_devices(), dlna_get_position(), dlna_get_volume(), dlna_pause() (+23 more)
+Cohesion: 0.11
+Nodes (32): AtomicBool, duration, TcpListener, UdpSocket, DeviceServices, dlna_get_devices(), dlna_get_position(), dlna_get_volume() (+24 more)
 
 ### Community 47 - "request.js"
-Cohesion: 0.08
-Nodes (35): ref_crypto, ref_dns, api_test, handleResult(), musicSearch(), search(), filterData(), getBatchMusicQualityInfo() (+27 more)
+Cohesion: 0.09
+Nodes (31): ref_dns, api_test, handleResult(), musicSearch(), search(), getBatchMusicQualityInfo(), api_temp, api_test (+23 more)
 
 ### Community 48 - "settings/index.vue"
 Cohesion: 0.12
-Nodes (11): ALLOWED_CLOUD_SONG_SOURCES, json(), normalizePlaylistSongs(), SyncDatabase, handleDynamicRoute(), getText, parseJsonArray(), PlaylistInput (+3 more)
+Nodes (12): ALLOWED_CLOUD_SONG_SOURCES, getFavoritePosition(), json(), parseJson(), SyncDatabase, toFavorite(), toSyncEvent(), handleDynamicRoute() (+4 more)
 
 ### Community 49 - "search.vue"
 Cohesion: 0.05
-Nodes (37): activeTab, currentPage, currentSong, fetchPlaylists(), fetchRadios(), filenameTemplate, handleDownload(), handleScroll() (+29 more)
+Nodes (36): activeTab, currentPage, currentSong, fetchPlaylists(), fetchRadios(), filenameTemplate, handleScroll(), hasMore (+28 more)
 
 ### Community 50 - "wy/songList.js"
-Cohesion: 0.08
-Nodes (34): applyEmoji(), cursorTools, emojis, filterComment(), getComment(), getHotComment(), wy, filterBoardsData() (+26 more)
+Cohesion: 0.46
+Nodes (7): createMusicuFetch(), filterAlbumList(), filterMusicInfoItem(), filterSongList(), getAlbumList(), getInfo(), getSongList()
 
 ### Community 51 - "lib.rs"
-Cohesion: 0.08
-Nodes (78): App, Box, deeplinkext, dlna, Error, Image, Instant, Menu (+70 more)
+Cohesion: 0.06
+Nodes (107): App, Box, deeplinkext, dlna, Error, Image, Instant, Menu (+99 more)
 
 ### Community 52 - "pluginSandbox.ts"
 Cohesion: 0.15
 Nodes (12): crypto-js, crypto-js, utf8ToBytes(), createNodeCryptoShim(), createShuxiumusicApi(), cryptoMode(), cryptoPadding(), HttpRequestResult (+4 more)
 
 ### Community 53 - "playlistManager.ts"
-Cohesion: 0.11
-Nodes (15): @renderer/components/Settings/MusicCache.vue, cacheInfo, clearCache(), emit, loadCacheInfo(), refreshCacheInfo(), DirectorySettings, directorySettingsRef (+7 more)
+Cohesion: 0.21
+Nodes (14): atomic, CGRect, E, Action, err(), AnyObject, c_void, run() (+6 more)
 
 ### Community 54 - "Main Community Map"
 Cohesion: 0.10
 Nodes (38): Audio Output Task Route, Listen Together Task Route, Local Music Task Route, Podcast And Radio Task Route, Top Graph Update Rules, Renderer And Sidecar Latency Boundary, Canonical Current Song And Source, Audio Quality Formats Community (+30 more)
 
 ### Community 55 - "download/index.mjs"
-Cohesion: 0.13
-Nodes (34): AUDIO_CACHE_EXTENSIONS, buildDownloadHeaders(), clearAudioCache(), emit(), emitTaskListReset(), finalizeQueuedTasks(), firstText(), formatMusicInfo() (+26 more)
+Cohesion: 0.06
+Nodes (74): ref_node_stream_promises, copyPackageTree(), copyResolvedPackage(), detectFromTauriEnv(), __dirname, downloadToFile(), ensureDir(), extractArchive() (+66 more)
 
 ### Community 56 - "@renderer/components/Settings/HotkeySettings.vue"
 Cohesion: 0.07
@@ -847,40 +767,40 @@ Cohesion: 0.05
 Nodes (31): ref_nsfwjs_core, ref_nsfwjs_models_mobilenet_v2, authStore, color, dropdownTheme, Name, Props, router (+23 more)
 
 ### Community 61 - "plugins/index.mjs"
-Cohesion: 0.10
-Nodes (25): appDataDir, configDir, DEFAULT_CONVERTED_SOURCES, extractAssignedArray(), extractAssignedObject(), extractAssignedString(), extractAssignedValue(), extractBalancedLiteral() (+17 more)
+Cohesion: 0.09
+Nodes (26): convertEventDrivenPlugin(), appDataDir, configDir, DEFAULT_CONVERTED_SOURCES, extractAssignedArray(), extractAssignedObject(), extractAssignedString(), extractAssignedValue() (+18 more)
 
 ### Community 62 - "nativeMedia.ts"
-Cohesion: 0.14
-Nodes (36): canFetchComments(), checkDownloadableQuality(), CommentFetchType, CommentResponse, CoverResult, DownloadableQualityResult, emptyComments(), enqueueDownloadTask() (+28 more)
+Cohesion: 0.12
+Nodes (38): canFetchComments(), checkDownloadableQuality(), CommentFetchType, CommentResponse, CoverResult, DownloadableQualityResult, emptyComments(), enqueueDownloadTask() (+30 more)
 
 ### Community 63 - "cloudLibrarySync.ts"
 Cohesion: 0.08
-Nodes (62): handleAddToSongList(), onToggleLike(), uploadPlaylistSnapshot(), AcknowledgedOperation, applyRemotePlaylistSongs(), canonicalSongSource(), canUseCloudLibrary(), compactMeta() (+54 more)
+Nodes (69): ensureFavoritesId(), favoriteSongKey(), handleAddToSongList(), isLiked(), onToggleLike(), handleFavoriteSyncUpdated(), onToggleLike(), refreshLikeState() (+61 more)
 
 ### Community 64 - "database.ts"
 Cohesion: 0.09
-Nodes (34): BRIDGED_PROVIDER_KEYS, BRIDGED_STABLE_ID_PREFIXES, FavoriteRow, FAVORITES_TITLE_ALIASES, getFavoritePosition(), isBridgedIdentifier(), isBridgedPlaylistInput(), isBridgedPlaylistRow() (+26 more)
+Nodes (31): decryptJson(), BRIDGED_PROVIDER_KEYS, BRIDGED_STABLE_ID_PREFIXES, FavoriteRow, FAVORITES_TITLE_ALIASES, isBridgedIdentifier(), isBridgedPlaylistInput(), isBridgedPlaylistRow() (+23 more)
 
 ### Community 65 - "service-base.ts"
 Cohesion: 0.08
 Nodes (24): Response, Album, AlbumDetail, Artist, axiosClient, DownloadBatchSongsArgs, DownloadSingleSongArgs, GetListSongsArgs (+16 more)
 
 ### Community 67 - "node_sidecar.rs"
-Cohesion: 0.18
-Nodes (23): atomic, AtomicU64, ChildStdin, duration, io, pathbuf, handle_sidecar_message(), init() (+15 more)
+Cohesion: 0.16
+Nodes (33): AtomicU64, ChildStdin, handle_sidecar_message(), init(), join_node_path(), node_sidecar_health(), node_sidecar_request(), node_sidecar_request_blocking() (+25 more)
 
 ### Community 68 - "crossfade.ts"
-Cohesion: 0.06
-Nodes (40): visible, globalPlayStatus, lightMainColor, { player }, playSetting, settingSections, @renderer/components/Settings/AudioOutputSettings.vue, controlAudio (+32 more)
+Cohesion: 0.07
+Nodes (35): ref_default_cover_png, visible, handleClearPlaylist(), globalPlayStatus, lightMainColor, { player }, playSetting, settingSections (+27 more)
 
 ### Community 69 - "LocalUserDetailStore"
-Cohesion: 0.10
-Nodes (44): buildQualityFormats(), calculateBestQuality(), compareQuality(), DISPLAY_NAME_MAP, getHighestQualityType(), getQualityDisplayName(), KnownQuality, normalizeQualityType() (+36 more)
+Cohesion: 0.07
+Nodes (64): buildQualityFormats(), calculateBestQuality(), compareQuality(), DISPLAY_NAME_MAP, getHighestQualityType(), getQualityDisplayName(), KnownQuality, normalizeQualityType() (+56 more)
 
 ### Community 70 - "find.vue"
 Cohesion: 0.06
-Nodes (35): activeCategoryName, activeGroup, activeGroupName, activeTagId, backTop, CacheEntry, coverBackdropStyle(), error (+27 more)
+Nodes (37): APP_LAUNCH_TS, activeCategoryName, activeGroup, activeGroupName, activeTagId, backTop, CacheEntry, coverBackdropStyle() (+29 more)
 
 ### Community 71 - "PluginNoticeDialog.vue"
 Cohesion: 0.15
@@ -903,8 +823,8 @@ Cohesion: 0.18
 Nodes (30): brandLogoPromise, drawBrandLogo(), drawTextWithEllipsis(), fitDrawImage(), getAvailableTemplates(), loadCoverOrNull(), loadImage(), parseLrcToLines() (+22 more)
 
 ### Community 76 - "formatSingerName"
-Cohesion: 0.12
-Nodes (16): createPluginId(), extractPluginMetaExports(), findInstalledPluginByName(), getPluginSupportedSources(), installPluginFromCode(), invalidateNodePluginEntriesCache(), normalizePluginConfigSchema(), normalizePluginId() (+8 more)
+Cohesion: 0.10
+Nodes (14): DownloadStatus, DownloadTask, useDownloadStore, activeTab, completedTasks, downloadingTasks, failedTasks, filenameTemplate (+6 more)
 
 ### Community 77 - "system/index.mjs"
 Cohesion: 0.21
@@ -915,24 +835,24 @@ Cohesion: 0.10
 Nodes (30): callSourceMethod(), copyDirectory(), devRuntimeRoot, __dirname, electronMainUtilsRoot, electronMusicSdkRoot, electronSrcRoot, ensureRuntime() (+22 more)
 
 ### Community 79 - "src/common/utils/common.ts"
-Cohesion: 0.06
-Nodes (27): sidecar_vendor_electron_src_main_utils_musicsdk_index_formatplaytime, sidecar_vendor_electron_src_main_utils_musicsdk_index_sizeformate, boardList, filterBoardsData(), getBoards(), getBoardsData(), getData(), getList() (+19 more)
+Cohesion: 0.05
+Nodes (35): sidecar_vendor_electron_src_main_utils_musicsdk_index_formatplaytime, sidecar_vendor_electron_src_main_utils_musicsdk_index_sizeformate, boardList, filterBoardsData(), getBoards(), getBoardsData(), getData(), getList() (+27 more)
 
 ### Community 80 - "cloudSongList.ts"
-Cohesion: 0.17
-Nodes (11): clearDialogVisible, exportDialogVisible, fileInputRef, handleImportFromClipboard(), handleImportFromFile(), importDialogVisible, { list }, localUserStore (+3 more)
+Cohesion: 0.08
+Nodes (21): AboutSection, activeCategory, AppearanceSection, contentPanelRef, currentComponent, handleSearchSelect(), HotkeySection, MusicSourceSection (+13 more)
 
 ### Community 81 - "LocalTagEditorPage.vue"
-Cohesion: 0.10
-Nodes (28): ref_shazamio_core_web, searchValue, generateShazamSignature(), pcmToWav(), writeAscii(), ensureAFP(), loadScript(), processFile() (+20 more)
+Cohesion: 0.17
+Nodes (18): audioStore, chunks, currentDuration, ensureAFP(), handleSearchResult(), loadScript(), recognizedSongs, resampleTo8kMono() (+10 more)
 
 ### Community 82 - "mediaGateway.ts"
 Cohesion: 0.11
 Nodes (17): allSelected, buildText(), copyAll(), copySelected(), doCopy(), emit, formatTs(), includeRomaji (+9 more)
 
 ### Community 83 - "AutoUpdateService"
-Cohesion: 0.14
-Nodes (14): displayItems, emit, handleKeydown(), handleSelect(), isFocused, query, recentSearches, saveRecent() (+6 more)
+Cohesion: 0.24
+Nodes (8): appRouter, flattenRoutes(), getRoutePreloadEnabled(), option, preloadRoutes(), router, routes, startPreload()
 
 ### Community 84 - "Ceru Music Tauri AI Search Index"
 Cohesion: 0.14
@@ -948,15 +868,15 @@ Nodes (25): better-sqlite3, dependencies, better-sqlite3, @shuxia/shared-contrac
 
 ### Community 87 - "download_engine.rs"
 Cohesion: 0.13
-Nodes (26): oneshot, Receiver, streamext, UnboundedReceiver, UnboundedSender, cleanup(), cover_extension(), cover_url() (+18 more)
+Nodes (40): oneshot, Receiver, cleanup(), cover_extension(), cover_url(), download_file(), download_finalize_metadata(), download_headers() (+32 more)
 
 ### Community 88 - "electron-old/index.js"
-Cohesion: 0.22
-Nodes (15): appendLog(), commitPluginEntriesCache(), createPluginId(), createWorkerRuntime(), ensureDirs(), getLog(), initializePluginSystem(), installFromCode() (+7 more)
+Cohesion: 0.28
+Nodes (13): commitPluginEntriesCache(), createPluginId(), ensureDirs(), initializePluginSystem(), installFromCode(), loadPluginEntries(), loadPluginEntriesUncached(), persistRuntimePluginMeta() (+5 more)
 
 ### Community 89 - "media_stream_proxy.rs"
-Cohesion: 0.18
-Nodes (18): HeaderMap, HeaderName, net, thread, forward_upstream(), handle_client(), header_text(), media_stream_proxy_url() (+10 more)
+Cohesion: 0.16
+Nodes (20): HeaderMap, HeaderName, io, net, streamext, thread, forward_upstream(), handle_client() (+12 more)
 
 ### Community 90 - "pluginWorker.mjs"
 Cohesion: 0.13
@@ -970,17 +890,13 @@ Nodes (18): authStore, contentRef, currentType, currentUserKeys, emit, expandedR
 Cohesion: 0.16
 Nodes (27): buildFeiniuAuthHeaders(), buildFeiniuStreamPlayback(), collectPluginRequestInfo(), extractMusicUrl(), firstText(), getPluginInvocationError(), hasMediaAuthHeaders(), isLocalStreamProxyUrl() (+19 more)
 
-### Community 93 - "Request"
-Cohesion: 0.14
-Nodes (4): logtoClient, logoutSilently(), Request, SocketRequest
-
 ### Community 94 - "createRouter"
-Cohesion: 0.08
-Nodes (19): createId(), createPairCode(), createToken(), decryptJson(), encryptJson(), generateDataKey(), hashPassword(), hashToken() (+11 more)
+Cohesion: 0.11
+Nodes (13): createPairCode(), createToken(), generateDataKey(), hashPassword(), hashToken(), nowIso(), scrypt, sha256Hex() (+5 more)
 
 ### Community 95 - "main.ts"
-Cohesion: 0.09
-Nodes (22): ref_logto_client, ref_tdesign_vue_next_es_style_index_css, m(), p(), app, appConfig, checkForUpdatesInBackground(), persistNativeImpactSettings() (+14 more)
+Cohesion: 0.13
+Nodes (15): ref_logto_client, ref_tdesign_vue_next_es_style_index_css, app, appConfig, checkForUpdatesInBackground(), clearAutoUpdateTimers(), persistNativeImpactSettings(), pinia (+7 more)
 
 ### Community 96 - "UI-Agnostic Renderer Utilities"
 Cohesion: 0.10
@@ -995,8 +911,8 @@ Cohesion: 0.12
 Nodes (16): @renderer/components/Settings/DesktopLyricStyle.vue, applyOption(), backgroundMaskStr, colorPickerPopupProps, isOpen, loading, loadOption(), LyricOption (+8 more)
 
 ### Community 99 - "autoUpdate.mjs"
-Cohesion: 0.19
-Nodes (19): DEFAULT_PROGRESS, firstText(), homeDataDir(), initializeSystem(), normalizeCheckResult(), normalizeError(), normalizeHistory(), normalizeMode() (+11 more)
+Cohesion: 0.17
+Nodes (20): DEFAULT_PROGRESS, firstText(), homeDataDir(), initializeSystem(), normalizeCheckResult(), normalizeError(), normalizeHistory(), normalizeMode() (+12 more)
 
 ### Community 100 - "local_music.rs"
 Cohesion: 0.14
@@ -1011,12 +927,12 @@ Cohesion: 0.70
 Nodes (4): getBestContrastTextColor(), getBestContrastTextColorWithOpacity(), getImageAverageLuminance(), shouldUseBlackText()
 
 ### Community 103 - "mg/lyric.js"
-Cohesion: 0.12
-Nodes (21): podcastApi, CacheEntry, deleteSessionCache(), entries, evictOldest(), getSessionCache(), pruneExpired(), setSessionCache() (+13 more)
+Cohesion: 0.20
+Nodes (19): CacheEntry, deleteSessionCache(), entries, evictOldest(), getSessionCache(), PersistedEntry, pruneExpired(), readPersistedEntry() (+11 more)
 
 ### Community 104 - "musicSdk/index.js"
-Cohesion: 0.07
-Nodes (35): bd, filterBDListDetail(), getListDetail(), getReqId(), aggregate, AGGREGATE_ORDER, sidecar_vendor_electron_src_main_utils_musicsdk_index_dateformat2, sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename (+27 more)
+Cohesion: 0.08
+Nodes (25): bd, filterBDListDetail(), getListDetail(), getReqId(), aggregate, AGGREGATE_ORDER, sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename, findMusic() (+17 more)
 
 ### Community 105 - "share.ts"
 Cohesion: 0.07
@@ -1027,36 +943,36 @@ Cohesion: 0.10
 Nodes (12): fonts, currentPluginName, currentSourceQualities, emit, globalQualityOptions, globalQualitySelected, goPlugin(), hasPluginData (+4 more)
 
 ### Community 108 - ".applyPluginOperation"
-Cohesion: 0.16
-Nodes (17): parseStringArray(), asBoolean(), asPort(), canonicalCapabilityRole(), canonicalizeCapabilityConfig(), capabilityFieldsForRole(), capabilityIdentityKey(), CapabilityRole (+9 more)
+Cohesion: 0.18
+Nodes (16): asBoolean(), asPort(), canonicalCapabilityRole(), canonicalizeCapabilityConfig(), capabilityFieldsForRole(), capabilityIdentityKey(), CapabilityRole, FEINIU_FIELDS (+8 more)
 
 ### Community 109 - "electron-reference/packages/shared-contract/src/index.ts"
+Cohesion: 0.19
+Nodes (19): activate(), ChatBuffer, configureNotifier(), ensureAudioContext(), ensurePermission(), fireNotification(), flushChatBuffer(), flushPendingBuffer() (+11 more)
+
+### Community 110 - "music_search.rs"
+Cohesion: 0.31
+Nodes (10): sha1, dispatch_search(), empty_result(), parse_kuwo_quality(), rand_search_id(), search_kugou(), search_kuwo(), search_migu() (+2 more)
+
+### Community 111 - "DuplicateSongsDialog.vue"
+Cohesion: 0.09
+Nodes (23): allItems, applySuggestedSelection(), dialogVisible, DuplicateGroup, duplicateGroups, DuplicateItem, emit, markKeep() (+15 more)
+
+### Community 112 - "radio.js"
 Cohesion: 0.21
 Nodes (22): coverCache, extractCoverUrl(), getCacheKey(), getMatchScores(), getSearchKeywords(), getSearchSources(), hasUsableCover(), isSameSongCover() (+14 more)
 
-### Community 110 - "music_search.rs"
-Cohesion: 0.27
-Nodes (11): engine, sha1, dispatch_search(), empty_result(), parse_kuwo_quality(), rand_search_id(), search_kugou(), search_kuwo() (+3 more)
-
-### Community 111 - "DuplicateSongsDialog.vue"
-Cohesion: 0.10
-Nodes (21): allItems, applySuggestedSelection(), dialogVisible, DuplicateGroup, duplicateGroups, DuplicateItem, emit, markKeep() (+13 more)
-
-### Community 112 - "radio.js"
-Cohesion: 0.19
-Nodes (18): buildSearchResult(), buildTypes(), createSearchParams(), formatPublishDate(), getCategoryPrograms(), getPrograms(), getRecommendations(), mapProgram() (+10 more)
-
 ### Community 113 - "git/songList.js"
-Cohesion: 0.14
-Nodes (22): asNumber(), asOptionalString(), asString(), durationTextFrom(), formatDurationText(), normalizeFavoriteEntityType(), normalizeQualities(), normalizeSong() (+14 more)
+Cohesion: 0.15
+Nodes (25): jumpTime(), applyDockProgressVisual(), applyPlaybackRate(), expectedDockProgressRatio(), findCurrentListSong(), getQualitySongKey(), handleMoreMenuSelect(), handleProgressClick() (+17 more)
 
 ### Community 114 - "ContextMenu/types.ts"
-Cohesion: 0.08
-Nodes (9): song(), withDatabase(), database, dbPath, ref_node_fs, ref_node_os, ref_node_path, ref_node_zlib (+1 more)
+Cohesion: 0.07
+Nodes (10): song(), withDatabase(), ref_node_fs, ref_node_os, ref_node_path, ref_node_url, ref_node_zlib, isBareSpecifier() (+2 more)
 
 ### Community 115 - "notification.mjs"
-Cohesion: 0.16
-Nodes (17): ref_node_crypto, DEFAULT_POLICY, firstText(), homeDataDir(), initializeSystem(), normalizeChannel(), normalizeHistory(), normalizeNotification() (+9 more)
+Cohesion: 0.18
+Nodes (15): DEFAULT_POLICY, firstText(), homeDataDir(), initializeSystem(), normalizeChannel(), normalizeHistory(), normalizeNotification(), normalizePolicy() (+7 more)
 
 ### Community 116 - "compilerOptions"
 Cohesion: 0.08
@@ -1067,48 +983,48 @@ Cohesion: 0.32
 Nodes (12): AmbientBackdropColors, AmbientRgb, asRgb(), bakeAmbientBackdropDataUrl(), bakeCache, boostForLightField(), cacheKeyOf(), clampByte() (+4 more)
 
 ### Community 118 - "electron-reference/index.js"
-Cohesion: 0.12
-Nodes (16): buildShareText(), buildShareUrl(), extractCodeFromShareText(), activeTab, emit, leaveRoom(), lt, onKeyDown() (+8 more)
+Cohesion: 0.14
+Nodes (3): applyGlobalEffects(), applyEffects(), AudioManager
 
 ### Community 119 - "scripts"
-Cohesion: 0.08
-Nodes (21): AboutSection, activeCategory, AppearanceSection, contentPanelRef, currentComponent, handleSearchSelect(), HotkeySection, MusicSourceSection (+13 more)
+Cohesion: 0.14
+Nodes (14): displayItems, emit, handleKeydown(), handleSelect(), isFocused, query, recentSearches, saveRecent() (+6 more)
 
 ### Community 120 - "LeaderBord.vue"
 Cohesion: 0.18
 Nodes (8): emit, handleClick(), props, boards, currentSource, loading, localUserStore, router
 
 ### Community 121 - "ListenTogetherOverlay.vue"
-Cohesion: 0.14
-Nodes (18): createRoom(), CreateRoomPayload, getMyCurrentRoom(), getRoomPreview(), request, ResolveCodePayload, resolveRoom(), queueLtDeeplinkCode() (+10 more)
+Cohesion: 0.10
+Nodes (13): formatMusicInfo(), clearCoverCache(), coverInfo, DirectorySettings, directorySettingsRef, filenameTemplate, loadCoverInfo(), MusicCache (+5 more)
 
 ### Community 122 - "SongCardActions.vue"
 Cohesion: 0.16
 Nodes (17): acting, addToList(), buildSongPayload(), close(), emit, globalPlayStatus, isCurrentlyPlaying, LocalPlaylist (+9 more)
 
 ### Community 124 - "e"
-Cohesion: 0.20
-Nodes (9): src_common_api_config, BackendEntry, ENTRIES, SHUXIA_API_RESOURCE, shuxiaRequest, axiosInstances, defaultRequest, ERROR_MESSAGES (+1 more)
+Cohesion: 0.14
+Nodes (12): song(), createId(), encryptJson(), normalizePlaylistSongs(), parseJsonRecord(), storedDurationText(), toPlaylist(), parseJsonArray() (+4 more)
 
 ### Community 125 - "json"
+Cohesion: 0.08
+Nodes (44): AudioUrlInfo, clear_audio_cache_recursive(), decode_base64_text(), decode_basic_html(), decode_lyric_text(), default_media_user_agent(), dir_size_recursive(), directory_settings_get_directory_size() (+36 more)
+
+### Community 126 - "scripts"
 Cohesion: 0.11
 Nodes (15): menuItems, menuPosition, menuVisible, handleContextMenu(), items, position, restoreFocus(), visible (+7 more)
 
-### Community 126 - "scripts"
-Cohesion: 0.22
-Nodes (17): activate(), ChatBuffer, ensureAudioContext(), ensurePermission(), fireNotification(), flushChatBuffer(), flushPendingBuffer(), formatChatPreview() (+9 more)
-
 ### Community 127 - "windowLifecycle.mjs"
-Cohesion: 0.22
-Nodes (15): closeDecision(), defaultState, homeDataDir(), initialize(), normalizeData(), normalizeTrayState(), normalizeWindowState(), persist() (+7 more)
+Cohesion: 0.20
+Nodes (16): ref_node_fs_promises, closeDecision(), defaultState, homeDataDir(), initialize(), normalizeData(), normalizeTrayState(), normalizeWindowState() (+8 more)
 
 ### Community 128 - ".error"
-Cohesion: 0.35
-Nodes (12): asString(), decryptPlaylist(), extractPlaylistSongs(), getExtFromPath(), gunzipToString(), importPlaylistFromClipboard(), importPlaylistFromFile(), importPlaylistFromPath() (+4 more)
+Cohesion: 0.11
+Nodes (20): clearDialogVisible, exportDialogVisible, fileInputRef, handleCopyToClipboard(), handleExportToFile(), handleImportFromClipboard(), handleImportFromFile(), importDialogVisible (+12 more)
 
 ### Community 129 - "isAppWindowVisible"
-Cohesion: 0.05
-Nodes (50): DeepLinkQueueOptions, dissolvingWelcome, ensureStartupMicrophonePermission(), isAppReady, playlistShareQueue, route, router, scheduleDelayedMicrophoneRequest() (+42 more)
+Cohesion: 0.17
+Nodes (14): envNumber(), envValue(), resolveDbPath(), SYNC_ADMIN_TOKEN(), SYNC_HOST(), SYNC_PORT(), database, dbPath (+6 more)
 
 ### Community 130 - "ShareConsentBar.vue"
 Cohesion: 0.13
@@ -1123,68 +1039,68 @@ Cohesion: 0.19
 Nodes (15): generateAndQuery(), handleFileUpload(), handleResult(), init(), isHovering, isProcessingFile, isRecording, micPermissionDenied (+7 more)
 
 ### Community 133 - "playback-url-benchmark.mjs"
-Cohesion: 0.22
-Nodes (11): AudioFingerprintRuntime(), GenerateFP(), instantiateRuntime(), c(), n(), o(), r(), t() (+3 more)
+Cohesion: 0.03
+Nodes (119): aiStreamListenerDisposers, applyWindowProgressBar(), appWindow, AppWindowStatePayload, buildDialogNoticeFromRaw(), BUILTIN_METADATA_APIS, clearAiStreamListeners(), clearElectronIpcListeners() (+111 more)
 
 ### Community 134 - "compilerOptions"
 Cohesion: 0.09
 Nodes (21): vite.config.ts, DOM, DOM.Iterable, ES2021, ./src/common/*, compilerOptions, allowImportingTsExtensions, isolatedModules (+13 more)
 
 ### Community 135 - "PlaylistActions.vue"
-Cohesion: 0.10
-Nodes (20): handleCopyToClipboard(), handleExportToFile(), @renderer/components/Settings/PlaylistSettings.vue, exportDialogVisible, fileInputRef, handleCopyToClipboard(), handleExportToFile(), handleImportFromClipboard() (+12 more)
+Cohesion: 0.14
+Nodes (11): @renderer/components/Settings/PlaylistSettings.vue, exportDialogVisible, fileInputRef, handleImportFromClipboard(), handleImportFromFile(), importDialogVisible, { list }, localUserStore (+3 more)
 
 ### Community 136 - "@renderer/components/Settings/DesktopLyricStyle.vue"
-Cohesion: 0.19
-Nodes (11): probeDownloadUrl(), getRequesters(), items, lt, overflowCount(), reject(), requesterCountLabel(), requesterTitle() (+3 more)
+Cohesion: 0.22
+Nodes (11): AudioFingerprintRuntime(), GenerateFP(), instantiateRuntime(), c(), n(), o(), r(), t() (+3 more)
 
 ### Community 137 - "DevAuthInjector.vue"
 Cohesion: 0.20
 Nodes (9): auth, callbackUrl, detectFromClipboard(), expanded, isDev, isValid, submit(), submitting (+1 more)
 
 ### Community 138 - "AudioMatch.vue"
-Cohesion: 0.22
-Nodes (16): verifyPlayableUrl(), _blockSource(), ensureWebViewPlayableUrl(), _getCachedUrl(), _getCacheKey(), _getHardBlockKey(), _getOtherSourceCacheKey(), _getQuality() (+8 more)
+Cohesion: 0.13
+Nodes (36): aggregate_category_playlists(), arg_i64(), arg_source(), arg_string(), empty_playlist_detail(), empty_playlist_tags(), EmptyStrExt, extract_numeric_id() (+28 more)
 
 ### Community 139 - "ListenTogetherEntryDialog.vue"
-Cohesion: 0.17
-Nodes (11): activeTab, close(), createForm, createSubmitting, detectedCode, emit, joinInput, joinInputRef (+3 more)
+Cohesion: 0.16
+Nodes (14): activeTab, close(), closeAndOpenOverlay(), createForm, createSubmitting, detectedCode, emit, handleCreate() (+6 more)
 
 ### Community 140 - "preparePluginCode"
 Cohesion: 0.17
 Nodes (21): decodePluginDetectionText(), detectImportPluginCompatibility(), ensureNodePluginPrepared(), extractConvertedLxOriginalCode(), injectPluginHeaders(), isConvertedLxPluginCode(), loadPersistedPluginRuntime(), looksLikeHtmlDocument() (+13 more)
 
 ### Community 141 - "cover_proxy.rs"
-Cohesion: 0.10
-Nodes (39): Url, build_feiniu_origin(), CachedCover, cover_cache_key(), cover_cache_returns_same_bytes(), cover_disk_cache_roundtrip(), cover_disk_paths(), cover_proxy_base() (+31 more)
+Cohesion: 0.09
+Nodes (58): build_feiniu_origin(), CachedCover, cover_cache_clear(), cover_cache_info(), cover_cache_key(), cover_cache_returns_same_bytes(), cover_disk_cache_roundtrip(), cover_disk_dir() (+50 more)
 
 ### Community 142 - "devDependencies"
-Cohesion: 0.07
-Nodes (29): devDependencies, sass-embedded, @tauri-apps/cli, @types/crypto-js, @types/dompurify, @types/lodash, @types/qrcode, @types/uuid (+21 more)
+Cohesion: 0.13
+Nodes (15): devDependencies, @tauri-apps/cli, @types/crypto-js, @types/lodash, unplugin-vue-components, vite, @vitejs/plugin-vue, vue-tsc (+7 more)
 
 ### Community 143 - "sImage.vue"
-Cohesion: 0.08
-Nodes (41): applyImageSrc(), assignImgSrc(), currentToken, decodeLocalCoverProxySrc(), directFallbackSrc, emit, graceReleased, hasBeenVisible (+33 more)
+Cohesion: 0.06
+Nodes (53): applyImageSrc(), assignImgSrc(), currentToken, decodeLocalCoverProxySrc(), directFallbackSrc, emit, graceReleased, hasBeenVisible (+45 more)
 
 ### Community 144 - "tauri-plugin-updater.ts"
-Cohesion: 0.19
-Nodes (13): ref_tauri_apps_api_core, ref_tauri_apps_api_event, checkUpdate(), emitUpdaterEvent(), getManifest(), installUpdate(), listeners, NativeDownloadEvent (+5 more)
+Cohesion: 0.11
+Nodes (22): ref_tauri_apps_api_core, ref_tauri_apps_api_event, channelDisposers, clearChannel(), createDesktopLyricBridge(), Disposer, safeInvoke(), trackDisposer() (+14 more)
 
 ### Community 145 - "歌单管理 API 文档"
-Cohesion: 0.11
-Nodes (20): buildNotify(), enqueue(), fire(), fireNext(), lt, ltSettings, PendingNotify, queue (+12 more)
+Cohesion: 0.06
+Nodes (34): buildNotify(), enqueue(), fire(), fireNext(), lt, ltSettings, PendingNotify, queue (+26 more)
 
 ### Community 146 - "scripts"
-Cohesion: 0.33
-Nodes (3): buildConsoleProxy(), PluginWorkerRuntime, serializeLogArg()
+Cohesion: 0.18
+Nodes (9): appendLog(), buildConsoleProxy(), configPath(), getLog(), logPath(), PluginWorkerRuntime, readJson(), serializeLogArg() (+1 more)
 
 ### Community 147 - "TitleBarControls.vue"
-Cohesion: 0.42
-Nodes (12): dispatch(), enter(), enter_windowed_fullscreen(), exit(), exit_windowed_fullscreen(), is_windowed_fullscreen(), AppHandle, Result (+4 more)
+Cohesion: 0.15
+Nodes (35): ai_ask(), ai_recommend_songs(), array_at(), empty_comment_response(), existing_category_playlists_response(), existing_comment_response(), existing_leaderboards_response(), existing_playlist_detail_response() (+27 more)
 
 ### Community 148 - "e"
-Cohesion: 0.20
-Nodes (10): allowFullPlayPointerEvents(), ensureLyricFonts(), handleBackdropResize(), onFullPlayWindowState(), openFullPlaySlide(), releaseFullPlayHeavyResources(), releaseLyricFonts(), scheduleBakeCurrentBackdrop() (+2 more)
+Cohesion: 0.14
+Nodes (15): allowFullPlayPointerEvents(), bindIdleActivityListeners(), emit, ensureLyricFonts(), handleKeyDown(), nudgeLyricPlayback(), onFullPlayWindowState(), openFullPlaySlide() (+7 more)
 
 ### Community 149 - "Start Here Task Routing Table"
 Cohesion: 0.23
@@ -1195,20 +1111,20 @@ Cohesion: 0.15
 Nodes (14): Per-Request Cookie Isolation, Main-Process Secret Boundary, Music SDK Adapter Guide, Music Provider Adapter Contract, Provider ID Scheme, Shared HTTP Agent, Minified Vendor Library Integrity, globalThis.window Shim (+6 more)
 
 ### Community 151 - "useSettingsStore"
-Cohesion: 0.06
-Nodes (24): vue, { checkForUpdates }, currentVersion, isChecking, { checkForUpdates }, currentVersion, isChecking, downloadSpeed (+16 more)
+Cohesion: 0.19
+Nodes (18): buildSearchResult(), buildTypes(), createSearchParams(), formatPublishDate(), getCategoryPrograms(), getPrograms(), getRecommendations(), mapProgram() (+10 more)
 
 ### Community 152 - "lyric_window.rs"
-Cohesion: 0.12
-Nodes (31): color, apply_desktop_lyric_lock(), apply_macos_screen_saver_level(), apply_wkwebview_transparent(), clamp_window_number(), close_desktop_lyric_window(), default_desktop_lyric_option(), desktop_lyric_webview_url() (+23 more)
+Cohesion: 0.10
+Nodes (39): color, database, manager, apply_desktop_lyric_lock(), apply_macos_screen_saver_level(), apply_wkwebview_transparent(), clamp_window_number(), close_desktop_lyric_window() (+31 more)
 
 ### Community 153 - "appendLog"
 Cohesion: 0.26
 Nodes (12): buildCerumusicApi(), buildCryptoApi(), isBinaryMediaContentType(), normalizeRequestBody(), parseResponseBody(), emitPluginEvent(), getDefaultNoticeMessage(), getNoticeTitle() (+4 more)
 
 ### Community 154 - "postEapi"
-Cohesion: 0.23
-Nodes (15): Props, LyricRequest, NativeDownloadTaskRequest, PlaybackUrlRequest, SongList, parseInterval(), strSim(), CandidateIdentitySnapshot (+7 more)
+Cohesion: 0.15
+Nodes (26): duration_text_to_seconds(), empty_lyric_response(), existing_lyric_response(), handle_get_lyric(), handle_get_music_url(), handle_get_song_url(), handle_parse_playlist_id(), kg_get_lyric() (+18 more)
 
 ### Community 155 - "PagerBar.vue"
 Cohesion: 0.19
@@ -1223,20 +1139,20 @@ Cohesion: 0.12
 Nodes (32): artwork_for(), ArtworkCacheEntry, bundle_identifier(), capture_accelerator(), claim_media_event(), create_mpmedia_artwork(), dict_set_f64(), dict_set_object() (+24 more)
 
 ### Community 158 - "package.json"
-Cohesion: 0.14
-Nodes (13): description, keywords, name, private, type, version, desktop-lyrics, downloads (+5 more)
+Cohesion: 0.25
+Nodes (8): keywords, desktop-lyrics, downloads, music-player, music-sources, node-sidecar, podcast, tauri
 
 ### Community 159 - "Settings.ts"
-Cohesion: 0.12
-Nodes (15): @renderer/components/Settings/GlobalBackgroundSettings.vue, bgSettings, handleFileSelect(), { settings }, settingsStore, updateMultipleBg(), currentStyle, DesktopLyricStyle (+7 more)
+Cohesion: 0.03
+Nodes (53): vue, getLegacyNasConfig(), BackendEntry, ENTRIES, SHUXIA_API_RESOURCE, @renderer/components/Settings/GlobalBackgroundSettings.vue, bgSettings, handleFileSelect() (+45 more)
 
 ### Community 160 - "normalizeSourceKey"
-Cohesion: 0.14
-Nodes (24): BUILTIN_CATALOG_APIS, BUILTIN_PLAYABLE_SOURCES, ensurePluginRuntimeForSource(), findNodePluginEntry(), getMusicPluginCandidatesForSource(), getNodePluginCandidatesForSource(), getNodePluginEntries(), getNodePluginHealth() (+16 more)
+Cohesion: 0.08
+Nodes (40): BUILTIN_CATALOG_APIS, BUILTIN_PLAYABLE_SOURCES, createPluginId(), ensurePluginRuntimeForSource(), extractPluginMetaExports(), findInstalledPluginByName(), findNodePluginEntry(), getMusicPluginCandidatesForSource() (+32 more)
 
 ### Community 161 - "GlobalPlayStatus.ts"
-Cohesion: 0.17
-Nodes (16): e(), closeAndOpenOverlay(), handleCreate(), handleJoin(), handleSearch(), onDownload(), toggleDesktopLyric(), syncLocalMetaWithCloudUpdate() (+8 more)
+Cohesion: 0.16
+Nodes (20): collect_mg_playlists(), empty_search_result(), first_valid_lyric_text(), get_lyric_proxy(), handle_search(), is_valid_lyric_text(), kg_song(), kuwo_comment_item() (+12 more)
 
 ### Community 162 - "renderer.ts"
 Cohesion: 0.36
@@ -1251,56 +1167,56 @@ Cohesion: 0.17
 Nodes (12): array, null, $ref, description, items, type, uniqueItems, description (+4 more)
 
 ### Community 165 - "Ceru Music（澜音）"
-Cohesion: 0.28
-Nodes (8): ref_node_fs_promises, electronPluginsDir, isPluginFile(), migrate(), readPluginId(), tauriConfigDir, tauriPluginsDir, service
+Cohesion: 0.32
+Nodes (7): electronPluginsDir, isPluginFile(), migrate(), readPluginId(), tauriConfigDir, tauriPluginsDir, service
 
 ### Community 166 - "Ceru Music（澜音）"
 Cohesion: 0.44
 Nodes (9): clearWorkerIdleTimer(), getWorkerRuntime(), invokePlugin(), normalizePluginId(), pinWorkerRuntime(), safeClone(), touchWorkerRuntime(), unloadWorkerRuntime() (+1 more)
 
 ### Community 167 - "pluginSync.ts"
-Cohesion: 0.14
-Nodes (34): NasSyncConflictError, handleImport(), canonicalizeCapabilityConfig(), pluginFingerprint(), applyCapabilityPlugin(), applyRemotePluginEvent(), backupLocalPluginsToCloud(), clearLocalPluginUpsert() (+26 more)
+Cohesion: 0.11
+Nodes (54): getPlugins(), handleImport(), uninstallPlugin(), canonicalizeCapabilityConfig(), capabilityIdentityKey(), musicSourceIdentityKey(), normalizeAuthorToken(), normalizePluginToken() (+46 more)
 
 ### Community 168 - "完整性能优化报告 V2（已补全激进清理）"
 Cohesion: 0.06
 Nodes (31): 1. **内存泄漏根源**, 1. **启动测试**, 2. **状态感知缺失**, 2. **监控命令**, 3. **场景测试**, 4. **V2 特有测试：激进清理验证**, CPU 优化, V1（不完整） (+23 more)
 
 ### Community 169 - "多端同步架构设计方案"
-Cohesion: 0.22
-Nodes (9): bakeCurrentBackdrop(), boostForLightField(), hasBackdropArtwork(), mixRgb(), resolveBackdropStageSize(), rgbaStr(), rgbStr(), scaleRgb() (+1 more)
+Cohesion: 0.13
+Nodes (11): APP_DATA, db, DB_PATH, extractUrl(), feiniuSong, isPlayableUrl(), kwSong, probeUrl() (+3 more)
 
 ### Community 170 - "sdk_get_json"
-Cohesion: 0.17
-Nodes (30): aggregate_category_playlists(), arg_i64(), arg_string(), empty_playlist_detail(), extract_kg_global_data(), extract_numeric_id(), handle_get_category_playlists(), handle_get_leaderboard_detail() (+22 more)
+Cohesion: 0.32
+Nodes (12): bitnum(), bitnum_intl(), bitnum_intr(), crypt(), f(), initial_permutation(), inverse_permutation(), key_schedule() (+4 more)
 
 ### Community 171 - "完整按需加载审计报告"
 Cohesion: 0.07
 Nodes (28): 1. **AudioVisualizer（频谱可视化）**, 2. **ShaderBackground（着色器背景）**, 3. **GlobalBackground（全局背景视频）**, 4. **IPC 统计刷新器**, 5. **播客页面推荐定时器**（中等优先级）, 6. **播客二维码轮询**（低优先级）, 7. **一起听功能定时器**（需要检查）⚠️, 8. **原生播放音量渐变定时器**（低优先级） (+20 more)
 
 ### Community 172 - "CeruMusicPluginHost 使用文档"
-Cohesion: 0.20
-Nodes (14): buildFeiniuOrigin(), encodeUrlSafeBase64(), encodeUtf8Base64(), ensureCoverProxyBase(), getFeiniuCoverAuthHeaders(), imageUrlToDataUrl(), isFeiniuApiImageUrl(), isLocalCoverProxyUrl() (+6 more)
+Cohesion: 0.15
+Nodes (10): applyState(), AppWindowState, initAppWindowState(), state, collapsed, KEEP_ALIVE_PAGES, keepAliveInclude, keepAliveMax (+2 more)
 
 ### Community 173 - "树夏Music 性能分析报告 - 空闲状态高占用"
 Cohesion: 0.07
 Nodes (27): 1. 全屏播放组件（FullPlay.vue）未完全卸载, 1. 强制清理全屏组件资源（窗口不可见时）, 1. 空闲状态测试, 2. AudioVisualizer 强制停止检测, 2. 全局背景（GlobalBackground.vue）持续播放视频, 2. 播放后暂停测试, 3. GlobalBackground 视频强制暂停, 3. 全屏进出测试 (+19 more)
 
 ### Community 174 - "plugin.rs"
-Cohesion: 0.09
-Nodes (14): manager, content_type_to_image_mime(), HttpRequestOptions, HttpResponse, image_url_to_data_url(), plugin_http_request(), plugin_load_config(), plugin_load_registry() (+6 more)
+Cohesion: 0.11
+Nodes (9): engine, pathbuf, content_type_to_image_mime(), HttpRequestOptions, HttpResponse, image_url_to_data_url(), plugin_http_request(), plugin_scan_dir() (+1 more)
 
 ### Community 175 - "插件通知系统使用说明"
-Cohesion: 0.26
-Nodes (12): CGRect, E, Action, err(), AnyObject, c_void, run(), run_enter() (+4 more)
+Cohesion: 0.35
+Nodes (12): asString(), decryptPlaylist(), extractPlaylistSongs(), getExtFromPath(), gunzipToString(), importPlaylistFromClipboard(), importPlaylistFromFile(), importPlaylistFromPath() (+4 more)
 
 ### Community 176 - "HomeLayout.vue"
-Cohesion: 0.05
-Nodes (41): checkGuide(), handleKeyDown(), handleSearch(), handleSuggestionSelect(), hasPluginData, inputRef, menuActive, MenuItem (+33 more)
+Cohesion: 0.08
+Nodes (20): checkGuide(), handleKeyDown(), handleSearch(), handleSuggestionSelect(), hasPluginData, inputRef, menuActive, MenuItem (+12 more)
 
 ### Community 177 - "value_string"
-Cohesion: 0.14
-Nodes (27): decode_base64_text(), decode_basic_html(), decode_lyric_text(), duration_text_to_seconds(), empty_lyric_response(), existing_lyric_response(), handle_get_lyric(), handle_get_music_url() (+19 more)
+Cohesion: 0.67
+Nodes (3): PermissionEntry, anyOf, description
 
 ### Community 178 - "BaseDialog.vue"
 Cohesion: 0.18
@@ -1308,19 +1224,19 @@ Nodes (10): build, beforeBuildCommand, beforeDevCommand, devUrl, frontendDist, i
 
 ### Community 179 - "tx/songList.js"
 Cohesion: 0.07
-Nodes (44): getPic(), filterList(), getList(), getPic(), filterComment(), getComment(), getHotComment(), getReplyComment() (+36 more)
+Nodes (43): sidecar_vendor_electron_src_main_utils_musicsdk_index_dateformat2, getPic(), filterComment(), getComment(), getHotComment(), filterList(), getList(), getPic() (+35 more)
 
 ### Community 181 - "prepare-sidecar-runtime.mjs"
 Cohesion: 0.17
-Nodes (25): ref_node_stream_promises, copyPackageTree(), copyResolvedPackage(), detectFromTauriEnv(), __dirname, downloadToFile(), ensureDir(), extractArchive() (+17 more)
+Nodes (22): adhocSign(), arch, brewPrefix(), chmodWritable(), collectLibs(), copyFile(), __dirname, exists() (+14 more)
 
 ### Community 182 - "handle_get_playlist_tags"
 Cohesion: 0.31
 Nodes (9): AudioObjectId, OsStatus, AudioObjectPropertyAddress, init(), init_audio_device_watcher(), on_default_output_device_changed(), AppHandle, c_void (+1 more)
 
 ### Community 183 - "invokeNodePlugin"
-Cohesion: 0.20
-Nodes (21): autoImportConfiguredFeiniuPlaylists(), autoImportFeiniuAfterLogin(), callFirstPluginMethod(), callPluginMethodNodeFirst(), createSongListFromService(), getFeiniuPluginId(), getPluginConfigValue(), getPluginServiceRoleValue() (+13 more)
+Cohesion: 0.15
+Nodes (25): autoImportConfiguredFeiniuPlaylists(), autoImportFeiniuAfterLogin(), buildFeiniuOrigin(), callFirstPluginMethod(), callPluginMethodNodeFirst(), createSongListFromService(), getFeiniuCoverAuthHeaders(), getFeiniuPluginId() (+17 more)
 
 ### Community 184 - "CapabilityRemote"
 Cohesion: 0.22
@@ -1331,16 +1247,16 @@ Cohesion: 0.22
 Nodes (9): urls, description, properties, required, type, CapabilityRemote, urls, description (+1 more)
 
 ### Community 186 - "GlobalAudio.vue"
-Cohesion: 0.11
-Nodes (35): jumpTime(), applyToBoth(), audioARef, audioBRef, audioOutputStore, AudioSlot, audioStore, effectStore (+27 more)
+Cohesion: 0.07
+Nodes (51): analyser, animationId, { Audio }, canvasRef, componentId, controlAudio, dataArray, draw() (+43 more)
 
 ### Community 187 - "完整性能优化报告"
 Cohesion: 0.08
 Nodes (24): 1. **内存泄漏根源**, 1. **启动测试**, 2. **状态感知缺失**, 2. **监控命令**, 3. **场景测试**, CPU 优化, 一、缓存大小限制（针对所有状态）, 三、图片质量优化 (+16 more)
 
 ### Community 188 - "LocalTagEditor.vue"
-Cohesion: 0.14
-Nodes (16): activeTab, applyResult(), dialog, emit, formModel, handleClose(), handleSave(), loading (+8 more)
+Cohesion: 0.13
+Nodes (17): activeTab, applyResult(), dialog, emit, formModel, handleClose(), handleSave(), handleSearch() (+9 more)
 
 ### Community 189 - "ref_path"
 Cohesion: 0.50
@@ -1355,8 +1271,8 @@ Cohesion: 0.08
 Nodes (23): 1. **频谱可视化持续渲染（最严重）**, 2. **WebGL 着色器持续渲染**, 3. **IPC 统计刷新器持续运行**, 4. **SMTC 媒体控制初始化轮询**, 5. **背景视频解码（可选）**, CPU 优化分析报告, CPU 占用高的根本原因, 下一步 (+15 more)
 
 ### Community 192 - "audioOutput.ts"
-Cohesion: 0.24
-Nodes (7): AudioOutputDevice, coalesceOutputDevices(), DeviceStats, looksLikePlaceholderLabel(), mergeOutputDevices(), NativeAudioOutputDevice, useAudioOutputStore
+Cohesion: 0.50
+Nodes (3): emit, handleConfirm(), visible
 
 ### Community 193 - "updater"
 Cohesion: 0.20
@@ -1367,36 +1283,36 @@ Cohesion: 0.50
 Nodes (5): ContextMenu Component, Context Menu Component Guide, Context Menu Edge Positioning, Context Menu Interaction Practices, Context Menu Item Model
 
 ### Community 195 - "CeruMusic 当前歌单导入/导出对接文档（移动端）"
-Cohesion: 0.31
-Nodes (10): goCategoryPage(), loadCategories(), loadCategoryPage(), loadCategoryTotal(), normalizeSeconds(), plainCategory(), podcastCoverSize(), selectCategory() (+2 more)
+Cohesion: 0.36
+Nodes (9): categoryKeyOf(), goCategoryPage(), loadCategories(), loadCategoryPage(), loadCategoryTotal(), normalizeSeconds(), plainCategory(), selectCategory() (+1 more)
 
 ### Community 196 - "value_str"
-Cohesion: 0.14
-Nodes (22): collect_mg_playlists(), first_valid_lyric_text(), get_lyric_proxy(), is_valid_lyric_text(), kg_leaderboards(), kg_song(), kg_static_boards(), kuwo_comment_item() (+14 more)
+Cohesion: 0.18
+Nodes (17): convertMusicFreePlugin(), extractMusicFreeMeta(), isConvertedMusicFreePlugin(), looksLikeMusicFreePlugin(), MF_QUALITYS, mfHash(), mfMatch(), mfSlug() (+9 more)
 
 ### Community 197 - "In"
-Cohesion: 0.31
-Nodes (8): configPath(), loadPluginEntriesUncached(), persistRuntimePluginMeta(), readJson(), readRegistry(), schemaSize(), writeJson(), writeRegistry()
+Cohesion: 0.18
+Nodes (11): bakeCurrentBackdrop(), boostForLightField(), handleBackdropResize(), hasBackdropArtwork(), mixRgb(), resolveBackdropStageSize(), rgbaStr(), rgbStr() (+3 more)
 
 ### Community 198 - "prepare-mpv-runtime.mjs"
-Cohesion: 0.17
-Nodes (22): adhocSign(), arch, brewPrefix(), chmodWritable(), collectLibs(), copyFile(), __dirname, exists() (+14 more)
+Cohesion: 0.14
+Nodes (13): appContainerStyle, bgBlur, bgBrightness, bgOpacity, bgSettings, bgType, bgUrl, isEnabled (+5 more)
 
 ### Community 200 - "Capability"
 Cohesion: 0.33
 Nodes (6): identifier, permissions, description, required, type, Capability
 
 ### Community 201 - "ShaderBackground.vue"
-Cohesion: 0.16
-Nodes (21): actualCoverImage, { Audio }, { bgPlaying }, canvasRef, colorPalette, controlAudio, createProgram(), createShader() (+13 more)
+Cohesion: 0.18
+Nodes (13): calcSearchSuggestHeights(), clearHistory(), directSearchRef, emit, getSearchSuggest(), historyRef, removeHistory(), SearchStore (+5 more)
 
 ### Community 202 - "Capability"
 Cohesion: 0.33
 Nodes (6): identifier, permissions, description, required, type, Capability
 
 ### Community 203 - "PendingPanel.vue"
-Cohesion: 0.33
-Nodes (7): bindIdleActivityListeners(), emit, handleKeyDown(), nudgeLyricPlayback(), resetIdleTimer(), unbindIdleActivityListeners(), wakeFromIdle()
+Cohesion: 0.15
+Nodes (8): { checkForUpdates }, currentVersion, isChecking, { checkForUpdates }, currentVersion, handleCheckUpdate(), isChecking, useAutoUpdate()
 
 ### Community 204 - "ye"
 Cohesion: 0.32
@@ -1415,88 +1331,80 @@ Cohesion: 0.19
 Nodes (15): @renderer/components/Settings/DirectorySettings.vue, cacheDirSize, directories, downloadDirSize, emit, isSaving, loadDirectories(), refreshDirectorySizes() (+7 more)
 
 ### Community 208 - "backupLocalPluginsToCloud"
-Cohesion: 0.36
-Nodes (8): clearUsageInterval(), ensureUsageInterval(), flushUsage(), maybeShowSponsorPrompt(), persistUsage(), setUsageActive(), stopUsageTracking(), updateUsageActiveState()
+Cohesion: 0.27
+Nodes (10): songListAPI, extractCoverUrl(), hydrateMissingSongCovers(), INVALID_COVER_VALUES, isUsableCover(), resolveFirstPlaylistSongCover(), resolvePlaylistCover(), resolveSongCover() (+2 more)
 
 ### Community 214 - "fs"
-Cohesion: 0.32
-Nodes (12): bitnum(), bitnum_intl(), bitnum_intr(), crypt(), f(), initial_permutation(), inverse_permutation(), key_schedule() (+4 more)
+Cohesion: 0.11
+Nodes (18): DeepLinkQueueOptions, dissolvingWelcome, ensureStartupMicrophonePermission(), isAppReady, playlistShareQueue, route, router, scheduleDelayedMicrophoneRequest() (+10 more)
 
 ### Community 215 - "树夏Music 性能测试 - 手动操作指南"
 Cohesion: 0.10
 Nodes (20): 1. 最小化时资源释放, 2. 频谱分析器按需创建, 3. 背景烘焙优化, 六状态功耗测试流程, 完成测试后, 手动启动步骤, 新版本优化点验证, 方法 1：Finder 右键启动（推荐） (+12 more)
 
 ### Community 216 - "normalize.ts"
-Cohesion: 0.23
-Nodes (12): emitFavoritesSync(), emitPlaylistSync(), emitPluginSync(), emitPodcastSync(), emitSyncEvent(), getListeners(), listeners, onSyncEvent() (+4 more)
+Cohesion: 0.27
+Nodes (10): emitPlaylistSync(), emitPluginSync(), emitPodcastSync(), emitSyncEvent(), getListeners(), listeners, onSyncEvent(), SyncChangeType (+2 more)
 
 ### Community 217 - "性能优化修复总结"
 Cohesion: 0.10
 Nodes (19): 1. FullPlay.vue - 延迟卸载机制缺陷, 2. AudioVisualizer.vue - 停止检测不完整, 3. GlobalBackground.vue - 视频解码未释放, 修复时间, 修复的文件, 已优化的组件（之前已完成）, 快速验证步骤, 性能优化修复总结 (+11 more)
 
 ### Community 218 - "infSign.min.js"
-Cohesion: 0.17
-Nodes (8): @renderer/components/Settings/LyricFontSettings.vue, fontList, fontOptions, lyricFontFamily, lyricFontRate, lyricFontWeight, { settings }, settingsStore
+Cohesion: 0.12
+Nodes (9): appVersion, raw, versions, appVersion, autoUpdate, { checkForUpdates }, isCheckingUpdate, { settings } (+1 more)
 
 ### Community 219 - "useSmtc.ts"
-Cohesion: 0.18
-Nodes (13): nativeDuration(), nativeIsPaused(), firstCoverValue(), isDefaultArtwork(), mediaDiagLog(), MediaSessionCallbacks, MediaSessionController, NativeNowPlayingPayload (+5 more)
+Cohesion: 0.24
+Nodes (6): downloadSpeed, isHidden, DownloadProgress, downloadState, UpdateInfo, UpdatePhase
 
 ### Community 220 - "GlobalBackground.vue"
-Cohesion: 0.24
-Nodes (11): Comment, CommentResponse, DEFAULT_SONG_INFO, getBlobUrlFromUrl(), isRemoteCoverUrl(), Player, resolveCoverDisplayUrl(), resolveCoverFetchUrl() (+3 more)
+Cohesion: 0.53
+Nodes (5): fs, main(), Path, write_dev_bundle_info_plist(), write_if_changed()
 
 ### Community 221 - "AppHandle"
-Cohesion: 0.31
-Nodes (9): clearPlaybackPositionTimer(), getPlaybackPositionDelay(), persistPlaybackStateForClose(), restartPlaybackPositionTracking(), resumePlaybackAfterAudioSessionChange(), schedulePlaybackPositionTick(), startPlaybackPositionTracking(), stopPlaybackPositionTracking() (+1 more)
-
-### Community 222 - "searchValue"
-Cohesion: 0.10
-Nodes (15): formatMusicInfo(), DownloadStatus, DownloadTask, useDownloadStore, activeTab, completedTasks, downloadingTasks, failedTasks (+7 more)
+Cohesion: 0.22
+Nodes (9): handle_get_leaderboards(), kg_leaderboards(), kg_static_boards(), kw_leaderboards(), kw_static_boards(), mg_static_boards(), netease_get_json(), tx_leaderboards() (+1 more)
 
 ### Community 223 - "性能优化验证报告"
 Cohesion: 0.11
 Nodes (18): V1 vs V2 对比, V1（不完整）, ❌ V1 的严重缺陷, V2（完整）, V2 补全方案, ✅ "全部给我优化了吗？", 发现的问题（V1 版本）, 回答用户的问题 (+10 more)
 
 ### Community 224 - "animate.css"
-Cohesion: 0.32
-Nodes (12): applyMusicSourceFlags(), applyMusicSourcePlugin(), collectLocalPlugins(), forgetAppliedPluginHash(), logPluginSync(), readAppliedPluginHashes(), readDisabledMusicSources(), readPluginScript() (+4 more)
+Cohesion: 0.23
+Nodes (12): @renderer/components/Settings/MusicCache.vue, cacheEntries, cacheInfo, clearCache(), emit, limitFormatted, limitGb, loadCacheInfo() (+4 more)
 
 ### Community 226 - "colorExtractor.ts"
-Cohesion: 0.17
-Nodes (21): analysisCache, analyzeImageColors(), cacheAnalysis(), cacheCoverAnalysisAlias(), calculateCentroid(), colorDistance(), colorEquals(), createColorVariant() (+13 more)
+Cohesion: 0.08
+Nodes (44): actualCoverImage, { Audio }, { bgPlaying }, canvasRef, colorPalette, controlAudio, createProgram(), createShader() (+36 more)
 
 ### Community 227 - "@lrc-player/core"
 Cohesion: 0.20
 Nodes (7): emit, error, importingId, loading, playlists, props, ServicePlaylist
 
 ### Community 228 - "naive-ui"
-Cohesion: 0.20
-Nodes (12): closeLogin(), confirmLogoutPodcast(), doLogoutPodcast(), handleLoginMenu(), handleVisibilityChange(), loadBlocks(), openLogin(), refreshLogin() (+4 more)
+Cohesion: 0.35
+Nodes (9): ref_shazamio_core_web, generateShazamSignature(), pcmToWav(), writeAscii(), ensureAFP(), loadScript(), processFile(), resampleTo8kMono() (+1 more)
 
 ### Community 229 - "@pixi/app"
-Cohesion: 0.53
-Nodes (6): blockState(), loadBlock(), patchBlock(), selectBlockSub(), shuffleBlock(), visibleBlockRadios()
+Cohesion: 0.19
+Nodes (13): blockState(), fetchBlockRadios(), loadBlock(), loadChannel(), mergeRadios(), openRadio(), patchBlock(), plainRadio() (+5 more)
 
 ### Community 230 - "qrcode"
-Cohesion: 0.60
-Nodes (4): fs, main(), write_dev_bundle_info_plist(), write_if_changed()
+Cohesion: 0.49
+Nodes (11): dispatch(), enter(), enter_windowed_fullscreen(), exit(), exit_windowed_fullscreen(), is_windowed_fullscreen(), AppHandle, Result (+3 more)
 
 ### Community 231 - "NAS 免密访问 & 部署说明（给 AI / 自动化）"
 Cohesion: 0.29
 Nodes (6): NAS 免密访问 & 部署说明（给 AI / 自动化）, root 权限（免密 sudo）, 同步服务器位置, 安全须知, 常用部署命令, 登录方式（免密钥登录）
 
 ### Community 232 - "windowed_fs.rs"
-Cohesion: 0.14
-Nodes (22): isPodcastProgram(), autoSwitchSource(), createSourceSwitchDialog(), getCandidateSongs(), NON_SEARCHABLE_SOURCES, SEARCHABLE_SOURCE_ORDER, SWITCH_DIALOG_SOURCE_LABELS, switchDialogSourceLabel() (+14 more)
+Cohesion: 0.32
+Nodes (8): clearLocateBtnTimer(), clearLocateScrollTimers(), handleLocateBtnMouseEnter(), handleLocateBtnMouseLeave(), handleSongListScroll(), locateCurrentSong(), startLocateBtnHideTimer(), triggerLocateBtnVisible()
 
 ### Community 234 - "qrc-decrypt.js"
 Cohesion: 0.50
 Nodes (4): resources, ../packaging/mpv, ../packaging/sidecar-runtime, ../sidecar
-
-### Community 235 - "LtDanmakuLayer.vue"
-Cohesion: 0.14
-Nodes (14): cleanupTimers, DanmakuItem, flying, FONT_SIZES, lt, ltSettings, pickTrack(), randInRange() (+6 more)
 
 ### Community 267 - "空闲状态 CPU 占用测试指南"
 Cohesion: 0.12
@@ -1511,16 +1419,20 @@ Cohesion: 0.40
 Nodes (5): app, macOSPrivateApi, security, windows, csp
 
 ### Community 270 - "vue"
-Cohesion: 0.27
-Nodes (10): error, exportLogs(), getPlugins(), loadPluginLogs(), refreshLogs(), refreshPlugins(), uninstallPlugin(), viewPluginLogs() (+2 more)
+Cohesion: 0.25
+Nodes (8): ensureDuration(), formatTime(), openAccurateMatch(), parseIntervalToSec(), pickBestMatch(), rankCandidate(), searchAcrossSources(), strSim()
 
 ### Community 271 - "COVER-02：飞牛封面滚动空白与底栏缺图"
 Cohesion: 0.29
 Nodes (7): COVER-02：飞牛封面滚动空白与底栏缺图, Electron 对照, Tauri 落点, 已完成, 目标, 禁止事项, 验收
 
 ### Community 272 - "hotkeys.rs"
-Cohesion: 0.20
-Nodes (22): serde_json, apply_global_hotkeys(), ax_is_trusted(), ax_prompt_state_path(), ax_prompted_for_version(), dispatch_hotkey_action(), hotkeys_accessibility(), mark_ax_prompted() (+14 more)
+Cohesion: 0.33
+Nodes (5): description, name, private, type, version
+
+### Community 273 - "@tauri-apps/plugin-process"
+Cohesion: 0.24
+Nodes (7): AudioOutputDevice, coalesceOutputDevices(), DeviceStats, looksLikePlaceholderLabel(), mergeOutputDevices(), NativeAudioOutputDevice, useAudioOutputStore
 
 ### Community 275 - "Ceru Music Tauri Migration Task Board"
 Cohesion: 0.18
@@ -1560,7 +1472,7 @@ Nodes (7): Electron 对照, SYNC-01：云端/插件同步去重与镜像规则, 
 
 ### Community 284 - "axios"
 Cohesion: 0.33
-Nodes (7): channelDisposers, clearChannel(), createDesktopLyricBridge(), Disposer, safeInvoke(), trackDisposer(), app
+Nodes (8): closeOnClick(), DEFAULT_DURATION, installMessageBehavior(), isMessageOptions(), MessageLevel, MessageMethod, normalizeMessage(), patchLevel()
 
 ### Community 285 - "ThemeSelector.vue"
 Cohesion: 0.24
@@ -1575,40 +1487,32 @@ Cohesion: 0.33
 Nodes (6): 上下文或时间超限时的拆法, 给其他 Agent 的标准提示词, 通用开头, 领取单个任务, 领取只读排查任务, 领取验证任务
 
 ### Community 289 - "ref_node_path"
-Cohesion: 0.13
-Nodes (11): APP_DATA, db, DB_PATH, extractUrl(), feiniuSong, isPlayableUrl(), kwSong, probeUrl() (+3 more)
+Cohesion: 0.67
+Nodes (3): dispatch(), installGlobalMusicControls(), uninstallGlobalMusicControls()
 
 ### Community 290 - "naive-ui"
-Cohesion: 0.46
-Nodes (8): Shortcut, ShortcutEvent, capture_accelerator_for_action(), handle_shortcut(), match_media_hotkey(), match_user_hotkey(), parse_accelerator(), Option
+Cohesion: 0.15
+Nodes (17): download_get_tasks(), download_validate_files(), find_usable_cover(), is_usable_cover_url(), local_music_get_dirs(), local_music_set_dirs(), DownloadTask, Songs (+9 more)
+
+### Community 291 - "@pixi/display"
+Cohesion: 0.50
+Nodes (4): addAllToPlaylist(), clearScan(), matchBatch(), moreActionSelect()
 
 ### Community 292 - "definitions"
 Cohesion: 0.12
 Nodes (16): definitions, Number, ShellScopeEntryAllowedArg, ShellScopeEntryAllowedArgs, Target, Value, anyOf, description (+8 more)
 
+### Community 293 - "@pixi/filter-bulge-pinch"
+Cohesion: 0.40
+Nodes (4): command, process, reap_in_background(), spawn_detached()
+
 ### Community 296 - "@pixi/app"
-Cohesion: 0.46
-Nodes (7): decrypt(), keyArr, longArrToString(), longToBytes(), teaDecrypt(), toBigintArray(), toLong()
+Cohesion: 0.29
+Nodes (10): getLyric(), getLyricWeb(), mrcTools, decrypt(), keyArr, longArrToString(), longToBytes(), teaDecrypt() (+2 more)
 
 ### Community 297 - "definitions"
 Cohesion: 0.12
 Nodes (16): definitions, Number, ShellScopeEntryAllowedArg, ShellScopeEntryAllowedArgs, Target, Value, anyOf, description (+8 more)
-
-### Community 298 - "QueuePanel.vue"
-Cohesion: 0.22
-Nodes (8): canRemove(), handlePlay(), handleRemove(), isCurrentItem(), {
-  list: virtualList,
-  containerProps,
-  wrapperProps
-}, lt, queueRef, QueueItem
-
-### Community 300 - "@tauri-apps/api"
-Cohesion: 0.33
-Nodes (3): OffsetEntry, OffsetMapRaw, useLyricExtrasStore
-
-### Community 301 - "@tauri-apps/plugin-fs"
-Cohesion: 0.52
-Nodes (6): envNumber(), envValue(), resolveDbPath(), SYNC_ADMIN_TOKEN(), SYNC_HOST(), SYNC_PORT()
 
 ### Community 302 - "@tauri-apps/plugin-notification"
 Cohesion: 0.29
@@ -1630,49 +1534,25 @@ Nodes (5): close(), emit, onEsc(), onOverlayClick(), props
 Cohesion: 0.22
 Nodes (13): handle_system_wake(), init(), init_system_power_watcher(), ns_string(), register_target_class(), AnyClass, AnyObject, AppHandle (+5 more)
 
-### Community 307 - "addToPlaylistAndPlay"
-Cohesion: 0.11
-Nodes (17): getLegacyNasConfig(), CloudSettings, request, SettingsSyncService, playSetting, GlobalBackgroundSettings, SettingsState, TagWriteOptions (+9 more)
-
 ### Community 308 - "SvgIcon.vue"
 Cohesion: 0.40
 Nodes (3): props, svgContainer, svgContent
 
-### Community 310 - "onExtraMenuClick"
-Cohesion: 0.62
-Nodes (5): capabilityIdentityKey(), musicSourceIdentityKey(), normalizeAuthorToken(), normalizePluginToken(), sameMusicSourcePlugin()
-
-### Community 315 - "@types/dompurify"
-Cohesion: 0.50
-Nodes (3): emit, handleConfirm(), visible
-
-### Community 317 - "@types/qrcode"
-Cohesion: 0.40
-Nodes (3): props, svgContainer, wrapStyle
-
 ### Community 318 - "models.rs"
 Cohesion: 0.13
-Nodes (16): Cow, serde, CountEntry, DirectorySettings, DownloadTask, normalize_duplicate_types(), parses_song_written_with_duplicate_types(), parses_string_album_id() (+8 more)
-
-### Community 321 - "unplugin-auto-import"
-Cohesion: 0.67
-Nodes (4): downloadDataUrl(), savePoster(), savePoster(), sanitizeFileName()
+Nodes (15): Cow, serde, CountEntry, DirectorySettings, DownloadTask, normalize_duplicate_types(), parses_song_written_with_duplicate_types(), parses_string_album_id() (+7 more)
 
 ### Community 322 - "macOS 应用公证指南"
 Cohesion: 0.13
 Nodes (14): macOS 应用公证指南, 公证后的效果, 总结, 方案 A：用户手动移除隔离属性, 方案 B：提供安装脚本, 替代方案（不推荐）, 根本原因, 步骤 1：加入 Apple Developer Program (+6 more)
 
+### Community 323 - "@tauri-apps/cli"
+Cohesion: 0.33
+Nodes (5): src_common_api_config, axiosInstances, defaultRequest, ERROR_MESSAGES, SocketConnectOptions
+
 ### Community 324 - "树夏Music 性能测试指南"
 Cohesion: 0.07
 Nodes (26): Instruments (macOS), Memory Profiler, Safari/Chrome DevTools Performance, 下一步行动, ⚠️  中优先级问题, 使用开发者工具深入分析, 全屏播放基线, 全屏连续切歌（20次） (+18 more)
-
-### Community 327 - "PermissionEntry"
-Cohesion: 0.67
-Nodes (3): PermissionEntry, anyOf, description
-
-### Community 328 - "converter-musicfree.mjs"
-Cohesion: 0.16
-Nodes (18): convertEventDrivenPlugin(), convertMusicFreePlugin(), extractMusicFreeMeta(), isConvertedMusicFreePlugin(), looksLikeMusicFreePlugin(), MF_QUALITYS, mfHash(), mfMatch() (+10 more)
 
 ### Community 334 - "applyFullPlayGesture"
 Cohesion: 0.19
@@ -1687,8 +1567,8 @@ Cohesion: 0.14
 Nodes (13): 1. 动画和渲染循环, 2. 定时器和轮询, 3. 内存泄漏风险, 4. 闲置优化, Phase 1: 核心渲染优化 (已完成), Phase 2: 定时器优化 (进行中), Phase 3: 内存管理 (计划中), Phase 4: 验证测试 (最后) (+5 more)
 
 ### Community 339 - "ImportPlaylist.vue"
-Cohesion: 0.14
-Nodes (16): ref_node_url, isBareSpecifier(), resolve(), roots, getNextSong(), initPlayback(), bootThenEnter(), brightnessScaled (+8 more)
+Cohesion: 0.24
+Nodes (9): brightnessScaled, canvasRef, CFG, makeStars(), rand(), resetStar(), router, Star (+1 more)
 
 ### Community 340 - "树夏Music 同步服务器"
 Cohesion: 0.15
@@ -1706,21 +1586,29 @@ Nodes (13): properties, Identifier, default, description, type, description, one
 Cohesion: 0.15
 Nodes (13): properties, Identifier, default, description, type, description, oneOf, type (+5 more)
 
-### Community 344 - "music_sdk_request"
-Cohesion: 0.21
-Nodes (13): build_file_path(), create_download_task(), handle_download_batch_songs(), handle_download_single_song(), handle_get_pic(), music_enqueue_download(), music_get_lyric(), music_resolve_cover() (+5 more)
+### Community 345 - "LyricExtras.ts"
+Cohesion: 0.33
+Nodes (3): OffsetEntry, OffsetMapRaw, useLyricExtrasStore
 
-### Community 348 - "array_at"
-Cohesion: 0.26
-Nodes (12): array_at(), existing_category_playlists_response(), existing_comment_response(), existing_playlist_detail_response(), existing_song_detail_response(), format_comment_time(), lyric_text_at(), normalize_comment() (+4 more)
+### Community 346 - "windowDrag.ts"
+Cohesion: 0.50
+Nodes (3): ref_tauri_apps_api_window, INTERACTIVE_SELECTOR, startWindowDrag()
+
+### Community 347 - "createWorkerRuntime"
+Cohesion: 0.67
+Nodes (4): createWorkerRuntime(), persistPreparedPluginCode(), pluginFileName(), pluginPath()
+
+### Community 350 - "PermissionEntry"
+Cohesion: 0.67
+Nodes (3): PermissionEntry, anyOf, description
 
 ### Community 351 - "isAppWindowActive"
 Cohesion: 0.27
 Nodes (11): addBurst(), pick(), resizeCanvas(), rnd(), scheduleBursts(), shouldRunBackground(), startFireworks(), step() (+3 more)
 
 ### Community 355 - "ref_node_crypto"
-Cohesion: 0.22
-Nodes (13): getSearchId(), handleResult(), musicSearch(), randomInt(), search(), signRequest(), base64Encode(), hashSHA1() (+5 more)
+Cohesion: 0.20
+Nodes (14): ref_node_crypto, getSearchId(), handleResult(), musicSearch(), randomInt(), search(), signRequest(), base64Encode() (+6 more)
 
 ### Community 364 - "sidecar/index.mjs"
 Cohesion: 0.17
@@ -1738,10 +1626,6 @@ Nodes (12): 1. 最小化/不可见时卸载重资源, 2. 频谱分析器按需�
 Cohesion: 0.20
 Nodes (10): type, webviews, windows, items, description, items, type, description (+2 more)
 
-### Community 377 - "handle_get_leaderboards"
-Cohesion: 0.11
-Nodes (26): arg_source(), empty_comment_response(), empty_playlist_tags(), existing_leaderboards_response(), existing_playlist_tags_response(), handle_get_comment(), handle_get_hot_comment(), handle_get_leaderboards() (+18 more)
-
 ### Community 382 - "NAS 多端同步成熟方案对照"
 Cohesion: 0.22
 Nodes (8): CouchDB / PouchDB, NAS 多端同步成熟方案对照, PowerSync, Replicache, 当前实现与缺口, 推荐协议, 方案对照, 结论
@@ -1754,10 +1638,6 @@ Nodes (7): 两个发布仓库, 发布流程, 更新器怎么“哪边快用哪�
 Cohesion: 0.25
 Nodes (7): Windows Packaging, 为什么以前不行, 在 macOS 上注意, 在 Windows 上打包, 安装后冒烟, 现在的方案, 相关文件
 
-### Community 395 - "tx_get_music_url"
-Cohesion: 0.32
-Nodes (8): is_restricted_playback_text(), kw_accept_play_url(), looks_like_audio_url(), normalize_http_play_url(), sdk_client(), sdk_post_json(), tx_filenames(), tx_get_music_url()
-
 ### Community 430 - "desktop-schema.json"
 Cohesion: 0.40
 Nodes (4): anyOf, description, $schema, title
@@ -1767,8 +1647,8 @@ Cohesion: 0.40
 Nodes (4): anyOf, description, $schema, title
 
 ### Community 438 - "@renderer/components/Settings/EqualizerSettings.vue"
-Cohesion: 0.10
-Nodes (19): @renderer/components/Settings/EqualizerSettings.vue, audio, audioStore, BUILTIN_PRESETS, canDeleteCurrentPreset, confirmDeletePreset(), currentPresetName, deleteCurrentPreset() (+11 more)
+Cohesion: 0.07
+Nodes (28): @renderer/components/Settings/AudioEffectSettings.vue, audioStore, { bassBoost, surround, balance, loudness }, bassPreset, store, @renderer/components/Settings/EqualizerSettings.vue, applyGains(), audio (+20 more)
 
 ### Community 454 - "sidecar/package.json"
 Cohesion: 0.50
@@ -1782,29 +1662,25 @@ Nodes (4): default, description, type, local
 Cohesion: 0.50
 Nodes (4): default, description, type, local
 
-### Community 487 - "PermissionEntry"
-Cohesion: 0.67
-Nodes (3): PermissionEntry, anyOf, description
-
 ## Knowledge Gaps
-- **2416 isolated node(s):** `analyze-webview-memory.sh script`, `install-new-build.sh script`, `monitor-live-app.sh script`, `name`, `version` (+2411 more)
+- **2435 isolated node(s):** `analyze-webview-memory.sh script`, `install-new-build.sh script`, `monitor-live-app.sh script`, `name`, `version` (+2430 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **244 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **174 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `vue` connect `useSettingsStore` to `PlayMusic.vue`, `list.vue`, `http.ts`, `FullPlay.vue`, `songlist.vue`, `SongVirtualList.vue`, `LocalUserDetail.ts`, `@renderer/components/Settings/plugins.vue`, `local.vue`, `globaPlayList.ts`, `SyncDatabase`, `tauri-bridge.ts`, `ChatPanel.vue`, `更新日志 (Changelog)`, `ListenTogether.ts`, `PlaylistDrawer.vue`, `ShareSongDialog.vue`, `ContextMenu.vue`, `SharePlaylistDialog.vue`, `podcast.vue`, `DeskTopLyric.vue`, `Provider.vue`, `LyricAdapter.vue`, `utils.ts`, `search.vue`, `playlistManager.ts`, `@renderer/components/Settings/HotkeySettings.vue`, `radio.vue`, `Profile.vue`, `crossfade.ts`, `LocalUserDetailStore`, `find.vue`, `PluginNoticeDialog.vue`, `recognize.vue`, `cloudSongList.ts`, `LocalTagEditorPage.vue`, `mediaGateway.ts`, `AutoUpdateService`, `CommentsOverlay.vue`, `main.ts`, `提问的智慧与高效提问指南（合并版）`, `mg/lyric.js`, `share.ts`, `MusicSourceSection.vue`, `DuplicateSongsDialog.vue`, `electron-reference/index.js`, `scripts`, `LeaderBord.vue`, `ListenTogetherOverlay.vue`, `SongCardActions.vue`, `e`, `json`, `isAppWindowVisible`, `ShareConsentBar.vue`, `httpFetch`, `PlaylistActions.vue`, `@renderer/components/Settings/DesktopLyricStyle.vue`, `DevAuthInjector.vue`, `ListenTogetherEntryDialog.vue`, `歌单管理 API 文档`, `PagerBar.vue`, `package.json`, `Settings.ts`, `HomeLayout.vue`, `GlobalAudio.vue`, `LocalTagEditor.vue`, `audioOutput.ts`, `ShaderBackground.vue`, `StorageSection.vue`, `infSign.min.js`, `GlobalBackground.vue`, `searchValue`, `@lrc-player/core`, `windowed_fs.rs`, `LtDanmakuLayer.vue`, `@tauri-apps/plugin-process`, `axios`, `ThemeSelector.vue`, `QueuePanel.vue`, `@tauri-apps/api`, `@tauri-apps/plugin-process`, `addToPlaylistAndPlay`, `@types/dompurify`, `@types/qrcode`, `ImportPlaylist.vue`, `@renderer/components/Settings/EqualizerSettings.vue`?**
-  _High betweenness centrality (0.308) - this node is a cross-community bridge._
-- **Why does `dependencies` connect `dependencies` to `time`, `package.json`, `dompurify`, `@pixi/display`, `@pixi/filter-bulge-pinch`, `markdown-it-footnote`, `mitt`, `pluginSandbox.ts`, `@tauri-apps/plugin-global-shortcut`, `tdesign-icons-vue-next`, `@vueuse/core`, `.migrate`, `songlist`, `db.rs`, `@pixi/filter-color-matrix`, `socket.io-client`, `three`, `@types/uuid`, `typescript`, `unplugin-auto-import`, `me`, `.get`, `@vueuse/core`, `marked`, `shazamio-core`, `vue-router`?**
-  _High betweenness centrality (0.219) - this node is a cross-community bridge._
+- **Why does `vue` connect `Settings.ts` to `PlayMusic.vue`, `list.vue`, `http.ts`, `FullPlay.vue`, `songlist.vue`, `SongVirtualList.vue`, `LocalUserDetail.ts`, `@renderer/components/Settings/plugins.vue`, `local.vue`, `globaPlayList.ts`, `ChatPanel.vue`, `更新日志 (Changelog)`, `ListenTogether.ts`, `PlaylistDrawer.vue`, `ShareSongDialog.vue`, `value`, `ContextMenu.vue`, `SharePlaylistDialog.vue`, `podcast.vue`, `DeskTopLyric.vue`, `Provider.vue`, `LyricAdapter.vue`, `utils.ts`, `search.vue`, `@renderer/components/Settings/HotkeySettings.vue`, `radio.vue`, `Profile.vue`, `crossfade.ts`, `LocalUserDetailStore`, `find.vue`, `PluginNoticeDialog.vue`, `recognize.vue`, `formatSingerName`, `cloudSongList.ts`, `LocalTagEditorPage.vue`, `mediaGateway.ts`, `CommentsOverlay.vue`, `main.ts`, `提问的智慧与高效提问指南（合并版）`, `share.ts`, `MusicSourceSection.vue`, `DuplicateSongsDialog.vue`, `scripts`, `LeaderBord.vue`, `ListenTogetherOverlay.vue`, `SongCardActions.vue`, `scripts`, `.error`, `ShareConsentBar.vue`, `httpFetch`, `PlaylistActions.vue`, `DevAuthInjector.vue`, `ListenTogetherEntryDialog.vue`, `tauri-plugin-updater.ts`, `歌单管理 API 文档`, `PagerBar.vue`, `package.json`, `CeruMusicPluginHost 使用文档`, `HomeLayout.vue`, `GlobalAudio.vue`, `LocalTagEditor.vue`, `audioOutput.ts`, `prepare-mpv-runtime.mjs`, `ShaderBackground.vue`, `PendingPanel.vue`, `StorageSection.vue`, `fs`, `infSign.min.js`, `useSmtc.ts`, `animate.css`, `colorExtractor.ts`, `@lrc-player/core`, `@tauri-apps/plugin-process`, `ThemeSelector.vue`, `@tauri-apps/plugin-process`, `ImportPlaylist.vue`, `LyricExtras.ts`, `@renderer/components/Settings/EqualizerSettings.vue`?**
+  _High betweenness centrality (0.313) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `time`, `hotkeys.rs`, `dompurify`, `markdown-it-footnote`, `mitt`, `QueuePanel.vue`, `qrcode`, `nsfwjs`, `@pixi/app`, `@tauri-apps/plugin-dialog`, `pluginSandbox.ts`, `onExtraMenuClick`, `@tauri-apps/plugin-global-shortcut`, `@tauri-apps/plugin-fs`, `@tauri-apps/plugin-notification`, `@tauri-apps/plugin-process`, `tdesign-vue-next`, `virtua`, `@pixi/filter-color-matrix`, `socket.io-client`, `three`, `unplugin-auto-import`, `me`, `.get`, `shazamio-core`, `vue-router`?**
+  _High betweenness centrality (0.238) - this node is a cross-community bridge._
 - **Why does `uuid` connect `time` to `dependencies`?**
-  _High betweenness centrality (0.198) - this node is a cross-community bridge._
-- **Are the 2 inferred relationships involving `createTauriBridge()` (e.g. with `e()` and `normalizeSongListRecords()`) actually correct?**
-  _`createTauriBridge()` has 2 INFERRED edges - model-reasoned connections that need verification._
+  _High betweenness centrality (0.221) - this node is a cross-community bridge._
 - **What connects `analyze-webview-memory.sh script`, `install-new-build.sh script`, `monitor-live-app.sh script` to the rest of the system?**
-  _2416 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _2435 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `native_audio.rs` be split into smaller, more focused modules?**
   _Cohesion score 0.06163401815575729 - nodes in this community are weakly interconnected._
 - **Should `misc.rs` be split into smaller, more focused modules?**
-  _Cohesion score 0.03261827799000882 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.11511387163561076 - nodes in this community are weakly interconnected._
+- **Should `PlayMusic.vue` be split into smaller, more focused modules?**
+  _Cohesion score 0.01765056648777579 - nodes in this community are weakly interconnected._

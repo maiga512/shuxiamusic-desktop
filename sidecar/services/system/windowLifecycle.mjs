@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import os from 'node:os'
 
-const DEFAULT_IDENTIFIER = 'com.cerumusic.tauri'
+const DEFAULT_IDENTIFIER = 'com.shuxiamusic.tauri'
 const HISTORY_LIMIT = 200
 
 const defaultState = {

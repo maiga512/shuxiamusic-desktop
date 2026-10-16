@@ -10,6 +10,7 @@ mod windowed_fs;
 
 use commands::cover_proxy::*;
 use commands::dlna::*;
+use commands::download_engine::download_finalize_metadata;
 use commands::local_music::*;
 use commands::lyric_window::*;
 use commands::media_stream_proxy::*;
@@ -441,7 +442,7 @@ fn refresh_menu_bar_lyric(app: &tauri::AppHandle) {
         return;
     }
 
-    let _ = tray.set_tooltip(Some("Ceru Music"));
+    let _ = tray.set_tooltip(Some("树夏Music"));
 
     #[cfg(target_os = "macos")]
     {
@@ -799,7 +800,7 @@ fn migrate_mac_tray_preferred_position_to_guid() {
     use std::process::Command;
     let domain = std::env::var("APP_IDENTIFIER").unwrap_or_else(|_| {
         // tauri dev bare binary uses process-name defaults domain; packaged uses bundle id.
-        "ceru-tauri".to_string()
+        "shuxia-tauri".to_string()
     });
     let legacy_key = "NSStatusItem Preferred Position Item-0";
     let guid_key = format!("NSStatusItem Preferred Position {MAC_TRAY_GUID}");
@@ -928,7 +929,7 @@ fn setup_tray(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(not(target_os = "macos"))]
     {
-        builder = builder.tooltip("Ceru Music").icon(load_tray_icon());
+        builder = builder.tooltip("树夏Music").icon(load_tray_icon());
     }
 
     if is_tray_interactive(app.handle()) {
@@ -1195,7 +1196,11 @@ fn parse_deep_link_payload(payload: &str) -> Vec<String> {
                 Vec::new()
             }
         }
-        _ if trimmed.starts_with("cerumusic://") => vec![trimmed.to_string()],
+        _ if trimmed.starts_with("shuxiamusic://")
+            || trimmed.starts_with("cerumusic://") =>
+        {
+            vec![trimmed.to_string()]
+        }
         _ => Vec::new(),
     };
 
@@ -1258,7 +1263,9 @@ fn handle_deep_link_url(handle: &tauri::AppHandle, url: String) {
         return;
     }
     if url.contains("/open-playlist") {
-        let path = url.replacen("cerumusic://open-playlist/", "", 1);
+        let path = url
+            .replacen("shuxiamusic://open-playlist/", "", 1)
+            .replacen("cerumusic://open-playlist/", "", 1);
         if !path.is_empty() {
             push_pending_open_playlist_file(path.clone());
             let _ = handle.emit("open-playlist-file", &path);
@@ -1295,11 +1302,105 @@ fn install_panic_logger() {
         if let Ok(mut file) = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(std::env::temp_dir().join("ceru-tauri-panic.log"))
+            .open(std::env::temp_dir().join("shuxia-music-panic.log"))
         {
             let _ = file.write_all(line.as_bytes());
         }
     }));
+}
+
+/// 把设置里指向旧 bundle id (com.cerumusic.tauri) 的存储目录改写到当前 app_data_dir。
+/// 更名后 `cache_dir`/`download_dir` 若仍写死旧标识，会指向已迁移目录下的死路径；
+/// 这里只在"旧前缀命中"时改写并回写，不改动用户自定义的其他绝对路径。
+fn remap_legacy_storage_dirs(database: &Database, app_data_dir: &std::path::Path) {
+    let Some(new_base) = app_data_dir.to_str().map(|s| s.to_string()) else {
+        return;
+    };
+    let Some(parent) = app_data_dir.parent() else {
+        return;
+    };
+    let old_base = parent
+        .join("com.cerumusic.tauri")
+        .to_string_lossy()
+        .to_string();
+    if old_base.is_empty() || old_base == new_base {
+        return;
+    }
+    for key in ["cache_dir", "download_dir"] {
+        let Some(raw) = database.get_setting(key) else {
+            continue;
+        };
+        let trimmed = raw.trim();
+        if trimmed.starts_with(&old_base) {
+            let suffix = &trimmed[old_base.len()..];
+            let fixed = format!("{new_base}{suffix}");
+            database.set_setting(key, fixed.trim());
+            eprintln!("[legacy-storage] 纠正 {key}: {trimmed} -> {fixed}");
+        }
+    }
+}
+
+/// 一次性把旧 bundle id (com.cerumusic.tauri) 的应用数据迁移到新目录。
+/// 仅当新目录还没有数据库、而旧目录存在时执行；优先用 rename 原子移动（同卷极快），
+/// 跨卷失败时退化为复制，且不覆盖新目录已有文件（保留新数据）。
+fn migrate_legacy_app_data(new_dir: &std::path::Path) -> Result<(), String> {
+    use std::path::Path;
+    let Some(parent) = new_dir.parent() else {
+        return Ok(());
+    };
+    let legacy = parent.join("com.cerumusic.tauri");
+    if !legacy.is_dir() {
+        return Ok(());
+    }
+    // 已迁移（新目录已存在新库或旧库）则跳过
+    if new_dir.join("shuxia-music.db").exists() || new_dir.join("ceru-music.db").exists() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(new_dir).map_err(|e| e.to_string())?;
+
+    for entry in std::fs::read_dir(&legacy).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let from = entry.path();
+        let to = new_dir.join(entry.file_name());
+        if to.exists() {
+            continue; // 新目录已有该条目，保留新数据
+        }
+        if std::fs::rename(&from, &to).is_err() {
+            // 跨卷等情况退化为复制
+            let file_type = entry.file_type().map_err(|e| e.to_string())?;
+            if file_type.is_dir() {
+                copy_dir_no_overwrite(&from, &to)?;
+            } else if file_type.is_file() {
+                std::fs::copy(&from, &to).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+
+    // 重命名旧数据库 ceru-music.db -> shuxia-music.db
+    let old_db = new_dir.join("ceru-music.db");
+    let new_db = new_dir.join("shuxia-music.db");
+    if old_db.exists() && !new_db.exists() {
+        let _ = std::fs::rename(&old_db, &new_db);
+    }
+    Ok(())
+}
+
+fn copy_dir_no_overwrite(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    std::fs::create_dir_all(dst).map_err(|e| e.to_string())?;
+    for entry in std::fs::read_dir(src).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let from = entry.path();
+        let to = dst.join(entry.file_name());
+        let file_type = entry.file_type().map_err(|e| e.to_string())?;
+        if file_type.is_dir() {
+            copy_dir_no_overwrite(&from, &to)?;
+        } else if file_type.is_file() {
+            if !to.exists() {
+                std::fs::copy(&from, &to).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+    Ok(())
 }
 
 pub fn run() {
@@ -1320,19 +1421,31 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-            let database = Database::new(app_data_dir)?;
+            // 更名迁移：Ceru(com.cerumusic.tauri) -> 树夏(com.shuxiamusic.tauri)
+            // bundle id 变化会让 app_data_dir 指向新目录；首次启动把旧目录数据搬过来，
+            // 并把旧库 ceru-music.db 重命名为 shuxia-music.db，避免数据库/下载/歌单丢失。
+            migrate_legacy_app_data(&app_data_dir)?;
+            let database = Database::new(app_data_dir.clone())?;
+            // 存储目录设置里若仍指向旧 bundle id (com.cerumusic.tauri) 的路径，
+            // 会变成一个指向已迁移目录的死路径（下载/缓存写错地方、"打开目录"打不开）。
+            // 启动时把这类设置纠正回当前 app_data_dir，避免用户看到的下载/缓存目录错位。
+            remap_legacy_storage_dirs(&database, &app_data_dir);
             app.manage(database);
 
             if let Err(error) = commands::cover_proxy::ensure_cover_proxy(app.handle().clone()) {
                 eprintln!("[cover-proxy] 启动失败: {}", error);
             }
 
-            // ---- 注册 cerumusic:// 深度链接协议 ----
+            // ---- 注册深度链接协议（主 scheme shuxiamusic://；保留 cerumusic:// 兼容旧端过渡）----
             // 处理 OAuth 登录回调、分享、歌单分享、插件安装、播放控制、歌单文件导入、一起听邀请
             {
                 let handle = app.handle().clone();
+                if let Err(e) = app.deep_link().register("shuxiamusic") {
+                    eprintln!("注册深度链接(shuxiamusic)失败: {}", e);
+                }
+                // 兼容：旧安卓/服务端可能仍发 cerumusic://，保留注册使过渡期不断开
                 if let Err(e) = app.deep_link().register("cerumusic") {
-                    eprintln!("注册深度链接失败: {}", e);
+                    eprintln!("注册深度链接(cerumusic 兼容)失败: {}", e);
                 }
                 app.listen("deep-link://new-url", move |event| {
                     let urls = parse_deep_link_payload(event.payload());
@@ -1602,6 +1715,8 @@ pub fn run() {
             // Node sidecar
             node_sidecar_request,
             node_sidecar_health,
+            // Download 元数据补写（Node 下载引擎落盘后，按"下载标签写入设置"写封面/歌词/基础信息）
+            download_finalize_metadata,
             // Desktop lyric window
             toggle_desktop_lyric,
             get_desktop_lyric_option,
@@ -1707,6 +1822,8 @@ pub fn run() {
             // System
             music_cache_get_info,
             music_cache_get_size,
+            music_cache_get_limit,
+            music_cache_set_limit,
             music_cache_clear,
             // Misc: media metadata bridge
             music_resolve_playback_url,
@@ -1767,6 +1884,8 @@ pub fn run() {
             image_url_to_data_url,
             cover_proxy_url,
             cover_proxy_base,
+            cover_cache_info,
+            cover_cache_clear,
             plugin_crypto_md5,
             plugin_crypto_random_bytes,
             plugin_crypto_aes_encrypt,

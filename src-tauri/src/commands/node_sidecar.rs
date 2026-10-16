@@ -196,6 +196,21 @@ fn spawn_sidecar(app: AppHandle, state: Arc<NodeSidecarState>) -> Result<(), Str
 
     let entry = resolve_sidecar_entry(&app)?;
     let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    // 把数据库里配置的下载/缓存目录作为 env 传给 sidecar，让 sidecar 一启动就用用户
+    // 设置的路径（不再依赖"打开过设置页才同步"，根治下载落到默认/缓存目录的问题）。
+    let (cfg_download_dir, cfg_cache_dir) = app
+        .try_state::<crate::db::Database>()
+        .map(|db| {
+            (
+                db.get_setting("download_dir")
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+                db.get_setting("cache_dir")
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+            )
+        })
+        .unwrap_or_default();
     let node_bin = resolve_bundled_node(&app).unwrap_or_else(|| std::path::PathBuf::from("node"));
     let module_paths = resolve_node_module_paths(&app, &entry);
     let mut command = Command::new(&node_bin);
@@ -215,6 +230,12 @@ fn spawn_sidecar(app: AppHandle, state: Arc<NodeSidecarState>) -> Result<(), Str
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    if let Some(dir) = &cfg_download_dir {
+        command.env("CERU_DOWNLOAD_DIR", dir);
+    }
+    if let Some(dir) = &cfg_cache_dir {
+        command.env("CERU_CACHE_DIR", dir);
+    }
     if let Some(dir) = sidecar_dir.as_ref() {
         command.current_dir(dir);
     }

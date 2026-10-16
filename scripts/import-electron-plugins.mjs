@@ -14,7 +14,7 @@ const tauriPluginsDir = path.join(
   os.homedir(),
   'Library',
   'Application Support',
-  'com.cerumusic.tauri',
+  'com.shuxiamusic.tauri',
   'plugins'
 )
 const tauriConfigDir = path.join(tauriPluginsDir, 'config')

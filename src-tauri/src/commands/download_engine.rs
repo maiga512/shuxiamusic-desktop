@@ -527,6 +527,46 @@ async fn write_basic_tags(task: &DownloadTask) -> Result<(), String> {
         return Ok(());
     }
 
+    // 优先 ffmpeg：本机 exiftool 写不了 mp3/flac（"Writing not yet supported"），
+    // ffmpeg 的 UTF-8 + 内嵌封面支持稳定。找不到 ffmpeg 才降级到下方 exiftool 兜底。
+    if let Some(ffmpeg) = resolve_ffmpeg() {
+        let title = first_song_text(&task.song_info, &["name"])
+            .map(str::to_string)
+            .or_else(|| Some(task.name.clone()))
+            .unwrap_or_default();
+        let artist = first_song_text(&task.song_info, &["singer"])
+            .map(str::to_string)
+            .or_else(|| Some(task.singer.clone()))
+            .unwrap_or_default();
+        let album = first_song_text(&task.song_info, &["albumName", "album_name"])
+            .map(str::to_string)
+            .unwrap_or_default();
+        let year = task.song_info.get("year").and_then(|v| v.as_i64());
+        let lyrics = first_song_text(&task.song_info, &["lrc"]).map(str::to_string).unwrap_or_default();
+        let cover_temp = if value_bool(&task.tag_write_options, "cover") {
+            write_cover_temp_file(task).await.ok().flatten()
+        } else {
+            None
+        };
+        let result = write_tags_with_ffmpeg(
+            ffmpeg,
+            task.file_path.clone(),
+            value_bool(&task.tag_write_options, "basicInfo"),
+            title,
+            artist,
+            album,
+            year,
+            value_bool(&task.tag_write_options, "lyrics"),
+            lyrics,
+            cover_temp.clone(),
+        )
+        .await;
+        if let Some(p) = cover_temp {
+            let _ = tokio::fs::remove_file(p).await;
+        }
+        return result;
+    }
+
     let mut args = vec!["-overwrite_original".to_string()];
     let mut deferred_errors = Vec::new();
     let cover_temp_path = match write_cover_temp_file(task).await {
@@ -588,7 +628,7 @@ async fn write_basic_tags(task: &DownloadTask) -> Result<(), String> {
     args.push(task.file_path.clone());
 
     let output = tokio::task::spawn_blocking(move || {
-        std::process::Command::new("exiftool").args(&args).output()
+        std::process::Command::new(resolve_exiftool()).args(&args).output()
     })
     .await
     .map_err(|error| format!("标签写入任务失败: {}", error))?
@@ -618,6 +658,191 @@ fn push_exif_arg(args: &mut Vec<String>, key: &str, value: Option<&str>) {
             args.push(format!("-{}={}", key, value));
         }
     }
+}
+
+/// 解析 exiftool 可执行文件。GUI 应用从 Dock/Finder 启动时 PATH 往往不含
+/// Homebrew 目录，直接 `Command::new("exiftool")` 会找不到；这里按常见安装位置
+/// 兜底，最后再退回 PATH。
+fn resolve_exiftool() -> String {
+    for candidate in [
+        "/opt/homebrew/bin/exiftool",
+        "/usr/local/bin/exiftool",
+        "/usr/bin/exiftool",
+    ] {
+        if std::path::Path::new(candidate).exists() {
+            return candidate.to_string();
+        }
+    }
+    "exiftool".to_string()
+}
+
+/// 解析 ffmpeg 可执行文件（写标签主工具）。本机 exiftool 实测
+/// "Writing of MP3/FLAC files is not yet supported"（写不了音频标签），
+/// 而 ffmpeg 对 UTF-8（中文歌名/歌词）与内嵌封面支持稳定，且 mp3/flac/m4a/wav/ogg
+/// 都能 `-c copy` 只做标签 remux（不重编码、秒级完成）。找不到就返回 None，
+/// 让调用方降级到 exiftool。
+fn resolve_ffmpeg() -> Option<String> {
+    for candidate in [
+        "/opt/homebrew/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "/usr/bin/ffmpeg",
+    ] {
+        if std::path::Path::new(candidate).exists() {
+            return Some(candidate.to_string());
+        }
+    }
+    None
+}
+
+/// 用 ffmpeg 写标签（basicInfo / 内嵌封面 / 内嵌歌词），`-c copy` 只 remux 不改音质。
+/// 内嵌歌词落到 comment（ffmpeg 对各容器无统一 USLT 通道，多数播放器会展示；
+/// 完整歌词由"单独下载歌词文件(.lrc)"承载，finalize 里已单独写文件）。
+async fn write_tags_with_ffmpeg(
+    ffmpeg: String,
+    file_path: String,
+    want_basic: bool,
+    title: String,
+    artist: String,
+    album: String,
+    year: Option<i64>,
+    want_lyrics: bool,
+    lyrics: String,
+    cover: Option<String>,
+) -> Result<(), String> {
+    if !(want_basic || want_lyrics || cover.is_some()) {
+        return Ok(());
+    }
+    let out_path = format!("{}.tagtmp.{}", file_path, uuid::Uuid::new_v4());
+    let out = out_path.clone();
+    let file = file_path.clone();
+    let file_arg = file.clone();
+    let out_arg = out.clone();
+    let output = tokio::task::spawn_blocking(move || {
+        let mut cmd = std::process::Command::new(ffmpeg);
+        cmd.arg("-y")
+            .arg("-hide_banner")
+            .arg("-loglevel")
+            .arg("error")
+            .arg("-i")
+            .arg(&file_arg);
+        if let Some(c) = &cover {
+            cmd.arg("-i").arg(c);
+        }
+        cmd.arg("-map").arg("0:a");
+        if cover.is_some() {
+            cmd.arg("-map")
+                .arg("1")
+                .arg("-disposition:v:0")
+                .arg("attached_pic");
+        }
+        cmd.arg("-c").arg("copy");
+        if want_basic {
+            cmd.arg("-metadata").arg(format!("title={}", title));
+            cmd.arg("-metadata").arg(format!("artist={}", artist));
+            if !album.trim().is_empty() {
+                cmd.arg("-metadata").arg(format!("album={}", album));
+            }
+            if let Some(y) = year {
+                cmd.arg("-metadata").arg(format!("date={}", y));
+            }
+        }
+        if want_lyrics && !lyrics.trim().is_empty() {
+            cmd.arg("-metadata").arg(format!("comment={}", lyrics.trim()));
+        }
+        cmd.arg(&out_arg);
+        cmd.output()
+    })
+    .await
+    .map_err(|error| format!("标签写入任务失败: {}", error))?
+    .map_err(|error| format!("ffmpeg 启动失败: {}", error))?;
+
+    if output.status.success() {
+        tokio::fs::rename(&out, &file)
+            .await
+            .map_err(|error| format!("标签写入失败: 替换文件失败: {}", error))
+    } else {
+        let _ = tokio::fs::remove_file(&out).await;
+        Err(format!(
+            "标签写入失败: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+/// 仅供"下载完成后补写元数据"使用：对一个已落盘的文件写入封面/基础信息/歌词，
+/// 复用引擎自带的 `finalize_download_metadata`（内嵌封面用 exiftool、写 .lrc、写基础 tag）。
+/// Node sidecar 下载引擎本身只负责把音频字节写到磁盘，标签写入统一走这里，
+/// 让"下载标签写入设置"（基础信息/封面/标准歌词/逐字歌词）真正生效。
+#[tauri::command]
+pub async fn download_finalize_metadata(
+    _app: AppHandle,
+    args: Value,
+) -> Result<Value, String> {
+    let args = args;
+    let file_path = args
+        .get("filePath")
+        .or_else(|| args.get("file_path"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if file_path.is_empty() {
+        return Err("缺少文件路径".into());
+    }
+    if !std::path::Path::new(&file_path).exists() {
+        return Ok(serde_json::json!({ "success": false, "skipped": true, "reason": "文件不存在" }));
+    }
+
+    let song_info = args
+        .get("songInfo")
+        .or_else(|| args.get("song_info"))
+        .cloned()
+        .unwrap_or_else(|| Value::Object(Default::default()));
+    let tag_write_options = args
+        .get("tagWriteOptions")
+        .or_else(|| args.get("tag_write_options"))
+        .cloned()
+        .unwrap_or_else(|| Value::Object(Default::default()));
+
+    // 完全没勾任何标签选项就跳过（避免对 wav 等无意义地跑 exiftool）
+    if !should_write_tags(&tag_write_options) && !should_download_lyrics(&tag_write_options) {
+        return Ok(serde_json::json!({ "success": true, "skipped": true }));
+    }
+
+    let name = song_info.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let singer = song_info.get("singer").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let cover = song_info.get("img").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let songmid = song_info.get("songmid").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let mut task = DownloadTask {
+        task_id: uuid::Uuid::new_v4().to_string(),
+        songmid,
+        url: String::new(),
+        file_path,
+        status: "completed".into(),
+        progress: 100.0,
+        total_bytes: 0,
+        downloaded_bytes: 0,
+        name,
+        singer,
+        cover,
+        error_message: None,
+        retries: 0,
+        created_at: now.clone(),
+        updated_at: now,
+        song_info,
+        tag_write_options,
+        plugin_id: None,
+        quality: None,
+        metadata_error: None,
+    };
+
+    finalize_download_metadata(&mut task).await;
+    Ok(serde_json::json!({
+        "success": task.metadata_error.is_none(),
+        "error": task.metadata_error,
+    }))
 }
 
 // ── Error handling with retries ───────────────────────────────────────

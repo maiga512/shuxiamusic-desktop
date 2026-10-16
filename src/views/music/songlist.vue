@@ -55,7 +55,7 @@ import {
   isUsableCover,
   resolvePlaylistCover
 } from '@renderer/utils/playlist/coverFallback'
-import { getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
+import { SESSION_TTL_MS, getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
 
 const settingsStore = useSettingsStore()
 
@@ -63,6 +63,7 @@ const settingsStore = useSettingsStore()
 // shallowRef：增删改统一走下面三个 helper 整体替换数组引用，不就地改元素，省内存
 const playlists = shallowRef<SongList[]>(getSessionCache<SongList[]>('songlist:playlists') || [])
 const loading = ref(false)
+const manualRefreshing = ref(false)
 // 喜欢歌单ID（用于排序与标记）
 const favoritesId = ref<string | null>(null)
 
@@ -258,8 +259,14 @@ const formatLocalTime = (input: string | number | Date): string => {
   const d = new Date(input)
   if (isNaN(d.getTime())) return ''
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+const getPlaylistUpdatedAt = (playlist: SongList): string =>
+  String(playlist.meta?.cloudUpdatedAt || playlist.updateTime || playlist.createTime || '')
+
+const getSourceBadgeLabel = (source: string | undefined): string =>
+  String(source || 'local').toUpperCase()
 
 // 右键菜单状态
 const contextMenuVisible = ref(false)
@@ -345,11 +352,15 @@ const importSonglistFromFile = async () => {
 }
 
 // 加载歌单列表
-const loadPlaylists = async () => {
-  loading.value = true
+let loadPlaylistsPromise: Promise<void> | null = null
+const loadPlaylists = async (): Promise<void> => {
+  if (loadPlaylistsPromise) return loadPlaylistsPromise
+
+  // 只有没有可展示数据时才显示整页加载；后台同步保持当前内容稳定可见。
+  if (playlists.value.length === 0) loading.value = true
   const authStore = useAuthStore()
   console.log('authStore.isAuthenticated', authStore.isAuthenticated)
-  try {
+  loadPlaylistsPromise = (async () => {
     async function getCloudSongList() {
       const syncAPI = await getPreferredSongListAPI()
       if (!syncAPI && (!authStore.initialized || !authStore.isAuthenticated)) {
@@ -377,7 +388,7 @@ const loadPlaylists = async () => {
         }),
         favoritesId.value
       )
-      setSessionCache('songlist:playlists', playlists.value)
+      setSessionCache('songlist:playlists', playlists.value, SESSION_TTL_MS, true)
     }
 
     const cloudResult = await getCloudSongList()
@@ -434,7 +445,7 @@ const loadPlaylists = async () => {
     }
 
     playlists.value = sortPlaylistsStable(mergedLists, favoritesId.value)
-    setSessionCache('songlist:playlists', playlists.value)
+    setSessionCache('songlist:playlists', playlists.value, SESSION_TTL_MS, true)
 
     // 读取“我的喜欢”ID并置顶与标记
     try {
@@ -444,11 +455,16 @@ const loadPlaylists = async () => {
     } catch {}
 
     void hydratePlaylistCovers()
+  })()
+
+  try {
+    await loadPlaylistsPromise
   } catch (error) {
     console.error('加载歌单失败:', error)
     MessagePlugin.error('加载歌单失败')
   } finally {
     loading.value = false
+    loadPlaylistsPromise = null
   }
 }
 
@@ -1746,22 +1762,29 @@ let unsubscribePlaylistSync: (() => void) | null = null
 let cloudFavoritesPulling = false
 let playlistRefreshTimer: number | null = null
 let lastPlaylistRefreshAt = 0
+let playlistRefreshPromise: Promise<void> | null = null
 
-const refreshPlaylistsWithCloudFavorites = async () => {
-  if (cloudFavoritesPulling) return
+const refreshPlaylistsWithCloudFavorites = async (
+  options: { immediate?: boolean } = {}
+): Promise<void> => {
+  if (playlistRefreshPromise) return playlistRefreshPromise
   const now = performance.now()
   const elapsed = now - lastPlaylistRefreshAt
-  if (elapsed < 1200) {
+  if (elapsed < 1200 && !options.immediate) {
     if (playlistRefreshTimer != null) window.clearTimeout(playlistRefreshTimer)
     playlistRefreshTimer = window.setTimeout(() => {
       playlistRefreshTimer = null
       void refreshPlaylistsWithCloudFavorites()
     }, 1200 - elapsed)
-    return
+    return Promise.resolve()
+  }
+  if (playlistRefreshTimer != null) {
+    window.clearTimeout(playlistRefreshTimer)
+    playlistRefreshTimer = null
   }
   lastPlaylistRefreshAt = now
   cloudFavoritesPulling = true
-  try {
+  playlistRefreshPromise = (async () => {
     const authStore = useAuthStore()
     const syncAPI = await getPreferredSongListAPI()
     if (!syncAPI && (!authStore.initialized || !authStore.isAuthenticated)) {
@@ -1772,8 +1795,23 @@ const refreshPlaylistsWithCloudFavorites = async () => {
       console.warn('拉取云端收藏失败:', error)
     })
     await loadPlaylists()
+  })()
+
+  try {
+    await playlistRefreshPromise
   } finally {
     cloudFavoritesPulling = false
+    playlistRefreshPromise = null
+  }
+}
+
+const handleManualRefresh = async () => {
+  if (manualRefreshing.value) return
+  manualRefreshing.value = true
+  try {
+    await refreshPlaylistsWithCloudFavorites({ immediate: true })
+  } finally {
+    manualRefreshing.value = false
   }
 }
 
@@ -1919,11 +1957,11 @@ onDeactivated(() => {
           <h3>我的歌单 ({{ playlists.length }})</h3>
           <div class="section-actions">
             <t-button
-              :loading="loading"
+              :loading="manualRefreshing"
               size="small"
               theme="primary"
               variant="text"
-              @click="loadPlaylists"
+              @click="handleManualRefresh"
             >
               <i class="iconfont icon-shuaxin"></i>
               刷新
@@ -1937,7 +1975,7 @@ onDeactivated(() => {
         </div>
 
         <!-- 歌单网格 -->
-        <div v-else-if="playlists.length > 0" class="playlists-grid" :class="{ refreshing: loading }">
+        <div v-else-if="playlists.length > 0" class="playlists-grid">
           <div
             v-for="playlist in playlists"
             :key="playlist.id"
@@ -1960,6 +1998,19 @@ onDeactivated(() => {
               />
               <div class="cover-overlay">
                 <i class="iconfont icon-bofang"></i>
+              </div>
+              <div class="cover-meta">
+                <span class="cover-source">{{ getSourceBadgeLabel(playlist.source) }}</span>
+                <div
+                  v-if="getPlaylistUpdatedAt(playlist)"
+                  class="cover-updated"
+                  :title="formatLocalTime(getPlaylistUpdatedAt(playlist))"
+                >
+                  <span class="cover-updated-label">更新于</span>
+                  <time class="cover-updated-time">
+                    {{ formatLocalTime(getPlaylistUpdatedAt(playlist)) }}
+                  </time>
+                </div>
               </div>
             </div>
             <div class="playlist-info">
@@ -1998,15 +2049,6 @@ onDeactivated(() => {
               </div>
               <div :title="playlist.description" class="playlist-description">
                 {{ formatServicePlaylistDescription(playlist) || '这个人很懒并没有留下任何描述...' }}
-              </div>
-              <div class="playlist-meta">
-                <span>{{ playlist.source }}</span>
-                <span v-if="playlist.meta?.cloudUpdatedAt"
-                  >更新于 {{ formatLocalTime(playlist.meta.cloudUpdatedAt) }}</span
-                >
-                <span v-else-if="playlist.createTime"
-                  >创建于 {{ formatLocalTime(playlist.createTime) }}</span
-                >
               </div>
             </div>
             <div class="playlist-actions">
@@ -2676,13 +2718,24 @@ onDeactivated(() => {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1.5rem;
 }
-.playlists-grid.refreshing {
-  opacity: 0.82;
-  transition: opacity 0.18s ease;
-}
 @media (min-width: 1600px) {
   .playlists-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1100px) {
+  .playlists-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 820px) {
+  .playlists-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .playlists-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -2722,12 +2775,6 @@ onDeactivated(() => {
       .playlist-description {
         color: rgba(255, 255, 255, 0.85);
       }
-      .playlist-meta {
-        color: rgba(255, 255, 255, 0.85);
-        span:first-child {
-          color: #fff;
-        }
-      }
     }
   }
 
@@ -2763,10 +2810,72 @@ onDeactivated(() => {
         color: #fff;
       }
     }
+
+    .cover-meta {
+      position: absolute;
+      left: 0.625rem;
+      right: 0.625rem;
+      bottom: 0.625rem;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .cover-source,
+    .cover-updated {
+      background: rgba(12, 15, 13, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .cover-source {
+      flex: 0 0 auto;
+      padding: 0.25rem 0.375rem;
+      color: var(--td-brand-color);
+      font-size: 0.625rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .cover-updated {
+      min-width: 0;
+      max-width: 68%;
+      padding: 0.25rem 0.375rem;
+      color: rgba(255, 255, 255, 0.92);
+      text-align: right;
+
+      .cover-updated-label,
+      .cover-updated-time {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .cover-updated-label {
+        margin-bottom: 0.0625rem;
+        color: rgba(255, 255, 255, 0.68);
+        font-size: 0.5625rem;
+        line-height: 1;
+      }
+
+      .cover-updated-time {
+        font-size: 0.6875rem;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+    }
   }
 
   .playlist-info {
-    padding: 1rem;
+    padding: 0.75rem 0.875rem 0.5rem;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -2795,7 +2904,7 @@ onDeactivated(() => {
     .playlist-name-row {
       display: flex;
       align-items: flex-start;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.35rem;
       cursor: pointer;
       gap: 6px;
 
@@ -2831,7 +2940,7 @@ onDeactivated(() => {
       flex: 1;
       font-size: 0.78rem;
       color: var(--local-text-secondary);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0;
       display: -webkit-box;
 
       -webkit-line-clamp: 2;
@@ -2842,28 +2951,13 @@ onDeactivated(() => {
       text-overflow: ellipsis;
     }
 
-    .playlist-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      font-size: 0.75rem;
-      color: var(--local-text-tertiary);
-
-      span {
-        &:first-child {
-          text-transform: uppercase;
-          font-weight: 500;
-          color: var(--td-brand-color);
-        }
-      }
-    }
   }
 
   .playlist-actions {
     display: flex;
     justify-content: flex-end;
-    padding: 0 1rem 1rem;
-    gap: 0.5rem;
+    padding: 0.35rem 0.75rem 0.65rem;
+    gap: 0.35rem;
   }
 }
 

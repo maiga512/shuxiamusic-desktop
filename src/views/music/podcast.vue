@@ -9,7 +9,7 @@ import songCover from '@assets/images/song.jpg'
 import podcastApi from '@renderer/api/podcast'
 import PagerBar from '@renderer/components/Pager/PagerBar.vue'
 import { nasFavoriteAPI, togglePodcastFavoritePinned } from '@renderer/api/nasSync'
-import { deleteSessionCache, getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
+import { APP_LAUNCH_TS, SESSION_TTL_MS, getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
 import { triggerAddToPlaylistAndPlay } from '@renderer/utils/playlist/playlistManager'
 import {
   HOME_BLOCKS,
@@ -264,20 +264,51 @@ const mergeRadios = (lists: RadioCard[][], limit = 10) => {
   return merged.slice(0, limit)
 }
 
+const CATEGORIES_CACHE_KEY = 'podcast:categories'
+const categoryKeyOf = (category?: Category | null) => category?.rawId || category?.name || ''
+
 const loadCategories = async () => {
-  // 分类树每次进入强制刷新（官方新分类立即出现，对齐 Electron）。
-  // 分页数据不再整删：命中新缓存时先渲染、后台刷新（SWR，同发现页），
-  // 避免点进播客后首屏空白等待；缓存 TTL 10min，失效后自然走网络。
-  deleteSessionCache('podcast:categories')
-  const nextCategories = (await podcastApi.getCategories(true)) || []
-  categories.value = Array.isArray(nextCategories) ? nextCategories : []
-  if (categories.value.length) setSessionCache('podcast:categories', categories.value)
-  selectedCategory.value = categories.value[0] || null
-  secondCategories.value = normalizeSeconds(selectedCategory.value)
-  if (selectedCategory.value) {
-    categoryTotal.value = 0
-    await loadCategoryPage(1)
+  // 分类树 SWR：先用缓存（含上一次会话持久化的）同步把首屏铺出来，再后台刷新官方分类。
+  // 原先进入页面就 deleteSessionCache + await 网络，每次冷启动都得等一个网络往返
+  // 才有内容 —— 这是「点播客要等一下才出来」的主因。
+  const cachedTree = getSessionCache<Category[]>(CATEGORIES_CACHE_KEY)
+  const cachedList = Array.isArray(cachedTree) ? cachedTree : []
+  const hadCache = cachedList.length > 0
+  if (hadCache) {
+    categories.value = cachedList
+    selectedCategory.value = cachedList[0]
+    secondCategories.value = normalizeSeconds(selectedCategory.value)
+    void loadCategoryPage(1)
     void loadCategoryTotal()
+  }
+  try {
+    const nextCategories = (await podcastApi.getCategories(true)) || []
+    const list = Array.isArray(nextCategories) ? (nextCategories as Category[]) : []
+    if (!list.length) return
+    categories.value = list
+    setSessionCache(CATEGORIES_CACHE_KEY, list, SESSION_TTL_MS, true)
+    const currentKey = categoryKeyOf(selectedCategory.value)
+    const matched = currentKey
+      ? list.find((item) => categoryKeyOf(item) === currentKey) || null
+      : null
+    // 已经在屏上渲染过首分类：只换分类树，不动已渲染的列表（不闪、不重排）。
+    if (hadCache && matched) {
+      selectedCategory.value = matched
+      if (matched.subCategories?.length) {
+        secondCategories.value = normalizeSeconds(matched)
+      }
+      return
+    }
+    selectedCategory.value = matched || list[0]
+    secondCategories.value = normalizeSeconds(selectedCategory.value)
+    if (selectedCategory.value) {
+      categoryTotal.value = 0
+      await loadCategoryPage(1)
+      void loadCategoryTotal()
+    }
+  } catch (e) {
+    // 有缓存时后台刷新失败无需打扰用户：屏上内容照常可用。
+    if (!hadCache) console.warn('播客分类加载失败:', e)
   }
 }
 
@@ -317,6 +348,11 @@ const loadCategoryTotal = async () => {
   }
 }
 
+// 首屏分类页缓存的「新鲜期」：本次启动之后拉过、且还在 30 分钟内 → 直接复用，不发请求。
+// 过期时也不清空列表，改成静默后台刷新（见下方 loadCategoryPage 的 silent 分支）。
+// 窗口取得偏长：会话内切来切去一直用缓存；"刷新"主要落在重启第一次进页（见 APP_LAUNCH_TS 判断）。
+const PODCAST_PAGE_FRESH_MS = 30 * 60 * 1000
+
 const loadCategoryPage = async (pageNum = 1) => {
   if (!selectedCategory.value) return
   const requestId = ++activeCategoryPageRequest
@@ -329,6 +365,8 @@ const loadCategoryPage = async (pageNum = 1) => {
   const requestPageSize = categoryPageSize.value
   const requestKey = `${requestCategoryKey}:${requestSecond}:${targetPage}:${requestPageSize}`
   const cached = getSessionCache<any>(`podcast:page:${requestKey}`)
+  // 静默后台刷新：缓存过旧时保持屏上列表可见，只换数据，不显示骨架、失败也不清空。
+  let silent = false
   if (cached) {
     if (requestId !== activeCategoryPageRequest) return
     categoryRadios.value = (cached?.radios || []) as RadioCard[]
@@ -340,7 +378,15 @@ const loadCategoryPage = async (pageNum = 1) => {
       ? targetPage + 1
       : Math.max(1, targetPage)
     categoryLoading.value = false
-    return
+    // 「新鲜」= 本次启动之后拉过 且 仍在窗口内 → 直接复用、连请求都不发：
+    // 来回切板块时列表保持原样，不重排不闪。
+    // 上次启动遗留的缓存（fetchedAt 早于本次启动）不算新鲜 → 走 silent 静默刷新，
+    // 即"重启第一次进页必刷"，但屏上仍先秒出这份缓存，不空不闪。
+    const fetchedAt = Number(cached?.fetchedAt || 0)
+    const age = Date.now() - fetchedAt
+    const freshThisSession = fetchedAt > APP_LAUNCH_TS
+    if (freshThisSession && age >= 0 && age < PODCAST_PAGE_FRESH_MS) return
+    silent = true
   }
   try {
     const res = await podcastApi.getCategoryPage({
@@ -371,7 +417,12 @@ const loadCategoryPage = async (pageNum = 1) => {
         (item) =>
           item.rawId === selectedCategory.value?.rawId || item.name === selectedCategory.value?.name
       )
-      setSessionCache(`podcast:page:${requestKey}`, res)
+      setSessionCache(
+        `podcast:page:${requestKey}`,
+        { ...res, fetchedAt: Date.now() },
+        SESSION_TTL_MS,
+        true
+      )
       if (index >= 0 && selectedCategory.value) {
         categories.value[index] = selectedCategory.value
       }
@@ -382,6 +433,8 @@ const loadCategoryPage = async (pageNum = 1) => {
     categoryEstimatedPages.value = categoryHasMore.value ? targetPage + 1 : Math.max(1, targetPage)
   } catch (error: any) {
     if (requestId !== activeCategoryPageRequest) return
+    // 后台静默刷新失败：保留屏上缓存内容，不清空也不弹错误。
+    if (silent) return
     categoryError.value = error?.message || '官方播客分类加载失败'
     categoryRadios.value = []
     secondCategories.value = normalizeSeconds(selectedCategory.value)
@@ -460,7 +513,7 @@ const loadShelf = async () => {
     const lists = await Promise.all(HOME_SHELF.specs.map((spec) => loadChannel(spec, 6)))
     shelfRadios.value = mergeRadios(lists, 10)
     if (shelfRadios.value.length) {
-      setSessionCache('podcast:shelf', shelfRadios.value, 5 * 60 * 1000)
+      setSessionCache('podcast:shelf', shelfRadios.value, SESSION_TTL_MS, true)
     }
   } catch {
     shelfRadios.value = []
@@ -517,7 +570,8 @@ const loadBlock = async (
       setSessionCache(
         `podcast:block:${block.title}:${targetSub}:${finalPage}:${BLOCK_FETCH_LIMIT}`,
         radios,
-        5 * 60 * 1000
+        SESSION_TTL_MS,
+        true
       )
     }
     patchBlock(block.title, { radios, page: finalPage })
@@ -698,7 +752,14 @@ onMounted(async () => {
   // 【旧·已停用，勿再启用】原来的两个 window 监听，和上面的总线做同一件事（多余）
   // window.addEventListener('shuxia-nas-sync-events', handleNasSyncEvents)
   // window.addEventListener('shuxia-podcast-favorites-updated', handlePodcastFavoritesUpdated)
-  await refreshLogin()
+  // 先锁页码尺寸，再同步用缓存铺首屏；登录态 / 分类树 / 推荐位全部丢后台刷新，
+  // 不再让 await refreshLogin() + await loadCategories() 的两次网络往返挡住首屏。
+  updateCategoryPageSize()
+  const categoriesTask = loadCategories()
+  void refreshLogin()
+  void loadShelf()
+  void loadBlocks()
+  void loadPodcastFavorites()
   await nextTick()
   updateCategoryPageSize()
   if (typeof ResizeObserver !== 'undefined') {
@@ -712,8 +773,7 @@ onMounted(async () => {
     const pageEl = document.querySelector('.podcast-page')
     if (pageEl) categoryResizeObserver.observe(pageEl)
   }
-  await loadCategories()
-  await Promise.all([loadShelf(), loadBlocks(), loadPodcastFavorites()])
+  await categoriesTask
   startRecommendationTimer()
   document.addEventListener('visibilitychange', handleVisibilityChange)
 })

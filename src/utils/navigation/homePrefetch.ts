@@ -8,7 +8,7 @@
  */
 import { storeToRefs } from 'pinia'
 import { LocalUserDetailStore } from '@renderer/store/LocalUserDetail'
-import { getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
+import { SESSION_TTL_MS, getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
 import { isAppWindowVisible } from '@renderer/utils/appWindowState'
 import { podcastApi } from '@renderer/api/podcast'
 
@@ -54,10 +54,12 @@ async function prefetchDiscover(): Promise<void> {
     if (!getSessionCache(tagsKey)) {
       const res = await api?.('getPlaylistTags', { source })
       if (source !== (userSource.value.source || 'wy')) return
-      setSessionCache(tagsKey, {
-        tags: res?.tags || [],
-        hotTag: res?.hotTag || []
-      })
+      setSessionCache(
+        tagsKey,
+        { tags: res?.tags || [], hotTag: res?.hotTag || [] },
+        SESSION_TTL_MS,
+        true
+      )
     }
 
     const listKey = `discover:playlists:${source}::hot`
@@ -73,12 +75,19 @@ async function prefetchDiscover(): Promise<void> {
       const rawList = Array.isArray(res?.list) ? res.list : []
       const list = rawList.map(mapDiscoverItem)
       const total = Number(res?.total || 0)
-      setSessionCache(listKey, {
-        list,
-        page: 2,
-        total,
-        noMore: list.length >= total || list.length === 0
-      })
+      setSessionCache(
+        listKey,
+        {
+          list,
+          page: 2,
+          total,
+          noMore: list.length >= total || list.length === 0,
+          // 新鲜度标记：发现页据此判定「不用再发请求」，预热内容就不会被后台刷新换掉（不闪）。
+          fetchedAt: Date.now()
+        },
+        SESSION_TTL_MS,
+        true
+      )
     }
   } catch (e) {
     console.warn('发现页预热失败（忽略，进入页面仍走正常加载）:', e)
@@ -90,6 +99,9 @@ async function prefetchPodcast(): Promise<void> {
     const categories = (await podcastApi.getCategories(true)) || []
     const first = Array.isArray(categories) ? categories[0] : null
     if (!first) return
+    // 分类树也写进缓存：播客页按 SWR 先渲染缓存树再后台刷新，
+    // 预热后第一次点播客就能直接出分类和首屏节目，不用等分类树网络往返。
+    setSessionCache('podcast:categories', categories, SESSION_TTL_MS, true)
     const pageKey = `podcast:page:${first.rawId || first.name}::1:${PODCAST_PAGE_SIZE}`
     if (getSessionCache(pageKey)) return
     const res = await podcastApi.getCategoryPage({
@@ -98,7 +110,10 @@ async function prefetchPodcast(): Promise<void> {
       page: 1,
       pageSize: PODCAST_PAGE_SIZE
     })
-    if (res) setSessionCache(pageKey, res)
+    if (res) {
+      // fetchedAt：播客页据此判定缓存是否新鲜，避免进页面又被后台刷新换一次内容。
+      setSessionCache(pageKey, { ...res, fetchedAt: Date.now() }, SESSION_TTL_MS, true)
+    }
   } catch (e) {
     console.warn('播客页预热失败（忽略，进入页面仍走正常加载）:', e)
   }

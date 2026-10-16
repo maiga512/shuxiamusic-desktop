@@ -8,7 +8,7 @@ const { service: pluginService } = await import('../sidecar/services/plugins/ind
 const { service: musicSdkService } = await import('../sidecar/services/musicSdk/index.mjs')
 const { service: downloadService } = await import('../sidecar/services/download/index.mjs')
 
-const APP_DATA = path.join(os.homedir(), 'Library/Application Support/com.cerumusic.tauri')
+const APP_DATA = path.join(os.homedir(), 'Library/Application Support/com.shuxiamusic.tauri')
 const DB_PATH = path.join(APP_DATA, 'ceru-music.db')
 const PLUGIN_ID = '9bef7105cb614607b755df9039aab4a0'
 const FEINIU_ID = '9ff4f5f82ce44ce7a565b845eef51a80'

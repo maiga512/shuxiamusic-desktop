@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, defineAsyncComponent } from 'vue'
+import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next'
 import { useSettingsStore } from '@renderer/store/Settings'
 import { formatMusicInfo } from '@common/utils/format'
 
@@ -16,6 +17,71 @@ const { settings } = storeToRefs(settingsStore)
 
 const musicCacheRef = ref()
 const directorySettingsRef = ref()
+
+// ---------- 封面缓存（cover_proxy 磁盘缓存，独立于歌曲缓存） ----------
+const formatBytes = (bytes: number): string => {
+  const value = Number(bytes || 0)
+  if (!Number.isFinite(value) || value <= 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = value
+  let index = 0
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024
+    index += 1
+  }
+  return index === 0 ? `${value} ${units[index]}` : `${size.toFixed(1)} ${units[index]}`
+}
+
+const coverInfo = ref<{ size: number; count: number; maxBytes: number; loading: boolean }>({
+  size: 0,
+  count: 0,
+  maxBytes: 0,
+  loading: true
+})
+
+const loadCoverInfo = async () => {
+  coverInfo.value.loading = true
+  try {
+    const info: any = await (window as any).api?.coverCache?.getInfo()
+    coverInfo.value = {
+      size: Number(info?.size || 0),
+      count: Number(info?.count || 0),
+      maxBytes: Number(info?.maxBytes || 0),
+      loading: false
+    }
+  } catch {
+    coverInfo.value.loading = false
+  }
+}
+
+const clearCoverCache = () => {
+  const confirm = DialogPlugin.confirm({
+    header: '确认清空封面缓存吗',
+    body: '清空后封面会重新从网络加载（不影响已下载歌曲）。',
+    confirmBtn: '确定清空',
+    cancelBtn: '取消',
+    placement: 'center',
+    onClose: () => confirm.hide(),
+    onConfirm: async () => {
+      confirm.hide()
+      try {
+        const result: any = await (window as any).api?.coverCache?.clear()
+        if (result?.success !== false) {
+          MessagePlugin.success('封面缓存已清空')
+        } else {
+          MessagePlugin.error('清空封面缓存失败')
+        }
+      } catch {
+        MessagePlugin.error('清空封面缓存失败')
+      }
+      loadCoverInfo()
+    }
+  })
+}
+
+onMounted(() => {
+  void loadCoverInfo()
+})
 
 const handleDirectoryChanged = () => {
   console.log('目录已更改，刷新缓存信息')
@@ -88,13 +154,40 @@ const getTagOptionsStatus = () => {
       <MusicCache ref="musicCacheRef" @cache-cleared="handleCacheCleared" />
     </div>
 
+    <!-- 封面缓存 -->
+    <div id="storage-cover-cache" class="setting-group">
+      <h3>封面缓存</h3>
+      <p>平时列表 / 详情页加载的封面缓存在这里，独立于上方"本地歌曲缓存"。自动按上限 + 30 天淘汰，需要时可一键清空。</p>
+      <div class="setting-item">
+        <div class="item-info">
+          <div class="item-title">
+            {{ coverInfo.loading ? '统计中…' : `${coverInfo.count} 张 · ${formatBytes(coverInfo.size)}` }}
+          </div>
+          <div class="item-desc">
+            超过 {{ coverInfo.maxBytes ? formatBytes(coverInfo.maxBytes) : '上限' }} 或 30 天未访问的封面会被自动删除
+          </div>
+        </div>
+        <t-button
+          theme="danger"
+          variant="outline"
+          size="small"
+          :disabled="!coverInfo.count"
+          @click="clearCoverCache"
+        >
+          清空封面缓存
+        </t-button>
+      </div>
+    </div>
+
     <!-- 缓存策略 -->
     <div id="storage-cache-strategy" class="setting-group">
       <h3>缓存策略</h3>
       <div class="setting-item">
         <div class="item-info">
           <div class="item-title">自动缓存音乐</div>
-          <div class="item-desc">播放时自动读取/写入缓存，加速后续播放</div>
+          <div class="item-desc">
+            在线听歌时把音频自动存到缓存目录，第二次听直接播本地（更快）；关闭则不缓存在线歌曲
+          </div>
         </div>
         <t-switch
           v-model="settings.autoCacheMusic"

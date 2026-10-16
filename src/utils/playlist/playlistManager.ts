@@ -116,6 +116,85 @@ let playlistEventListenersInstalled = false
 
 // 将事件总线挂载到全局
 ;(window as any).musicEmitter = emitter
+
+// 带超时的 Promise 包装：超时即 reject，用于"命中检查"绝不拖慢首播。
+function withPlaybackCacheTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('playback cache timeout')), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      }
+    )
+  })
+}
+
+/**
+ * 在线播放自动落盘缓存（对齐 Electron MusicCacheService 的产品行为）：
+ * - 命中：直接返回 file:// 本地音频文件（第二次听更快、可离线）。
+ * - 未命中：后台把音频文件落盘到缓存目录（fire-and-forget，不阻塞当前播放），
+ *   由 sidecar 登记进 LRU 索引、按容量上限淘汰。
+ * 只对"可重新拉取的普通在线歌曲 CDN 直链"生效；播客 / 服务插件 / 本地流代理（ephemeral）一律跳过。
+ * 全程 try/catch + 超时兜底，任何失败都回落到原 URL，绝不影响正常播放。
+ */
+async function maybeApplyPlaybackFileCache(
+  song: SongList,
+  quality: string,
+  playableUrl: string,
+  urlData: any,
+  isCache: boolean,
+  isPodcast: boolean,
+  isServicePlugin: boolean,
+): Promise<string> {
+  if (!isCache || isPodcast || isServicePlugin) return playableUrl
+  if (typeof playableUrl !== 'string' || !/^https?:\/\//i.test(playableUrl)) return playableUrl
+  if (/127\.0\.0\.1|localhost/i.test(playableUrl)) return playableUrl
+
+  const songAny = song as any
+  const identity =
+    songAny.songmid || songAny.hash || `${songAny.name || ''}_${songAny.singer || ''}`
+  if (!identity) return playableUrl
+  const key = `${songAny.source || ''}:${identity}:${quality}`
+
+  const api = (window as any).api?.musicCache
+  if (!api || typeof api.playbackGet !== 'function') return playableUrl
+
+  const headers =
+    (typeof urlData === 'object' && urlData ? (urlData as any).headers : null) ||
+    songAny.__nativeMedia?.headers ||
+    {}
+
+  // 命中检查（限时，失败即回落）
+  try {
+    const hit: any = await withPlaybackCacheTimeout<any>(
+      api.playbackGet(key) as Promise<any>,
+      800
+    )
+    if (hit?.hit && typeof hit.url === 'string' && hit.url) return hit.url
+  } catch {
+    /* 命中检查失败 → 用原 URL 播放 */
+  }
+
+  // 未命中：后台落盘（不 await，绝不阻塞当前播放）
+  void api
+    .playbackCache({
+      key,
+      url: playableUrl,
+      headers,
+      name: songAny.name,
+      artist: songAny.singer,
+      quality,
+    })
+    .catch(() => undefined)
+
+  return playableUrl
+}
+
 /**
  * 获取歌曲真实播放URL
  * @param song 歌曲对象
@@ -190,7 +269,16 @@ export async function getSongRealUrl(song: SongList): Promise<string> {
         } catch {}
       }
       if (isPlayableUrl(playableUrl)) {
-        return playableUrl
+        // 在线播放自动落盘缓存（对齐 Electron）：命中直接播本地 file://，未命中后台下载落盘到缓存目录。
+        return await maybeApplyPlaybackFileCache(
+          song,
+          qualityToTry,
+          playableUrl,
+          urlData,
+          isCache,
+          podcastProgram,
+          Boolean(servicePluginId)
+        )
       }
       // Electron accepts any non-empty string that does not look like an error,
       // 但聚合音源会返回只带 host 的 CDN 根地址。那种串交给 mpv 只会"加载

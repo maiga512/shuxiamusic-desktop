@@ -193,6 +193,10 @@ const services = {
     return await downloadService.setDownloadDir(payload)
   },
 
+  async 'download.setCacheDir'(payload) {
+    return await downloadService.setCacheDir(payload)
+  },
+
   // 下载列表里"文件夹"图标：在 Finder/资源管理器里定位已下载的文件。
   // 服务实现早已存在（services/download/index.mjs 的 openFileLocation），
   // 但此前漏注册路由，调用会抛 "Unsupported sidecar method"，
@@ -225,8 +229,24 @@ const services = {
     return await downloadService.musicCacheGetSize()
   },
 
+  async 'music.cache.setLimit'(payload) {
+    return await downloadService.musicCacheSetLimit(payload)
+  },
+
+  async 'music.cache.touch'(payload) {
+    return await downloadService.musicCacheTouch(payload)
+  },
+
   async 'music.cache.clear'() {
     return await downloadService.musicCacheClear()
+  },
+
+  async 'music.cache.playback.get'(payload) {
+    return await downloadService.musicCachePlaybackGet(payload)
+  },
+
+  async 'music.cache.playback.cache'(payload) {
+    return await downloadService.musicCachePlaybackCache(payload)
   },
 
   async 'system.health'() {

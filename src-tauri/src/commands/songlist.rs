@@ -846,6 +846,13 @@ fn cache_directory_info(dir: &str) -> (i64, i64) {
 
     for entry in entries.flatten() {
         let path = entry.path();
+        if path.is_dir() {
+            // 递归统计子目录（旧代码只扫顶层，导致子目录缓存不计入、显示 0B）
+            let (child_count, child_size) = cache_directory_info(&path.to_string_lossy());
+            count += child_count;
+            size += child_size;
+            continue;
+        }
         if !path.is_file() || !is_audio_cache_file(&path) {
             continue;
         }
@@ -856,6 +863,35 @@ fn cache_directory_info(dir: &str) -> (i64, i64) {
     }
 
     (count, size)
+}
+
+// ==================== Cache Limit Setting ====================
+
+/// 缓存容量上限（字节）。存 DB，前端滑块设置。
+#[tauri::command]
+pub fn music_cache_get_limit(db: State<'_, Database>) -> Result<serde_json::Value, String> {
+    let bytes: i64 = db
+        .get_setting("cache_max_bytes")
+        .and_then(|v| v.parse::<i64>().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(5 * 1024 * 1024 * 1024); // 默认 5GB
+    Ok(serde_json::json!({
+        "bytes": bytes,
+        "formatted": format_file_size(bytes),
+    }))
+}
+
+#[tauri::command]
+pub fn music_cache_set_limit(db: State<'_, Database>, bytes: i64) -> Result<serde_json::Value, String> {
+    if bytes <= 0 {
+        return Err("缓存上限必须大于 0".into());
+    }
+    db.set_setting("cache_max_bytes", &bytes.to_string());
+    Ok(serde_json::json!({
+        "success": true,
+        "bytes": bytes,
+        "formatted": format_file_size(bytes),
+    }))
 }
 
 // ==================== System ====================

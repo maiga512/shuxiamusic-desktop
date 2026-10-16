@@ -1,3 +1,34 @@
+## 2026-10-15 板块切换「重影 / 每次都加载」根因修复（KeepAlive + 静默 SWR）
+
+- 用户反馈：点发现/播客/歌单**还是有重影**、不顺畅；希望「缩小化再回来直接就有界面」；板块之间切换不要每次都加载、闪一下；同时尽量省内存。
+- 三个根因（前两次只改过渡 CSS，所以「还是」）：
+  1. **KeepAlive 被窗口可见性误伤**（真凶）：`src/views/home/index.vue` 原来把 `include`/`max` 绑在 `windowVisible` 上，不可见就收缩成当前页。而 macOS 下「窗口被别的窗口遮住」「切到别的 App」「最小化」都会让 `windowVisible=false`，`include` 一变 Vue 立刻 `pruneCache` → 其余缓存页 `unmount` → 再切回去是冷启动（骨架 + 重新拉网络 + 重新解码封面）。这就是「经常都得加载一下才出来」。
+  2. **旧页退出那一帧还在画**：`.page-leave-active` 没有 `visibility:hidden`，Vue 把旧页 DOM 移出文档要等一个 `nextFrame`，主线程忙着挂载新页时这一帧能拖上百毫秒 → 旧页与新页左滑入同屏 = 肉眼重影。
+  3. **封面解码位图释放太早**：`sImage` 切走 tab 只给 60s 宽限，切回来整屏封面重走代理 + 重新解码 + 淡入 = 「闪一下」。
+- 改动：
+  - `src/views/home/index.vue`：KeepAlive 组恒定（`max=5`、`include=KEEP_ALIVE_PAGES`）；只有「窗口真的不在屏幕上」（最小化 / 托盘隐藏 / Cmd+H，判断**不再用 `document.hidden`**，避免「被遮住」这种听歌常态误伤）且持续 **1 小时** 才收缩回收内存；回前台立刻恢复整组。`.page-leave-active` 加 `visibility:hidden; pointer-events:none`（同帧生效，旧页首帧让位，露出 `.content` 底色）。
+  - `src/components/sImage.vue`：释放分三档——窗口隐藏 → 立即释放（原行为不变）；整页被 KeepAlive 切走（`!el.isConnected`）→ **5 分钟**宽限；仅滚出视口 → 60s。
+  - `src/views/music/find.vue`：缓存条目加 `fetchedAt`，10 分钟内新鲜缓存**直接复用不发请求**（不重排卡片、不闪封面）；后台刷新用 `refreshing` 静默标记，不再点亮「加载更多」、失败不清空。
+  - `src/views/music/podcast.vue`：分类树改 SWR（不再 `deleteSessionCache` + await 网络才出首屏；有缓存时只换分类树、不动已渲染列表）；首屏分类页同样 10 分钟新鲜期 + 过期静默刷新（`silent`，失败保留屏上缓存）。
+  - `src/utils/navigation/homePrefetch.ts`：预热条目补 `fetchedAt`；新增写 `podcast:categories`（第一次点播客也能直接出分类）。
+- 验证：`vue-tsc --noEmit` exit 0；graphify 增量重建 7902 nodes / 16497 edges / 491 communities。
+- 实机验收项：①点发现/播客/歌单无重影；②最小化 1 小时内回来直接有界面、板块切换秒出；③长时间（>1h）后台后回来允许一次重建（设计如此）。
+- 可继续调的两个旋钮：`HIDDEN_RECLAIM_MS`（1h）与 `COVER_RELEASE_GRACE_DETACHED_MS`（5min）。
+
+## 2026-10-15 协议 scheme + bundle id 切换（ceru → shuxia）& 暂时停用「一起听」
+
+- 背景：之前"全面清理 ceru 命名"时，`cerumusic://`、`com.cerumusic.tauri` 是**特意保留不动**的；本次用户决定一并切到树夏。
+- 改动：
+  - `src-tauri/tauri.conf.json` identifier：`com.cerumusic.tauri` → **`com.shuxiamusic.tauri`**（版本仍 1.1.2，未升）。
+  - `src/config/index.ts` Logto 回跳：`cerumusic://oauth/callback` → **`shuxiamusic://oauth/callback`**（含 `oauth/logout-callback`）。
+  - `src-tauri/src/lib.rs`：运行时深链注册以 **`shuxiamusic://` 为主**、`cerumusic://` 兼容保留（过渡期旧链接不断）；新增 `migrate_legacy_app_data()` 一次性把 `~/Library/Application Support/com.cerumusic.tauri` 数据迁到新目录。
+  - sidecar 各 `APP_IDENTIFIER` / `DEFAULT_IDENTIFIER` 同步为 `com.shuxiamusic.tauri`（仅本地文件路径用，不发服务端）。
+  - 签名身份新增 **`Shuxia Music Self-Signed`**（自签、无 TeamIdentifier、未公证；旧 `Ceru Music Self-Signed` 仍在 keychain）。
+- **NAS 三端同步不受影响**：契约是「配对码 → NAS 账号 → Bearer session」（`POST /auth/pair`），请求只带 `Authorization: Bearer`，不认 bundle id / scheme；Mac 与安卓（`applicationId com.shuxia.music`）契约一致。
+- ⚠️ 待办：①Logto 后台补登记 `shuxiamusic://oauth/callback`（当前桌面端 UI 已隐藏登录入口 `show-account=false`，暂不触发）；②macOS 辅助功能/媒体键权限对新 bundle id 重新授权。
+- **暂时停用「一起听」（Listen Together）**：`PlayMusic.vue` 更多菜单入口用 `LISTEN_TOGETHER_ENTRY_ENABLED=false` 屏蔽、房间面板按钮与 `ListenTogetherEntryDialog` 挂载用模板注释关闭；`Provider.vue` deeplink 邀请入口用 `LISTEN_TOGETHER_INVITE_ENABLED=false` 屏蔽。store / socket / 组件代码全保留，改回 `true` 即恢复。
+- 验证：`cargo check --release` 通过（97 warnings，均既有）；`vue-tsc --noEmit` exit 0；`codesign --verify --deep --strict` 通过。
+
 ## 2026-10-15 全面清理 ceru 命名（ceru -> shuxia / 树夏Music）
 
 - 用户要求：所有相关 Ceru 全部改为树夏Music。npm 包名不支持中文，用 `@shuxia/`（树夏拼音）。
@@ -7,9 +38,9 @@
   - 全局属性 `__ceru*`、CSS 变量 `--ceru-`、事件 `ceru-*`、函数名/常量名全部改 `shuxia`。
   - 插件沙箱加 `shuxiaMusic` 别名（与 `cerumusic` 同一对象），新老插件都能用。
 - **保留不动**（改了会破坏外部契约）：
-  - `cerumusic://` 深链（OAuth 回调，Logto 应用注册了该 scheme）
-  - `com.cerumusic.tauri` bundle id（改了 macOS 辅助功能/签名权限全丢）
-  - `api.ceru.shiqianjiang.cn` / `ceru.share.shiqianjiang.cn` 服务端域名
+  - ~~`cerumusic://` 深链（OAuth 回调，Logto 应用注册了该 scheme）~~ → **已于 2026-10-15 改为 `shuxiamusic://`**（见上方"协议 scheme + bundle id 切换"）。⚠️ Logto 后台需补登记新 scheme，否则登录会 `redirect_uri_mismatch`。
+  - ~~`com.cerumusic.tauri` bundle id（改了 macOS 辅助功能/签名权限全丢）~~ → **已于 2026-10-15 改为 `com.shuxiamusic.tauri`**。⚠️ macOS 辅助功能/媒体键权限需对新 bundle id 重新授权。
+  - `api.ceru.shiqianjiang.cn` / `ceru.share.shiqianjiang.cn` 服务端域名（仍未改，改动风险大）
 - 独立仓库（`maiga512/shuxiamusic-nas-sync` + Gitee 镜像）：
   - 本地 `nas-sync-server/` 为主版，合并独立仓库改进（超时 25s、v0.3.2）。
   - 新增 `src/env.ts`：`SHUXIA_SYNC_* > CERU_SYNC_* > 默认值` 兼容读取；DB 老文件 `ceru-sync.sqlite` 存在就继续用。

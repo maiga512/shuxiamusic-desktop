@@ -246,9 +246,19 @@ watch(
 )
 // 封面解码位图释放策略：
 // - 窗口隐藏/最小化 → 立即释放（内存优先，原有行为不变）；
-// - 切到别的 tab 但窗口仍可见 → 60s 宽限：快速来回切 tab 时封面回来即有，
-//   停留 60s 自动释放，不做长期常驻。
+// - 整页被 KeepAlive 切走（DOM 移出文档）→ 5 分钟宽限：五个板块来回切是高频操作，
+//   释放得太早会每次切回来都重走封面代理 + 重新解码 + 淡入，一整屏封面「闪一下」；
+// - 页面还在、只是滚出视口 → 60s 宽限（长列表滚动时内存优先）。
 const COVER_RELEASE_GRACE_MS = 60000
+const COVER_RELEASE_GRACE_DETACHED_MS = 5 * 60 * 1000
+
+// 本组件 DOM 已不在文档里 = 所在页面被 KeepAlive 保活切走（而不是滚动出视口）。
+const isDetachedFromDocument = (): boolean => {
+  const el = imgContainer.value
+  if (!el) return false
+  return !el.isConnected
+}
+
 const releaseDue = computed(() => {
   if (!props.observeVisibility || !props.releaseOnHide || !hasBeenVisible.value) return false
   if (pinnedThroughWindowSleep.value) return false
@@ -271,10 +281,13 @@ watch(
       graceReleased.value = true
       return
     }
-    graceTimer = window.setTimeout(() => {
-      graceTimer = undefined
-      graceReleased.value = true
-    }, COVER_RELEASE_GRACE_MS)
+    graceTimer = window.setTimeout(
+      () => {
+        graceTimer = undefined
+        graceReleased.value = true
+      },
+      isDetachedFromDocument() ? COVER_RELEASE_GRACE_DETACHED_MS : COVER_RELEASE_GRACE_MS
+    )
   },
   { immediate: true }
 )

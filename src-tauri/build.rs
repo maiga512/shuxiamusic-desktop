@@ -31,7 +31,7 @@ fn write_dev_bundle_info_plist() {
 	<key>CFBundleExecutable</key>
 	<string>{executable}</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.cerumusic.tauri</string>
+	<string>com.shuxiamusic.tauri</string>
 	<key>CFBundleName</key>
 	<string>树夏Music</string>
 	<key>CFBundleDisplayName</key>

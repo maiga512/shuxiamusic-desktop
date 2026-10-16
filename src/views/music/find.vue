@@ -7,7 +7,7 @@ import { storeToRefs } from 'pinia'
 import LeaderBord from '@renderer/components/Find/LeaderBord.vue'
 import { ChevronDownIcon, PlayCircleIcon } from 'tdesign-icons-vue-next'
 import { useSettingsStore } from '@renderer/store/Settings'
-import { getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
+import { APP_LAUNCH_TS, SESSION_TTL_MS, getSessionCache, setSessionCache } from '@renderer/utils/cache/sessionCache'
 import { listCoverUrl } from '@renderer/utils/coverThumb'
 
 interface Playlist {
@@ -34,6 +34,8 @@ type CacheEntry = {
   page: number
   total: number
   noMore: boolean
+  // 写入时间：用于判断缓存是否「新鲜到可以完全跳过网络请求」。
+  fetchedAt?: number
 }
 
 const settingsStore = useSettingsStore()
@@ -128,17 +130,27 @@ const fetchTags = async (): Promise<void> => {
     tags.value = res?.tags || []
     hotTag.value = res?.hotTag || []
     if (!activeGroupName.value) activeGroupName.value = tags.value[0]?.name || ''
-    setSessionCache(cacheKey, {
-      tags: tags.value,
-      hotTag: hotTag.value
-    })
+    setSessionCache(
+      cacheKey,
+      { tags: tags.value, hotTag: hotTag.value },
+      SESSION_TTL_MS,
+      true
+    )
   } catch (e) {
     console.error('获取歌单标签失败:', e)
   }
 }
 
-const fetchCategoryPlaylists = async (reset = false): Promise<void> => {
-  if (!reset && loadingMore.value) return
+// 缓存新鲜度：本次启动之后拉过、且还在 30 分钟内 → 直接复用，连后台刷新都不发。
+// 用户来回切板块本就是纯缓存秒出（onActivated 不重拉），这里只影响「首次进页 / 切分类」
+// 要不要后台悄悄补一次新数据。窗口取得偏长：数据慢变，宁可会话内一直用缓存，
+// 让"刷新"主要发生在重启那一刻（见 APP_LAUNCH_TS 判断），切来切去永远不闪、不重排。
+const DISCOVER_FRESH_MS = 30 * 60 * 1000
+// 静默后台刷新标记：只换数据，不清空列表、不显示「加载更多」。
+const refreshing = ref(false)
+
+const fetchCategoryPlaylists = async (reset = false, force = false): Promise<void> => {
+  if (!reset && (loadingMore.value || refreshing.value)) return
   const requestId = ++activeCategoryRequest
   const requestSource = userSource.value.source || 'wy'
   const requestTagId = activeTagId.value
@@ -157,12 +169,21 @@ const fetchCategoryPlaylists = async (reset = false): Promise<void> => {
       noMore.value = cached.noMore
       loading.value = false
       loadingMore.value = false
+      // 「新鲜」= 本次启动之后拉过 且 仍在窗口内：这种就纯用缓存、不发请求
+      // （用户没翻页时重复请求只会让卡片重排一次）。
+      // 若是上次启动遗留的缓存（fetchedAt 早于本次启动）→ 不满足，走下方静默后台刷新，
+      // 即"重启第一次进页必刷"，但屏上仍先秒出这份缓存，不空、不闪。
+      const fetchedAt = Number(cached.fetchedAt || 0)
+      const age = Date.now() - fetchedAt
+      const freshThisSession = fetchedAt > APP_LAUNCH_TS
+      if (!force && freshThisSession && age >= 0 && age < DISCOVER_FRESH_MS) return
     } else {
       loading.value = true
       recommendPlaylists.value = []
     }
   }
-  loadingMore.value = true
+  if (reset) refreshing.value = true
+  else loadingMore.value = true
   try {
     let res: any
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -201,9 +222,10 @@ const fetchCategoryPlaylists = async (reset = false): Promise<void> => {
       list: recommendPlaylists.value.slice(),
       page: page.value,
       total: total.value,
-      noMore: noMore.value
+      noMore: noMore.value,
+      fetchedAt: Date.now()
     }
-    setSessionCache(requestCacheKey, cacheEntry)
+    setSessionCache(requestCacheKey, cacheEntry, SESSION_TTL_MS, true)
     error.value = ''
   } catch (e) {
     if (requestId !== activeCategoryRequest) return
@@ -213,6 +235,7 @@ const fetchCategoryPlaylists = async (reset = false): Promise<void> => {
     if (requestId === activeCategoryRequest) {
       loading.value = false
       loadingMore.value = false
+      refreshing.value = false
     }
   }
 }
@@ -389,7 +412,7 @@ onDeactivated(() => {
             <div v-if="error && !recommendPlaylists.length" class="state-container">
               <div class="error-state">
                 <p class="state-text">{{ error }}</p>
-                <t-button theme="primary" size="medium" @click="fetchCategoryPlaylists(true)">
+                <t-button theme="primary" size="medium" @click="fetchCategoryPlaylists(true, true)">
                   重新加载
                 </t-button>
               </div>

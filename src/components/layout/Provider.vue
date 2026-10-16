@@ -341,6 +341,31 @@ onMounted(() => {
   loadSavedTheme()
   syncNaiveTheme()
 
+  // 启动时把 Rust DB 里的下载/缓存目录同步给 Node sidecar。
+  // sidecar 是实际执行下载的引擎，重启后 state.downloadDir/state.cacheDir 会回退到
+  // 默认 appDataDir/downloads、appDataDir/music-cache，不推的话设置页里设的目录不生效。
+  // 之前只在 DirectorySettings.vue onMounted 时推，用户不打开设置页就不推 → 下载目录失效。
+  ;(async () => {
+    try {
+      const dirs = await (window.api as any)?.directorySettings?.getDirectories?.()
+      if (dirs?.downloadDir) {
+        await (window.api as any)?.download?.setDownloadDir?.(dirs.downloadDir)
+      }
+      if (dirs?.cacheDir) {
+        await (window.api as any)?.download?.setCacheDir?.(dirs.cacheDir)
+      }
+      // 同步缓存上限给 sidecar，让 LRU 淘汰按用户设置执行
+      try {
+        const limit = await (window.api as any)?.musicCache?.getLimit?.()
+        if (limit?.bytes > 0) {
+          await (window.api as any)?.musicCache?.setLimit?.(limit.bytes)
+        }
+      } catch {}
+    } catch (error) {
+      console.warn('[Provider] 启动同步目录到 sidecar 失败:', error)
+    }
+  })()
+
   usageTotalMs.value = parseStoredNumber(localStorage.getItem(usageTotalMsKey))
   if (localStorage.getItem(sponsorPromptHiddenKey) === '1') {
     usageTrackingEnabled = false
@@ -522,7 +547,10 @@ const pendingLtDeeplinkCodes: string[] = []
 
 const ltInviteReady = computed(() => appInteractiveReady.value && !isWelcomeRoute.value)
 
+/* 一起听邀请 —— 暂时停用（恢复：把 LISTEN_TOGETHER_INVITE_ENABLED 改为 true）*/
+const LISTEN_TOGETHER_INVITE_ENABLED: boolean = false
 function queueLtDeeplinkCode(code: string): void {
+  if (!LISTEN_TOGETHER_INVITE_ENABLED) return
   if (ltInviteReady.value) {
     void tryShowListenTogetherInvite('deeplink', code)
   } else {

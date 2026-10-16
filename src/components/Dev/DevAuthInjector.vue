@@ -35,20 +35,20 @@ const callbackUrl = ref('')
 /** 提交中防重 */
 const submitting = ref(false)
 
-/** 输入有效性：必须以 cerumusic://callback 开头且包含 code 参数 */
+/** 输入有效性：必须以 shuxiamusic://callback（或旧 cerumusic://callback）开头且包含 code 参数 */
 const isValid = computed(() => {
   const u = callbackUrl.value.trim()
-  if (!u.startsWith('cerumusic://')) return false
+  if (!u.startsWith('shuxiamusic://') && !u.startsWith('cerumusic://')) return false
   // logto callback 必带 code 或 error 参数
   return /[?&](code|error)=/.test(u)
 })
 
-/* 自动从剪贴板检测 cerumusic:// URL —— 用户复制后打开浮窗就自动填上 */
+/* 自动从剪贴板检测 shuxiamusic:// / cerumusic:// URL —— 用户复制后打开浮窗就自动填上 */
 async function detectFromClipboard(): Promise<void> {
   try {
     const text = await navigator.clipboard?.readText()
     if (!text) return
-    const m = text.match(/cerumusic:\/\/[^\s]+/)
+    const m = text.match(/shuxiamusic:\/\/[^\s]+/i) || text.match(/cerumusic:\/\/[^\s]+/i)
     if (m && !callbackUrl.value) {
       callbackUrl.value = m[0]
     }
@@ -108,14 +108,14 @@ function paste(): void {
 
       <p class="hint">
         粘贴浏览器中拦截到的
-        <code>cerumusic://callback?code=...</code>
+        <code>shuxiamusic://callback?code=...</code>
         URL，这里直接调 <code>handleSignInCallback</code> 完成登录，绕开协议处理器全局注册问题。
       </p>
 
       <t-textarea
         v-model="callbackUrl"
         :autosize="{ minRows: 3, maxRows: 6 }"
-        placeholder="cerumusic://callback?code=...&state=..."
+        placeholder="shuxiamusic://callback?code=...&state=..."
       />
 
       <div class="actions">

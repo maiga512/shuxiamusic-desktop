@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-utils/schema.json",
   "productName": "树夏Music",
-  "mainBinaryName": "ceru-music",
+  "mainBinaryName": "shuxia-music",
   "version": "../package.json",
-  "identifier": "com.cerumusic.tauri",
+  "identifier": "com.shuxiamusic.tauri",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://127.0.0.1:1421",
@@ -52,7 +52,7 @@
     },
     "macOS": {
       "infoPlist": "Info.plist",
-      "signingIdentity": "Ceru Music Self-Signed"
+      "signingIdentity": "Shuxia Music Self-Signed"
     },
     "windows": {
       "webviewInstallMode": {

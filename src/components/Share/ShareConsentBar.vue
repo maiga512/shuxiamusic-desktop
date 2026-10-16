@@ -73,7 +73,7 @@
               <li>
                 <strong>歌单分享（默认）：</strong>
                 <span>仅生成 </span>
-                <code>cerumusic://</code>
+                <code>shuxiamusic://</code>
                 <span>{{ techPlaylistDefault }}</span>
               </li>
               <li>

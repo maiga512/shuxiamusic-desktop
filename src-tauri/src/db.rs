@@ -12,7 +12,7 @@ pub struct Database {
 impl Database {
     pub fn new(app_data_dir: PathBuf) -> Result<Self, String> {
         std::fs::create_dir_all(&app_data_dir).map_err(|e| format!("创建数据目录失败: {}", e))?;
-        let db_path = app_data_dir.join("ceru-music.db");
+        let db_path = app_data_dir.join("shuxia-music.db");
         let conn = Connection::open(&db_path).map_err(|e| format!("打开数据库失败: {}", e))?;
 
         conn.execute_batch(

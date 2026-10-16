@@ -537,6 +537,61 @@ pub fn cover_proxy_url(app: tauri::AppHandle, url: String) -> Result<String, Str
     ))
 }
 
+/// 封面磁盘缓存目录（`app_data_dir/cover-cache`）。封面代理是常驻服务，
+/// 其缓存独立于"歌曲缓存"，走自己的容量上限（200MB）+ 30 天淘汰。
+fn cover_disk_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("获取数据目录失败: {}", error))?;
+    Ok(app_data_dir.join(DISK_CACHE_DIR))
+}
+
+/// 封面缓存容量统计（供"存储管理"展示）。只统计 `.bin` 封面文件。
+#[tauri::command]
+pub fn cover_cache_info(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let dir = cover_disk_dir(&app)?;
+    let mut size: u64 = 0;
+    let mut count: u32 = 0;
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|v| v.to_str()) != Some("bin") {
+                continue;
+            }
+            if let Ok(meta) = fs::metadata(&path) {
+                size = size.saturating_add(meta.len());
+                count += 1;
+            }
+        }
+    }
+    Ok(serde_json::json!({
+        "size": size as i64,
+        "count": count as i64,
+        "maxBytes": MAX_DISK_CACHE_BYTES as i64,
+    }))
+}
+
+/// 清空封面磁盘缓存（删除所有 `.bin` + `.meta`）。不影响内存缓存，
+/// 下一次请求会重新回源并按需落盘。
+#[tauri::command]
+pub fn cover_cache_clear(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+    let dir = cover_disk_dir(&app)?;
+    let mut deleted: u32 = 0;
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let ext = path.extension().and_then(|v| v.to_str());
+            if ext == Some("bin") || ext == Some("meta") {
+                if fs::remove_file(&path).is_ok() {
+                    deleted += 1;
+                }
+            }
+        }
+    }
+    Ok(serde_json::json!({ "success": true, "deleted": deleted as i64 }))
+}
+
 fn handle_client(mut stream: TcpStream) -> Result<(), String> {
     let request_text = read_http_request(&mut stream)?;
     let (method, path) = parse_http_request(&request_text)?;

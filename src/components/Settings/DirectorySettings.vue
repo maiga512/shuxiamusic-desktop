@@ -7,7 +7,10 @@
 
       <div class="directory-section">
         <h4>缓存目录</h4>
-        <p class="directory-description">用于存储歌曲缓存文件，提高播放速度</p>
+        <p class="directory-description">
+          平时在线听歌时自动落盘到这里（打开"自动缓存音乐"后），第二次听直接播本地、更快。
+          达到下方容量上限后自动删除最久未听的（LRU）。<b>你点"下载"的歌曲不进这里。</b>
+        </p>
 
         <div class="directory-item">
           <div class="directory-info">
@@ -37,7 +40,10 @@
 
       <div class="directory-section">
         <h4>下载目录</h4>
-        <p class="directory-description">用于存储下载的音乐文件</p>
+        <p class="directory-description">
+          你点"下载"的歌曲永久保存到这里（按下方标签设置写入封面/歌词），不会自动删除。
+          <b>下载是下载、缓存是缓存</b>——在线听歌的缓存不占这里。
+        </p>
 
         <div class="directory-item">
           <div class="directory-info">
@@ -101,11 +107,17 @@ const loadDirectories = async () => {
   try {
     const dirs = await window.api.directorySettings.getDirectories()
     directories.value = dirs
-    // 启动时把 Rust DB 里的下载目录同步给实际执行下载的 Node sidecar，
-    // 否则 sidecar 只会用默认的 appDataDir/downloads，设置页改的路径不生效。
+    // 启动时把 Rust DB 里的下载/缓存目录同步给实际执行下载的 Node sidecar，
+    // 否则 sidecar 只会用默认的 appDataDir/downloads、appDataDir/music-cache，
+    // 设置页改的路径不生效。缓存目录不同步的话 isCache 任务写错位置。
     if (dirs?.downloadDir) {
       try {
         await (window.api as any)?.download?.setDownloadDir?.(dirs.downloadDir)
+      } catch {}
+    }
+    if (dirs?.cacheDir) {
+      try {
+        await (window.api as any)?.download?.setCacheDir?.(dirs.cacheDir)
       } catch {}
     }
 

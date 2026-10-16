@@ -58,7 +58,7 @@ through Graphify.
 | Desktop Lyric Settings | User options mapped to the native lyric window. | `src/components/Settings/DesktopLyricStyle.vue` |
 | Local Music Library | Local scan, edit tags, cover/lyric lookup, playlist insertion. | `src/views/music/local.vue`, `src-tauri/src/commands/local_music.rs` |
 | SQLite Database Layer | Playlists, tracks, settings, downloads, local metadata persistence. | `src-tauri/src/db.rs` |
-| Discover Page Cache | Discover categories, tags, playlists, request IDs, stale response rejection. | `src/views/music/find.vue` |
+| Discover Page Cache | Discover categories, tags, playlists, request IDs, stale response rejection; slow-changing content cached at session-level TTL and persisted to localStorage for cross-restart first paint. | `src/views/music/find.vue`, `src/utils/cache/sessionCache.ts` |
 | Podcast Discovery UI | Categories, shelves, blocks, login, radio loading. | `src/views/music/podcast.vue` |
 | NAS Library Sync | Operation-driven local outboxes, server revision events, SSE wake-up with long-poll compensation, and responsive library/plugin updates. Server is a separate self-hosted repo (`maiga512/shuxiamusic-nas-sync`, Gitee mirror `songsong2020/shuxiamusic-nas-sync`, image `ghcr.io/maiga512/shuxiamusic-nas-sync`); `nas-sync-server/` here is a vendored copy for local dev and may lag the standalone repo. | `src/api/nasSync.ts`, `src/services/nasSyncPoller.ts`, `src/utils/playlist/cloudLibrarySync.ts`, `src/utils/playlist/pluginSync.ts`, `nas-sync-server/src/http.ts` |
 | Listen Together | Room synchronization, chat, queue actions, notifier and overlays. | `src/store/ListenTogether.ts`, `src/components/ListenTogether/*` |
@@ -344,6 +344,41 @@ First-screen work must be concurrent where Electron is concurrent. Category
 totals, shelves, blocks, favorites, and login refresh must not serialize behind
 one slow request.
 
+Discover / podcast / songlist list snapshots are cached with a session-level
+TTL and persisted to localStorage (`sessionCache.ts` →
+`setSessionCache(key, value, SESSION_TTL_MS, true)`). The in-memory map is the
+hot layer; on a cache miss `getSessionCache` falls back to localStorage, so a
+hidden/reopened window — or a full app restart — paints the last snapshot
+instantly and revalidates in the background (SWR). `deleteSessionCache` clears
+both layers. The 3-minute quality/source ranking cache in `audioHelpers.ts`
+deliberately stays in-memory only.
+
+Freshness is part of the contract: discover playlist entries and podcast
+category-page entries carry `fetchedAt`. A snapshot fetched **this launch**
+(`fetchedAt > APP_LAUNCH_TS`) and younger than 30 minutes is used **without any
+request** (no card reorder, no cover fade). Anything older — and every snapshot
+left over from a previous launch (restart) — revalidates silently
+(`refreshing` / `silent` flags): the visible list is never cleared, no "load
+more" spinner appears, and a failed background refresh keeps the cached content.
+So switching between sections is always pure cached DOM (KeepAlive + `onActivated`
+does not refetch — indefinite, not time-boxed); the only network moment is the
+first open after launch / a category change, and on restart the first open
+always revalidates (paint the persisted cache instantly, update in the
+background). `homePrefetch.ts` writes the same `fetchedAt` stamp so prefetched
+content is not immediately replaced.
+
+The home browsing pages (`find`, `songlist`, `recent`, `search`, `podcast`) are
+one stable KeepAlive group in `src/views/home/index.vue`; the group is **not**
+keyed to window visibility, because occlusion/blur/minimize on macOS would then
+prune the Vue cache and turn every switch into a cold mount. The group only
+shrinks to the current page after the window has been genuinely off-screen
+(minimized, tray-hidden, Cmd+H — not merely covered by another window) for one
+hour; decoded cover bitmaps are still released as soon as the window goes
+off-screen (`sImage.vue`), so the retained cost is DOM plus list data only.
+Switching pages must never show the outgoing page: `.page-leave-active` is
+`visibility: hidden`, since Vue removes the old page's DOM only after one
+`nextFrame`.
+
 ### 5. Playlist Duplicate Cleanup
 
 ```text
@@ -380,6 +415,39 @@ in `sidecar/index.mjs`'s method table — the service implementation existing in
 throws `Unsupported sidecar method` and the bridge's non-strict wrapper silently
 returns `undefined`, so the click appears to do nothing.
 
+**Download vs Cache 分目录（务必保持这条不变量）**
+
+- 主下载按钮走 **Node sidecar**（`enqueueSingleDownload` → `download.addTask`），
+  `isCache=false`；在线听歌的自动缓存走 `musicCachePlaybackCache`（`autoCacheMusic`
+  开关控制），落 `state.cacheDir/playback/`（md5 命名）。两者物理隔离。
+- 配置目录（Rust DB `download_dir`/`cache_dir`）在 **sidecar 启动时**由
+  `node_sidecar.rs::spawn_sidecar` 以 env `CERU_DOWNLOAD_DIR`/`CERU_CACHE_DIR` 注入，
+  `sidecar download/index.mjs::initializeSystem` 优先使用（未注入才回退 appDataDir 默认）。
+  设置页 `saveDirectories`/打开页面仍会 `setDownloadDir`/`setCacheDir` 实时覆盖。
+  不要依赖"打开过设置页才同步"。
+- `normalizeTask` 必须保留 `isCache`（持久化 + `markCompleted` 判登记缓存索引）；
+  `addTask` 有守卫：非缓存任务若解析到缓存目录下，纠正回 `state.downloadDir`，
+  防下载被当缓存进 LRU。缓存索引 `rebuildCacheIndexFromDisk` 只扫 `state.cacheDir`。
+- 标签写入：Node 下载引擎只落盘音频字节，封面/基础信息/歌词由渲染层在下载完成事件后
+  调 `download_finalize_metadata`（`download_engine.rs`，复用 `finalize_download_metadata`
+  + exiftool，含 Homebrew PATH 兜底）补写；`src/utils/audio/download.ts::finalizeDownloadedTask`
+  按需抓标准/逐字歌词（`getLyric`）再下发。改动标签字段要同步 exiftool 参数与 lyricFormat。
+- 遗留 `com.cerumusic.tauri` 存储路径由 `lib.rs::remap_legacy_storage_dirs` 启动时纠正回当前
+  app_data_dir（配合 `migrate_legacy_app_data`）。
+
+**封面缓存（独立有界 LRU，纳入"存储管理"）**
+
+- 封面走 `cover_proxy` 常驻服务的磁盘缓存：`app_data_dir/cover-cache`（`DISK_CACHE_DIR`），
+  上限 `MAX_DISK_CACHE_BYTES=200MB` + `DISK_CACHE_MAX_AGE_SECS=30 天` 双条件淘汰（`prune_disk_cache`）。
+  它独立于"歌曲缓存"（`state.cacheDir`），**不塞进用户缓存目录**——迁移运行期服务的缓存位置
+  风险高，改为在设置里可见可清。
+- 查看/清除入口：`cover_proxy.rs::cover_cache_info`（扫 `.bin` 统计 size/count + maxBytes）与
+  `cover_cache_clear`（删全部 `.bin`/`.meta`），`lib.rs` 注册；`window.api.coverCache`（bridge）；
+  `StorageSection.vue`"封面缓存"块（张数/占用 + 清空按钮）。
+- 概念三分（写进 UI，勿混）：**下载目录**=点"下载"永久保存（写封面/歌词标签）；
+  **本地歌曲缓存**=在线听歌自动落盘音频（`autoCacheMusic` + 容量上限 LRU）；
+  **封面缓存**=列表/详情页封面（独立 200MB LRU）。
+
 ### 6. Desktop Lyrics
 
 ```text
@@ -411,10 +479,14 @@ metadata share this persistence layer.
 
 ```text
 src/main.ts
-  -> delayed periodic background check
-  -> src/tauri-bridge.ts
+  -> idempotent periodic background check (autoUpdateScheduled + autoUpdateFirstTimer)
+  -> src/services/autoUpdateService.ts  (phase state machine: idle/checking/available/downloading/downloaded/error)
+  -> src/services/autoUpdateState.ts     (pure reactive state, safe to import before window.api exists)
+  -> src/tauri-bridge.ts  autoUpdater (check / download / quitAndInstall are DECOUPLED)
+  -> src/stubs/tauri-plugin-updater.ts   (plugin:updater|check + download_and_install, cached rid)
+  -> src/components/UpdateDialog.vue     (progress dialog + user "重启安装" confirm)
   -> Tauri updater plugin
-  -> shared GitHub Release latest.json
+  -> shared GitHub/Gitee Release latest.json
   -> platform-specific signed DMG / NSIS artifact
 ```
 
@@ -423,6 +495,20 @@ Tauri updater does not consume the APK; it selects the platform-specific entry
 from `latest.json`. Mac Apple Silicon and Intel require separately built and
 signed artifacts unless a universal binary is intentionally produced. Windows
 continues using NSIS artifacts and needs its own updater entry/signature.
+
+Update flow (invariants, per v1.1.1 rework):
+- `checkForUpdates` only checks + records state; it never downloads. `downloadUpdate`
+  reuses the cached `rid` from the last check (no re-check, so no duplicate CHECKING).
+  Only `quitAndInstall()` (user clicking "重启安装") calls `relaunchApp()`. There is no
+  automatic relaunch/overwrite anywhere.
+- A discovered update opens the global `UpdateDialog.vue`: download progress bar
+  (with an indeterminate fallback when the server sends no `Content-Length`), then a
+  "重启安装" button. Background (silent) checks auto-download with visible progress and
+  never show a "正在检查更新" toast; manual "检查更新" waits for the user to click "立即更新".
+- The `main.ts` scheduler is idempotent: re-focusing the window must not re-arm a new
+  15s check (this was the root cause of the "keeps popping 正在检查更新" complaint).
+- On startup, `autoUpdateService.initFromPersistedState()` reads the sidecar state; if a
+  download is already `pending`, it re-opens the install-confirm dialog.
 
 
 The main process, WebKit renderer, Rust native audio/MPV layer, and Node sidecar
