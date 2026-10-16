@@ -34,11 +34,11 @@ Gitee 没有同等开关，所以桌面放独立仓库，彻底避免干扰安�
 
 令牌只放 Secret，源码/配置里绝不出现明文。
 
-## 公开 Runner 免额度方案（私有 Actions 被账单拦截时）
+## 公开 Runner 免额度方案（推荐）
 
-源码仓库 `maiga512/shuxiamusic-desktop` 是私有仓库。若 GitHub 提示
-`recent account payments have failed or your spending limit needs to be increased`，
-不要等待私有仓库额度恢复，改用公开发布仓库里的构建工作流：
+桌面源码仓库 `maiga512/shuxiamusic-desktop` 已公开。公开发布仓库
+`maiga512/shuxiamusic-release` 的构建工作流会直接 Checkout 公开桌面源码，
+不依赖私有源码 Token，也不需要等待私有仓库额度：
 
 ```text
 maiga512/shuxiamusic-release
@@ -46,12 +46,11 @@ maiga512/shuxiamusic-release
 ```
 
 该工作流在**公开仓库**申请 `ubuntu-latest` / `macos-14` / `windows-latest` Runner，
-再通过 `SOURCE_REPO_TOKEN` 私密读取私有源码标签。源码不提交到公开仓库，产物仍直传
-`maiga512/shuxiamusic-release` 的 Release。公开仓库 Runner 不占用被扣款拦截的私有仓库 Actions。
+直接 Checkout `maiga512/shuxiamusic-desktop` 的 `main` 或 `desktop-vX.Y.Z` 标签。
+发布仓库只保留 Release 中心 README、CHANGELOG、产品截图和工作流，不存放桌面源码副本。
 
 公开仓库 Secrets：
 
-- `SOURCE_REPO_TOKEN`：读取私有源码仓库。
 - `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`：更新包签名。
 - `CERU_MPV_WINDOWS_URL`：Windows 内置便携 MPV 压缩包地址。
 
@@ -98,5 +97,5 @@ gh workflow run "Desktop Release Public" \
   `desktop-latest`，再运行 `publish-gitee-local.sh` 重建。Gitee 列表接口不返回附件 id，
   试图只删单个旧附件不可靠，必须整 Release 重建。
 - Gitee 单文件附件也有体积上限；若桌面安装包超限会导致 Gitee 上传失败（此时自动回退 GitHub）。
-- 安卓的 Gitee 仓库 `songsong2020/shuxiamusic-release` 目前是**私有**，若安卓也要从 Gitee
-  自动更新，需另行将其设为公开（不属于本次桌面改动范围）。
+- 安卓 APK 仍可从公开 Release 附件下载，但安卓源码不再放在发布中心仓库；
+  发布中心仓库只保留 README、截图和必要工作流。

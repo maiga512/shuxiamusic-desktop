@@ -1,3 +1,15 @@
+## 2026-10-16 源码可见性调整
+
+- `maiga512/shuxiamusic-desktop` 已公开，桌面源码包含 Tauri/Rust/Vue；更新签名私钥与密码仍只存在本地
+  `.gitignore` 文件，未进入 Git 历史。
+- `maiga512/shuxiamusic-release` 和 `songsong2020/shuxiamusic-release` 已通过 `git filter-branch`
+  重写全部分支/Tag，当前公开树只保留 README、CHANGELOG、`.gitignore`、`screenshots/product` 和
+  `desktop-release-public.yml`。`app/src`、Android Gradle/资源、server、skills 等已从公开引用移除。
+- GitHub Release 附件和 Gitee Release 附件保留；桌面 `latest.json` 仍为 `1.1.3` 双平台，Android APK
+  仍可下载。公开构建工作流已去掉 `SOURCE_REPO_TOKEN`，直接读取公开桌面仓库。
+- 本地完整镜像备份保存在 `/tmp/shuxiamusic-release-github-mirror-backup` 和
+  `/tmp/shuxiamusic-release-gitee-mirror-backup`，当前未删除备份。
+
 ## 2026-10-16 低音增强去“假”：收窄低架 + 低中频防糊
 
 - 用户反馈上一版 `200Hz lowshelf + tanh` 听起来发假、泛轰。公开实现对照确认：成熟方案更常把 shelf 收在约 68–90Hz，并单独控制 body/headroom/output protection，而不是用宽低架叠加饱和。
@@ -30,11 +42,11 @@
 ## 2026-10-16 发布桌面版 v1.1.3（公开 Runner + GitHub/Gitee + 插件附件）
 
 - 版本 `1.1.2` → `1.1.3`，提交 `23d0fbb`、标签 `desktop-v1.1.3`。
-- 私有仓库 `maiga512/shuxiamusic-desktop` 的 Actions 因“recent account payments have failed /
-  spending limit”无法启动。**以后直接使用公开 Runner，不再等待私有额度**：公开仓库
-  `maiga512/shuxiamusic-release` 的 `.github/workflows/desktop-release-public.yml` 通过
-  `SOURCE_REPO_TOKEN` 私密读取私有源码标签，公开申请 Mac/Windows Runner，产物直传公开 Release。
-  本次公开构建 run `38855267488`，prepare / macOS arm64 / Windows x64 / publish 全部 success。
+- `v1.1.3` 发布时桌面源码仍私有，Actions 因“recent account payments have failed /
+  spending limit”无法启动。当时公开仓库 `.github/workflows/desktop-release-public.yml` 通过
+  `SOURCE_REPO_TOKEN` 读取私有源码标签，公开申请 Mac/Windows Runner，产物直传公开 Release；
+  本次公开构建 run `38855267488`，四个 Job 全部 success。后续桌面源码已公开，Token 已删除，
+  工作流改为直接 Checkout 公开桌面仓库。
 - GitHub `maiga512/shuxiamusic-release`：`desktop-v1.1.3` 与 `desktop-latest` 均含 Mac 三件套、
   Windows 安装包+签名、`feiniu-service.js`、`shuxia-sync-service.js`；旧
   `ceru-nas-sync-service.js` 已按用户要求从两个 Release 删除。`desktop-latest/latest.json`
