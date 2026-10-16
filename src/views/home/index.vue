@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { appWindowState } from '@renderer/utils/appWindowState'
 import { scheduleHomePrefetch } from '@renderer/utils/navigation/homePrefetch'
+import { welcomeTransitionActive } from '@renderer/utils/navigation/welcomeTransition'
 
 // 主导航浏览页：常驻缓存，来回切换不重建、不重复走 onMounted 拉数据。
 // 这几页都用了 release-on-hide，切走时解码图会释放，常驻成本只是组件实例和已取到的列表数据。
@@ -78,7 +79,7 @@ const keepAliveInclude = computed<string[] | string | undefined>(() => {
     <HomeLayout>
       <template #body>
         <router-view v-slot="{ Component }">
-          <Transition name="page">
+          <Transition :name="welcomeTransitionActive ? undefined : 'page'">
             <KeepAlive :max="keepAliveMax" :include="keepAliveInclude" exclude="list,local">
               <component :is="Component" />
             </KeepAlive>

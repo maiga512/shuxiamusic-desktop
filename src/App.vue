@@ -82,7 +82,7 @@ html.desktop-lyric-window #app {
   width: 100vw;
   height: 100vh;
   transform-origin: center center;
-  animation: shuxiaWelcomeDissolve 0.72s linear both;
+  animation: shuxiaWelcomeDissolve 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: opacity, transform, filter;
 }
 .welcome-reveal.pagesApp {
@@ -92,7 +92,7 @@ html.desktop-lyric-window #app {
   width: 100vw;
   height: 100vh;
   transform-origin: center center;
-  animation: shuxiaWelcomeReveal 0.72s linear both;
+  animation: shuxiaWelcomeReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: opacity, transform, filter;
 }
 @keyframes shuxiaWelcomeDissolve {
@@ -143,6 +143,7 @@ import { startNasSyncPoller, stopNasSyncPoller } from '@renderer/services/nasSyn
 import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'
 import { initAppWindowState, destroyAppWindowState, isAppWindowVisible } from './utils/appWindowState'
 import { startWindowDrag } from './utils/windowDrag'
+import { welcomeTransitionActive } from './utils/navigation/welcomeTransition'
 
 const route = useRoute()
 const router = useRouter()
@@ -150,6 +151,7 @@ const settingsStore = useSettingsStore()
 const dissolvingWelcome = ref(false)
 const stopWelcomeDissolveGuard = router.beforeEach((to, from) => {
   dissolvingWelcome.value = from.name === 'welcome' && to.path.startsWith('/home')
+  welcomeTransitionActive.value = dissolvingWelcome.value
 })
 const setDesktopLyricRootState = (enabled: boolean) => {
   document.documentElement.classList.toggle('desktop-lyric-window', enabled)

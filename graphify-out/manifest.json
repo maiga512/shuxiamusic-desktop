@@ -1,6 +1,6 @@
 {
   "package.json": {
-    "mtime": 1792147137.1633124,
+    "mtime": 1792148018.9814289,
     "ast_hash": "8091a4c771b9f639668eec1152e0f55b",
     "semantic_hash": ""
   },
@@ -660,8 +660,8 @@
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1792042622.884932,
-    "ast_hash": "74e2da1b7816fda2808abf7c6a7d12ea",
+    "mtime": 1792148328.8666499,
+    "ast_hash": "8eb2e53d71890a9a5fa70a572c86a776",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792147147.9329214,
+    "mtime": 1792148444.9718075,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792147175.3453052,
+    "mtime": 1792148110.258361,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1615,8 +1615,8 @@
     "semantic_hash": ""
   },
   "src/views/home/index.vue": {
-    "mtime": 1792074389.7243812,
-    "ast_hash": "becab108841cc112ad5b13b5816a3493",
+    "mtime": 1792148384.1442301,
+    "ast_hash": "e0f2d797662ea1ee730bf62fabac7fcc",
     "semantic_hash": ""
   },
   "src/views/music/LocalTagEditorPage.vue": {
@@ -1685,13 +1685,13 @@
     "semantic_hash": ""
   },
   "src/views/settings/searchIndex.ts": {
-    "mtime": 1792147091.4512281,
-    "ast_hash": "accaf8733ebf6e730041a57a4d901be1",
+    "mtime": 1792147916.881179,
+    "ast_hash": "b90e54c63f937b80d766fc2e7801ebbd",
     "semantic_hash": ""
   },
   "src/views/settings/sections/AboutSection.vue": {
-    "mtime": 1792147212.5481668,
-    "ast_hash": "0abc26f57382e1bde78a8fff6232ad14",
+    "mtime": 1792147909.3303165,
+    "ast_hash": "bcf23f77c7192f31783769831083f6fb",
     "semantic_hash": ""
   },
   "src/views/settings/sections/AppearanceSection.vue": {
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792023494.23622,
-    "ast_hash": "9169a22c4d326a847deb8bedbf231559",
+    "mtime": 1792148346.1074364,
+    "ast_hash": "995293412fe0cdb5846b96ec9e5450ae",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,17 +1760,17 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792147222.726003,
-    "ast_hash": "52e7fc4a4fe641968747e0c58123c919",
+    "mtime": 1792148614.777305,
+    "ast_hash": "38943906cfe1913c19cc993dc497e793",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792147222.7289813,
-    "ast_hash": "ca64b54517ef76c4c3543cea359fbe80",
+    "mtime": 1792148614.7791846,
+    "ast_hash": "4226fd26b1692e6980c6efdfecbb6d1b",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792142239.731876,
+    "mtime": 1792147923.759045,
     "ast_hash": "0fd8536953749006e6ab966166cc3219",
     "semantic_hash": ""
   },
@@ -3070,8 +3070,8 @@
     "semantic_hash": ""
   },
   "docs/RELEASE_DUAL_PLATFORM.md": {
-    "mtime": 1792147222.724639,
-    "ast_hash": "9299dad42c110837e4ec696c0e7812ab",
+    "mtime": 1792148018.9956686,
+    "ast_hash": "2b28cf317855986326ca1ffc85aa7483",
     "semantic_hash": ""
   },
   "scripts/ci/publish-gitee-local.sh": {
@@ -3132,6 +3132,11 @@
   "src/utils/audio/recorderMime.ts": {
     "mtime": 1792137029.3712783,
     "ast_hash": "1a55a2664f74e8f50b83b2cdca9d317e",
+    "semantic_hash": ""
+  },
+  "src/utils/navigation/welcomeTransition.ts": {
+    "mtime": 1792148328.8655422,
+    "ast_hash": "0687c7152312d298e4a0f5f8299c6493",
     "semantic_hash": ""
   }
 }

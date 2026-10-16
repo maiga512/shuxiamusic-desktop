@@ -9,6 +9,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { initPlayback } from '@renderer/utils/audio/globaPlayList'
+import { WELCOME_DISSOLVE_MS } from '@renderer/utils/navigation/welcomeTransition'
 
 const router = useRouter()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -210,21 +211,35 @@ onMounted(() => {
 })
 
 let entered = false
+function preloadHomeEntry() {
+  return Promise.all([
+    import('@renderer/views/home/index.vue'),
+    import('@renderer/views/music/find.vue')
+  ])
+}
+
 async function bootThenEnter() {
   if (entered) return
   const startAt = Date.now()
   // 插件系统仍在欢迎页预热，但播放恢复必须等正式界面挂载后再开始。
-  try {
-    await window.electron?.ipcRenderer?.invoke?.('service-plugin-initialize-system')
-  } catch (e) {
-    console.warn('[welcome] plugin init failed', e)
-  }
+  const pluginReady = window.electron?.ipcRenderer
+    ?.invoke?.('service-plugin-initialize-system')
+    .catch((e: unknown) => {
+      console.warn('[welcome] plugin init failed', e)
+    })
+  const homeReady = preloadHomeEntry().catch((e: unknown) => {
+    console.warn('[welcome] home preload failed', e)
+  })
 
   const wait = Math.max(0, STARTUP_MIN_MS - (Date.now() - startAt))
-  await new Promise<void>((resolve) => window.setTimeout(resolve, wait))
+  await Promise.all([
+    new Promise<void>((resolve) => window.setTimeout(resolve, wait)),
+    pluginReady,
+    homeReady
+  ])
   if (entered) return
   entered = true
-  await router.replace('/home')
+  await router.replace('/home/find')
   // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
   // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
   // 星空遮罩的化开交给 App.vue 的路由 Transition：主页先在下面挂好，
@@ -234,7 +249,7 @@ async function bootThenEnter() {
     void initPlayback().catch((e) => {
       console.error('[welcome] initPlayback failed', e)
     })
-  }, 720)
+  }, WELCOME_DISSOLVE_MS)
 }
 
 onUnmounted(() => {

@@ -1,5 +1,14 @@
 # 桌面版双平台发布（GitHub + Gitee）
 
+## 发布页项目来源署名
+
+发布中心 README 的介绍段落后必须保留以下来源说明，并在桌面端下载段落再次简要标注：
+
+> **项目来源与架构迁移**：树夏Music 桌面版基于澜音 Music（Ceru Music）改进而来，
+> 将原 Electron + Vue 架构迁移为 Tauri 2 + Rust + Vue 3。感谢澜音团队的原项目与设计基础。
+>
+> 原项目：[maiga512/CeruMusic](https://github.com/maiga512/CeruMusic) · [项目主页](https://ceru.docs.shiqianjiang.cn)
+
 树夏Music 桌面版同时发布到两个平台，更新器会优先用国内更快的 Gitee，连不上再自动回退 GitHub。
 
 ## 更新器怎么“哪边快用哪边”
@@ -61,8 +70,8 @@ gh workflow run "Desktop Release Public" \
   -R maiga512/shuxiamusic-release \
   --ref main \
   -f version=1.1.5 \
-  -f source_ref=desktop-v1.1.5 \
-  -f release_notes="树夏Music 桌面版 v1.1.5"
+  -f source_ref=main \
+  -f release_notes="树夏Music 桌面版 v1.1.5：修复听歌识曲麦克风授权与录音启动。"
 ```
 
 `source_ref` 默认是 `main`，便于先验证源码；正式发布时显式传入 `desktop-vX.Y.Z` 标签，
