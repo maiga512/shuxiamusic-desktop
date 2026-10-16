@@ -660,8 +660,8 @@
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1792148328.8666499,
-    "ast_hash": "8eb2e53d71890a9a5fa70a572c86a776",
+    "mtime": 1792160016.820247,
+    "ast_hash": "5f4ad854a2ad4d0d51f67325efc8d017",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792156800.5778883,
+    "mtime": 1792160127.1538315,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792156819.4555686,
+    "mtime": 1792160150.349629,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792156675.1892035,
-    "ast_hash": "05e36c93307350c041535598f8c8a92d",
+    "mtime": 1792160016.8192103,
+    "ast_hash": "3111ce74086ad13c04cf83431bdac74c",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792157244.1469982,
-    "ast_hash": "1fcbf1233b2f81151aa696dbb24ede4d",
+    "mtime": 1792160800.7466376,
+    "ast_hash": "405f6064a95d826428b010d72c31b52d",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792157244.1520844,
-    "ast_hash": "18449b54710291f81f8b2d22183f7a2a",
+    "mtime": 1792160800.7490485,
+    "ast_hash": "f9bb01066c6cd93d8f64f11e77058591",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792157244.1548398,
-    "ast_hash": "22451c985fefc3892b22fdd9611ab3e4",
+    "mtime": 1792160800.750296,
+    "ast_hash": "0911c884dc72be052d31a5f1cc15f357",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3135,8 +3135,8 @@
     "semantic_hash": ""
   },
   "src/utils/navigation/welcomeTransition.ts": {
-    "mtime": 1792156647.3141124,
-    "ast_hash": "6a3be8277844d6242988337920274693",
+    "mtime": 1792160016.8162751,
+    "ast_hash": "9b320f3e630fdc71ce24b7d46aa2fe30",
     "semantic_hash": ""
   },
   "src-tauri/src/permissions.rs": {

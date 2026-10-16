@@ -11867,8 +11867,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "kg/hotsearch.js"
     },
     {
@@ -11878,8 +11878,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch_getlist",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlist()"
     },
     {
@@ -11889,8 +11889,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch_filterlist",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterlist()"
     },
     {
@@ -11900,8 +11900,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_index",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "kg/index.js"
     },
     {
@@ -11911,8 +11911,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_index_kg",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "kg"
     },
     {
@@ -11922,8 +11922,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "kg/leaderboard.js"
     },
     {
@@ -11933,8 +11933,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_boardlist",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "boardlist"
     },
     {
@@ -11944,8 +11944,8 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_geturl",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "geturl()"
     },
     {
@@ -11955,8 +11955,8 @@
       "source_location": "L130",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getboardsdata",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getboardsdata()"
     },
     {
@@ -11966,8 +11966,8 @@
       "source_location": "L137",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getdata",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getdata()"
     },
     {
@@ -11977,8 +11977,8 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getsinger",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getsinger()"
     },
     {
@@ -11988,8 +11988,8 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_filterboardsdata",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "filterboardsdata()"
     },
     {
@@ -11999,8 +11999,8 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getboards",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getboards()"
     },
     {
@@ -12010,8 +12010,8 @@
       "source_location": "L190",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getlist",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getlist()"
     },
     {
@@ -12021,8 +12021,8 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_leaderboard_getdetailpageurl",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -13803,8 +13803,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/album.js"
     },
     {
@@ -13814,8 +13814,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album_getalbumdetail",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getalbumdetail()"
     },
     {
@@ -13825,8 +13825,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album_getalbuminfo",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getalbuminfo()"
     },
     {
@@ -13858,8 +13858,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/comment.js"
     },
     {
@@ -13869,8 +13869,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_getcomment",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getcomment()"
     },
     {
@@ -13880,8 +13880,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_gethotcomment",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "gethotcomment()"
     },
     {
@@ -13891,8 +13891,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_getreplycomment",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getreplycomment()"
     },
     {
@@ -13902,8 +13902,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_filtercomment",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "filtercomment()"
     },
     {
@@ -13913,8 +13913,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/hotsearch.js"
     },
     {
@@ -13924,8 +13924,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch_getlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getlist()"
     },
     {
@@ -13935,8 +13935,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch_filterlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "filterlist()"
     },
     {
@@ -13946,8 +13946,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_index",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/index.js"
     },
     {
@@ -13957,8 +13957,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_index_mg",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg"
     },
     {
@@ -13968,8 +13968,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/leaderboard.js"
     },
     {
@@ -13979,8 +13979,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_boardlist",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "boardlist"
     },
     {
@@ -13990,8 +13990,8 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_geturl",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "geturl()"
     },
     {
@@ -14001,8 +14001,8 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getboardsdata",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getboardsdata()"
     },
     {
@@ -14012,8 +14012,8 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getdata",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getdata()"
     },
     {
@@ -14023,8 +14023,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getboards",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getboards()"
     },
     {
@@ -14034,8 +14034,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getlist",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getlist()"
     },
     {
@@ -14045,8 +14045,8 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getdetailpageurl",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -14056,8 +14056,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/lyric.js"
     },
     {
@@ -14067,8 +14067,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_mrctools",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mrctools"
     },
     {
@@ -14078,8 +14078,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_getlyricweb",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getlyricweb()"
     },
     {
@@ -14089,8 +14089,8 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_getlyric",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getlyric()"
     },
     {
@@ -14100,8 +14100,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/musicinfo.js"
     },
     {
@@ -14111,8 +14111,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_creategetmusicinfostask",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "creategetmusicinfostask()"
     },
     {
@@ -14122,8 +14122,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_filtermusicinfolist",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "filtermusicinfolist()"
     },
     {
@@ -14144,8 +14144,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_getmusicinfo",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getmusicinfo()"
     },
     {
@@ -14155,8 +14155,8 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_getmusicinfos",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getmusicinfos()"
     },
     {
@@ -14221,8 +14221,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/pic.js"
     },
     {
@@ -14232,8 +14232,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic_getpicurl",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getpicurl()"
     },
     {
@@ -14243,8 +14243,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic_getpic",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getpic()"
     },
     {
@@ -14254,8 +14254,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_songid",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "songid.js"
     },
     {
@@ -14265,8 +14265,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_songid_getsongid",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "getsongid()"
     },
     {
@@ -14452,8 +14452,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/tipsearch.js"
     },
     {
@@ -14463,8 +14463,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_canceltipsearch",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "canceltipsearch()"
     },
     {
@@ -14474,8 +14474,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_tipsearchbysong",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "tipsearchbysong()"
     },
     {
@@ -14485,8 +14485,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_handleresult",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "handleresult()"
     },
     {
@@ -14496,8 +14496,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_search",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "search()"
     },
     {
@@ -14507,8 +14507,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_utils_index",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "mg/utils/index.js"
     },
     {
@@ -14518,8 +14518,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_utils_index_createhttpfetch",
-      "community": 28,
-      "community_name": "mg/songList.js",
+      "community": 206,
+      "community_name": "electron-reference/index.js",
       "norm_label": "createhttpfetch()"
     },
     {
@@ -14859,8 +14859,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_index",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "tx/index.js"
     },
     {
@@ -14870,8 +14870,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_index_tx",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "tx"
     },
     {
@@ -15167,8 +15167,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_musicinfo",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "tx/musicinfo.js"
     },
     {
@@ -15178,8 +15178,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_musicinfo_getsinger",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "getsinger()"
     },
     {
@@ -15398,8 +15398,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_quality_detail",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "tx/quality_detail.js"
     },
     {
@@ -15409,8 +15409,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_quality_detail_getbatchmusicqualityinfo",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getbatchmusicqualityinfo()"
     },
     {
@@ -15508,8 +15508,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "tx/songlist.js"
     },
     {
@@ -15519,8 +15519,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlisturl",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlisturl()"
     },
     {
@@ -15530,8 +15530,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistdetailurl",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlistdetailurl()"
     },
     {
@@ -15541,8 +15541,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gettag",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "gettag()"
     },
     {
@@ -15552,8 +15552,8 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gethottag",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "gethottag()"
     },
     {
@@ -15563,8 +15563,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterinfohottag",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterinfohottag()"
     },
     {
@@ -15574,8 +15574,8 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filtertaginfo",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filtertaginfo()"
     },
     {
@@ -15585,8 +15585,8 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlist",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlist()"
     },
     {
@@ -15596,8 +15596,8 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlist",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterlist()"
     },
     {
@@ -15607,8 +15607,8 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlist2",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterlist2()"
     },
     {
@@ -15618,8 +15618,8 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_handleparseid",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "handleparseid()"
     },
     {
@@ -15629,8 +15629,8 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistid",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlistid()"
     },
     {
@@ -15640,8 +15640,8 @@
       "source_location": "L212",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistdetail",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlistdetail()"
     },
     {
@@ -15651,8 +15651,8 @@
       "source_location": "L246",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlistdetail",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterlistdetail()"
     },
     {
@@ -15662,8 +15662,8 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gettags",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "gettags()"
     },
     {
@@ -15673,8 +15673,8 @@
       "source_location": "L292",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getdetailpageurl",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -15684,8 +15684,8 @@
       "source_location": "L298",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_search",
-      "community": 188,
-      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "search()"
     },
     {
@@ -15695,8 +15695,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_tipsearch",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "tx/tipsearch.js"
     },
     {
@@ -15706,8 +15706,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_tipsearch_tipsearch",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "tipsearch()"
     },
     {
@@ -15717,8 +15717,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_tipsearch_handleresult",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "handleresult()"
     },
     {
@@ -15728,8 +15728,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_tipsearch_canceltipsearch",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "canceltipsearch()"
     },
     {
@@ -15739,8 +15739,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_tipsearch_search",
-      "community": 189,
-      "community_name": "crossfade.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "search()"
     },
     {
@@ -17301,8 +17301,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "wy/songlist.js"
     },
     {
@@ -17312,8 +17312,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_handleparseid",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "handleparseid()"
     },
     {
@@ -17323,8 +17323,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlistid",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "getlistid()"
     },
     {
@@ -17334,8 +17334,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlistdetail",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "getlistdetail()"
     },
     {
@@ -17345,8 +17345,8 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterlistdetail",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "filterlistdetail()"
     },
     {
@@ -17356,8 +17356,8 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlist",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "getlist()"
     },
     {
@@ -17367,8 +17367,8 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterlist",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "filterlist()"
     },
     {
@@ -17378,8 +17378,8 @@
       "source_location": "L248",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gettag",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "gettag()"
     },
     {
@@ -17389,8 +17389,8 @@
       "source_location": "L261",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filtertaginfo",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "filtertaginfo()"
     },
     {
@@ -17400,8 +17400,8 @@
       "source_location": "L286",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gethottag",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "gethottag()"
     },
     {
@@ -17411,8 +17411,8 @@
       "source_location": "L299",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterhottaginfo",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "filterhottaginfo()"
     },
     {
@@ -17422,8 +17422,8 @@
       "source_location": "L307",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gettags",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "gettags()"
     },
     {
@@ -17433,8 +17433,8 @@
       "source_location": "L315",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getdetailpageurl",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -17444,8 +17444,8 @@
       "source_location": "L320",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_search",
-      "community": 36,
-      "community_name": "tx/lyric.js",
+      "community": 73,
+      "community_name": "wy/songList.js",
       "norm_label": "search()"
     },
     {
@@ -18533,8 +18533,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_definitions_permissionentry",
-      "community": 291,
-      "community_name": "PermissionEntry",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "permissionentry"
     },
     {
@@ -18544,8 +18544,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_permissionentry_description",
-      "community": 291,
-      "community_name": "PermissionEntry",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "description"
     },
     {
@@ -18555,8 +18555,8 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_permissionentry_anyof",
-      "community": 291,
-      "community_name": "PermissionEntry",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "anyof"
     },
     {
@@ -18687,7 +18687,7 @@
       "source_location": "L6647",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_definitions_shellscopeentryallowedarg",
-      "community": 176,
+      "community": 292,
       "community_name": "definitions",
       "norm_label": "shellscopeentryallowedarg"
     },
@@ -18698,7 +18698,7 @@
       "source_location": "L6648",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_shellscopeentryallowedarg_description",
-      "community": 176,
+      "community": 292,
       "community_name": "definitions",
       "norm_label": "description"
     },
@@ -18709,7 +18709,7 @@
       "source_location": "L6649",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_shellscopeentryallowedarg_anyof",
-      "community": 176,
+      "community": 292,
       "community_name": "definitions",
       "norm_label": "anyof"
     },
@@ -19391,7 +19391,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_definitions_permissionentry",
-      "community": 292,
+      "community": 177,
       "community_name": "definitions",
       "norm_label": "permissionentry"
     },
@@ -19402,7 +19402,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_permissionentry_description",
-      "community": 292,
+      "community": 177,
       "community_name": "definitions",
       "norm_label": "description"
     },
@@ -19413,7 +19413,7 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_permissionentry_anyof",
-      "community": 292,
+      "community": 177,
       "community_name": "definitions",
       "norm_label": "anyof"
     },
@@ -19446,8 +19446,8 @@
       "source_location": "L6553",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_definitions_value",
-      "community": 177,
-      "community_name": "definitions",
+      "community": 464,
+      "community_name": "Value",
       "norm_label": "value"
     },
     {
@@ -19457,8 +19457,8 @@
       "source_location": "L6554",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_value_description",
-      "community": 177,
-      "community_name": "definitions",
+      "community": 464,
+      "community_name": "Value",
       "norm_label": "description"
     },
     {
@@ -19468,8 +19468,8 @@
       "source_location": "L6555",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_macos_schema_value_anyof",
-      "community": 177,
-      "community_name": "definitions",
+      "community": 464,
+      "community_name": "Value",
       "norm_label": "anyof"
     },
     {
@@ -33589,7 +33589,7 @@
       "label": "route",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L148",
+      "source_location": "L121",
       "_origin": "ast",
       "id": "src_app_route",
       "community": 117,
@@ -33600,7 +33600,7 @@
       "label": "router",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L149",
+      "source_location": "L122",
       "_origin": "ast",
       "id": "src_app_router",
       "community": 117,
@@ -33611,7 +33611,7 @@
       "label": "settingsStore",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L150",
+      "source_location": "L123",
       "_origin": "ast",
       "id": "src_app_settingsstore",
       "community": 117,
@@ -33622,7 +33622,7 @@
       "label": "dissolvingWelcome",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L151",
+      "source_location": "L124",
       "_origin": "ast",
       "id": "src_app_dissolvingwelcome",
       "community": 117,
@@ -33633,7 +33633,7 @@
       "label": "stopWelcomeDissolveGuard",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L152",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "src_app_stopwelcomedissolveguard",
       "community": 117,
@@ -33644,7 +33644,7 @@
       "label": "setDesktopLyricRootState()",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L156",
+      "source_location": "L129",
       "_origin": "ast",
       "id": "src_app_setdesktoplyricrootstate",
       "community": 117,
@@ -33655,7 +33655,7 @@
       "label": "isAppReady",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L166",
+      "source_location": "L139",
       "_origin": "ast",
       "id": "src_app_isappready",
       "community": 117,
@@ -33666,7 +33666,7 @@
       "label": "DeepLinkQueueOptions",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L174",
+      "source_location": "L147",
       "_origin": "ast",
       "id": "src_app_deeplinkqueueoptions",
       "community": 117,
@@ -33677,7 +33677,7 @@
       "label": "createDeepLinkQueue()",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L179",
+      "source_location": "L152",
       "_origin": "ast",
       "id": "src_app_createdeeplinkqueue",
       "community": 117,
@@ -33688,7 +33688,7 @@
       "label": "songShareQueue",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L213",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "src_app_songsharequeue",
       "community": 117,
@@ -33699,7 +33699,7 @@
       "label": "playlistShareQueue",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L243",
+      "source_location": "L216",
       "_origin": "ast",
       "id": "src_app_playlistsharequeue",
       "community": 117,
@@ -33710,7 +33710,7 @@
       "label": "ensureStartupMicrophonePermission()",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L286",
+      "source_location": "L259",
       "_origin": "ast",
       "id": "src_app_ensurestartupmicrophonepermission",
       "community": 117,
@@ -33721,7 +33721,7 @@
       "label": "scheduleDelayedMicrophoneRequest()",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L300",
+      "source_location": "L273",
       "_origin": "ast",
       "id": "src_app_scheduledelayedmicrophonerequest",
       "community": 117,
@@ -33732,7 +33732,7 @@
       "label": "handleWindowCloseRequest()",
       "file_type": "code",
       "source_file": "src/App.vue",
-      "source_location": "L333",
+      "source_location": "L306",
       "_origin": "ast",
       "id": "src_app_handlewindowcloserequest",
       "community": 117,
@@ -35891,8 +35891,8 @@
       "source_location": "L282",
       "_origin": "ast",
       "id": "src_common_utils_common_formatminutesflexible",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "norm_label": "formatminutesflexible()"
     },
     {
@@ -36705,8 +36705,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_card_leaderbordcard",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "leaderbordcard.vue"
     },
     {
@@ -36716,8 +36716,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_components_card_leaderbordcard_props",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "props"
     },
     {
@@ -36727,8 +36727,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_components_card_leaderbordcard_emit",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "emit"
     },
     {
@@ -36738,8 +36738,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_components_card_leaderbordcard_handleclick",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "handleclick()"
     },
     {
@@ -37882,8 +37882,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_find_leaderbord",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "leaderbord.vue"
     },
     {
@@ -37893,8 +37893,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_boards",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "boards"
     },
     {
@@ -37904,8 +37904,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_loading",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "loading"
     },
     {
@@ -37915,8 +37915,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_router",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "router"
     },
     {
@@ -37926,8 +37926,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_localuserstore",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "localuserstore"
     },
     {
@@ -37937,8 +37937,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_currentsource",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "currentsource"
     },
     {
@@ -37948,8 +37948,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_fetchboards",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "fetchboards()"
     },
     {
@@ -37959,8 +37959,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_components_find_leaderbord_handlecardclick",
-      "community": 60,
-      "community_name": "LocalUserDetail.ts",
+      "community": 205,
+      "community_name": "ref_node_crypto",
       "norm_label": "handlecardclick()"
     },
     {
@@ -43800,8 +43800,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_components_play_globalaudio_applyglobaleq",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "applyglobaleq()"
     },
     {
@@ -43811,8 +43811,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_components_play_globalaudio_applyglobaleffects",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "applyglobaleffects()"
     },
     {
@@ -47762,8 +47762,8 @@
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "id": "src_components_settings_audioeffectsettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "@renderer/components/settings/audioeffectsettings.vue"
     },
     {
@@ -47773,8 +47773,8 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_store",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "store"
     },
     {
@@ -47784,8 +47784,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_audiostore",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "audiostore"
     },
     {
@@ -47795,8 +47795,8 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_bassboost_surround_balance_loudness",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "{ bassboost, surround, balance, loudness }"
     },
     {
@@ -47806,8 +47806,8 @@
       "source_location": "L149",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_basspreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "basspreset"
     },
     {
@@ -47828,8 +47828,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_applyeffects",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "applyeffects()"
     },
     {
@@ -47839,8 +47839,8 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_applybasspreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "applybasspreset()"
     },
     {
@@ -47850,8 +47850,8 @@
       "source_location": "L224",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_resetall",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "resetall()"
     },
     {
@@ -47861,8 +47861,8 @@
       "source_location": "L228",
       "_origin": "ast",
       "id": "src_components_settings_audioeffectsettings_formatbalance",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "formatbalance()"
     },
     {
@@ -48393,8 +48393,8 @@
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "id": "src_components_settings_equalizersettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "@renderer/components/settings/equalizersettings.vue"
     },
     {
@@ -48404,8 +48404,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_builtin_presets",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "builtin_presets"
     },
     {
@@ -48415,8 +48415,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_eqstore",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "eqstore"
     },
     {
@@ -48426,8 +48426,8 @@
       "source_location": "L120",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_audiostore",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "audiostore"
     },
     {
@@ -48437,8 +48437,8 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_enabled_currentpreset_gains_presets",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "{ enabled, currentpreset, gains, presets }"
     },
     {
@@ -48448,8 +48448,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_audio",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "audio"
     },
     {
@@ -48459,8 +48459,8 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_fileinputref",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "fileinputref"
     },
     {
@@ -48470,8 +48470,8 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_savepresetdialogvisible",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "savepresetdialogvisible"
     },
     {
@@ -48481,8 +48481,8 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_newpresetname",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "newpresetname"
     },
     {
@@ -48492,8 +48492,8 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_formatfreq",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "formatfreq()"
     },
     {
@@ -48503,8 +48503,8 @@
       "source_location": "L133",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_currentpresetname",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "currentpresetname"
     },
     {
@@ -48514,8 +48514,8 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_candeletecurrentpreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "candeletecurrentpreset"
     },
     {
@@ -48525,8 +48525,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_confirmdeletepreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "confirmdeletepreset()"
     },
     {
@@ -48536,8 +48536,8 @@
       "source_location": "L166",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_deletecurrentpreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "deletecurrentpreset()"
     },
     {
@@ -48547,8 +48547,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_savecurrenttopreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "savecurrenttopreset()"
     },
     {
@@ -48569,8 +48569,8 @@
       "source_location": "L241",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_handlepresetchange",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "handlepresetchange()"
     },
     {
@@ -48580,8 +48580,8 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_ongainchange",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "ongainchange()"
     },
     {
@@ -48591,8 +48591,8 @@
       "source_location": "L253",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_resettocurrentpreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "resettocurrentpreset()"
     },
     {
@@ -48602,8 +48602,8 @@
       "source_location": "L277",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_savenewpreset",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "savenewpreset()"
     },
     {
@@ -48613,8 +48613,8 @@
       "source_location": "L305",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_exportconfig",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "exportconfig()"
     },
     {
@@ -48624,8 +48624,8 @@
       "source_location": "L327",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_triggerimport",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "triggerimport()"
     },
     {
@@ -48635,8 +48635,8 @@
       "source_location": "L331",
       "_origin": "ast",
       "id": "src_components_settings_equalizersettings_handlefileimport",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 181,
+      "community_name": "normalizeSourceKey",
       "norm_label": "handlefileimport()"
     },
     {
@@ -57727,8 +57727,8 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "src_tauri_bridge_invoke",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invoke()"
     },
     {
@@ -57815,8 +57815,8 @@
       "source_location": "L297",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizesonglistrecord",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "normalizesonglistrecord()"
     },
     {
@@ -57826,8 +57826,8 @@
       "source_location": "L316",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizesonglistrecords",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "normalizesonglistrecords()"
     },
     {
@@ -58123,8 +58123,8 @@
       "source_location": "L613",
       "_origin": "ast",
       "id": "src_tauri_bridge_registerpluginsources",
-      "community": 134,
-      "community_name": "preparePluginCode",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "registerpluginsources()"
     },
     {
@@ -58167,8 +58167,8 @@
       "source_location": "L654",
       "_origin": "ast",
       "id": "src_tauri_bridge_extractpluginmetaexports",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "extractpluginmetaexports()"
     },
     {
@@ -58211,8 +58211,8 @@
       "source_location": "L701",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizeplugintype",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "normalizeplugintype()"
     },
     {
@@ -58222,8 +58222,8 @@
       "source_location": "L705",
       "_origin": "ast",
       "id": "src_tauri_bridge_isvalidhttpurl",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "isvalidhttpurl()"
     },
     {
@@ -58233,8 +58233,8 @@
       "source_location": "L719",
       "_origin": "ast",
       "id": "src_tauri_bridge_getpluginnoticetitle",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "getpluginnoticetitle()"
     },
     {
@@ -58244,8 +58244,8 @@
       "source_location": "L731",
       "_origin": "ast",
       "id": "src_tauri_bridge_getpluginnoticedefaultmessage",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "getpluginnoticedefaultmessage()"
     },
     {
@@ -58255,8 +58255,8 @@
       "source_location": "L746",
       "_origin": "ast",
       "id": "src_tauri_bridge_builddialognoticefromraw",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "builddialognoticefromraw()"
     },
     {
@@ -58266,8 +58266,8 @@
       "source_location": "L817",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizedialognotice",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "normalizedialognotice()"
     },
     {
@@ -58277,8 +58277,8 @@
       "source_location": "L823",
       "_origin": "ast",
       "id": "src_tauri_bridge_parsepluginaddlinkpayload",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 291,
+      "community_name": "PermissionEntry",
       "norm_label": "parsepluginaddlinkpayload()"
     },
     {
@@ -58288,8 +58288,8 @@
       "source_location": "L844",
       "_origin": "ast",
       "id": "src_tauri_bridge_createplugininstallnotice",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "createplugininstallnotice()"
     },
     {
@@ -58299,8 +58299,8 @@
       "source_location": "L868",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizepluginid",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "normalizepluginid()"
     },
     {
@@ -58310,8 +58310,8 @@
       "source_location": "L878",
       "_origin": "ast",
       "id": "src_tauri_bridge_createpluginid",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "createpluginid()"
     },
     {
@@ -58321,8 +58321,8 @@
       "source_location": "L883",
       "_origin": "ast",
       "id": "src_tauri_bridge_getpluginsupportedsources",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "getpluginsupportedsources()"
     },
     {
@@ -58354,8 +58354,8 @@
       "source_location": "L907",
       "_origin": "ast",
       "id": "src_tauri_bridge_hasmoduleexports",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "hasmoduleexports()"
     },
     {
@@ -58398,8 +58398,8 @@
       "source_location": "L934",
       "_origin": "ast",
       "id": "src_tauri_bridge_isshuxiaplugincode",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "isshuxiaplugincode()"
     },
     {
@@ -58486,8 +58486,8 @@
       "source_location": "L1112",
       "_origin": "ast",
       "id": "src_tauri_bridge_readpersistedplugincode",
-      "community": 134,
-      "community_name": "preparePluginCode",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "readpersistedplugincode()"
     },
     {
@@ -58739,8 +58739,8 @@
       "source_location": "L1498",
       "_origin": "ast",
       "id": "src_tauri_bridge_normalizepluginconfigschema",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "normalizepluginconfigschema()"
     },
     {
@@ -58750,8 +58750,8 @@
       "source_location": "L1504",
       "_origin": "ast",
       "id": "src_tauri_bridge_pluginfieldsize",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "pluginfieldsize()"
     },
     {
@@ -58761,8 +58761,8 @@
       "source_location": "L1510",
       "_origin": "ast",
       "id": "src_tauri_bridge_tosettingspluginlistitem",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "tosettingspluginlistitem()"
     },
     {
@@ -59069,8 +59069,8 @@
       "source_location": "L2137",
       "_origin": "ast",
       "id": "src_tauri_bridge_findimportedserviceplaylist",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "findimportedserviceplaylist()"
     },
     {
@@ -59157,8 +59157,8 @@
       "source_location": "L2307",
       "_origin": "ast",
       "id": "src_tauri_bridge_persistpluginfile",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "persistpluginfile()"
     },
     {
@@ -59168,8 +59168,8 @@
       "source_location": "L2311",
       "_origin": "ast",
       "id": "src_tauri_bridge_unregisterpluginsources",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "unregisterpluginsources()"
     },
     {
@@ -59179,8 +59179,8 @@
       "source_location": "L2317",
       "_origin": "ast",
       "id": "src_tauri_bridge_unloadpluginruntime",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "unloadpluginruntime()"
     },
     {
@@ -59190,8 +59190,8 @@
       "source_location": "L2322",
       "_origin": "ast",
       "id": "src_tauri_bridge_removepersistedpluginfile",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "removepersistedpluginfile()"
     },
     {
@@ -59201,8 +59201,8 @@
       "source_location": "L2328",
       "_origin": "ast",
       "id": "src_tauri_bridge_loadpersistedpluginruntime",
-      "community": 134,
-      "community_name": "preparePluginCode",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "loadpersistedpluginruntime()"
     },
     {
@@ -59498,8 +59498,8 @@
       "source_location": "L3068",
       "_origin": "ast",
       "id": "src_tauri_bridge_findinstalledpluginbyname",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "findinstalledpluginbyname()"
     },
     {
@@ -59509,8 +59509,8 @@
       "source_location": "L3075",
       "_origin": "ast",
       "id": "src_tauri_bridge_savepluginregistry",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "savepluginregistry()"
     },
     {
@@ -59520,8 +59520,8 @@
       "source_location": "L3087",
       "_origin": "ast",
       "id": "src_tauri_bridge_installpluginfromcode",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "installpluginfromcode()"
     },
     {
@@ -59531,8 +59531,8 @@
       "source_location": "L3145",
       "_origin": "ast",
       "id": "src_tauri_bridge_toelectronpluginresult",
-      "community": 27,
-      "community_name": "PlaylistActions.vue",
+      "community": 20,
+      "community_name": "playback-url-benchmark.mjs",
       "norm_label": "toelectronpluginresult()"
     },
     {
@@ -59597,8 +59597,8 @@
       "source_location": "L3208",
       "_origin": "ast",
       "id": "src_tauri_bridge_delayms",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "delayms()"
     },
     {
@@ -59608,8 +59608,8 @@
       "source_location": "L3210",
       "_origin": "ast",
       "id": "src_tauri_bridge_ensurepluginsystemready",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "ensurepluginsystemready()"
     },
     {
@@ -59619,8 +59619,8 @@
       "source_location": "L3230",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodemusicsdk",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodemusicsdk()"
     },
     {
@@ -59641,8 +59641,8 @@
       "source_location": "L3262",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodedownload",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodedownload()"
     },
     {
@@ -59652,8 +59652,8 @@
       "source_location": "L3274",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodemusiccache",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodemusiccache()"
     },
     {
@@ -59663,8 +59663,8 @@
       "source_location": "L3286",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodemusicurlcache",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodemusicurlcache()"
     },
     {
@@ -59674,8 +59674,8 @@
       "source_location": "L3298",
       "_origin": "ast",
       "id": "src_tauri_bridge_probenodedownloadurl",
-      "community": 181,
-      "community_name": "normalizeSourceKey",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "probenodedownloadurl()"
     },
     {
@@ -59685,8 +59685,8 @@
       "source_location": "L3312",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodesystem",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodesystem()"
     },
     {
@@ -59696,8 +59696,8 @@
       "source_location": "L3324",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodeautoupdate",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodeautoupdate()"
     },
     {
@@ -59707,8 +59707,8 @@
       "source_location": "L3328",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodenotification",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "invokenodenotification()"
     },
     {
@@ -59729,8 +59729,8 @@
       "source_location": "L3336",
       "_origin": "ast",
       "id": "src_tauri_bridge_recordnotificationdecision",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "recordnotificationdecision()"
     },
     {
@@ -59938,8 +59938,8 @@
       "source_location": "L3527",
       "_origin": "ast",
       "id": "src_tauri_bridge_recordautoupdatestate",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "recordautoupdatestate()"
     },
     {
@@ -59993,8 +59993,8 @@
       "source_location": "L3559",
       "_origin": "ast",
       "id": "src_tauri_bridge_handlepluginaddlinkpayload",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 27,
+      "community_name": "PlaylistActions.vue",
       "norm_label": "handlepluginaddlinkpayload()"
     },
     {
@@ -60972,8 +60972,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_utils_audio_audiohelpers_strsim",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "strsim()"
     },
     {
@@ -60983,8 +60983,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_utils_audio_audiohelpers_parseinterval",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "parseinterval()"
     },
     {
@@ -61049,8 +61049,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "audiomanager.ts"
     },
     {
@@ -61060,8 +61060,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": "audiomanager"
     },
     {
@@ -61071,8 +61071,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getinstance",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getinstance()"
     },
     {
@@ -61082,8 +61082,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_resumecontext",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".resumecontext()"
     },
     {
@@ -61093,8 +61093,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_suspendcontext",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".suspendcontext()"
     },
     {
@@ -61126,8 +61126,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getorcreateaudiosource",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getorcreateaudiosource()"
     },
     {
@@ -61137,8 +61137,8 @@
       "source_location": "L287",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setaudiooutputdevice",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setaudiooutputdevice()"
     },
     {
@@ -61148,8 +61148,8 @@
       "source_location": "L314",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getaudiocontextstats",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getaudiocontextstats()"
     },
     {
@@ -61159,8 +61159,8 @@
       "source_location": "L329",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_createanalyser",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".createanalyser()"
     },
     {
@@ -61170,8 +61170,8 @@
       "source_location": "L395",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_removeanalyser",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".removeanalyser()"
     },
     {
@@ -61181,8 +61181,8 @@
       "source_location": "L421",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_cleanupaudioelement",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".cleanupaudioelement()"
     },
     {
@@ -61192,8 +61192,8 @@
       "source_location": "L522",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getanalyser",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getanalyser()"
     },
     {
@@ -61203,8 +61203,8 @@
       "source_location": "L527",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setequalizerband",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setequalizerband()"
     },
     {
@@ -61214,8 +61214,8 @@
       "source_location": "L543",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getequalizerbands",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getequalizerbands()"
     },
     {
@@ -61225,8 +61225,8 @@
       "source_location": "L551",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setbassboost",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setbassboost()"
     },
     {
@@ -61236,8 +61236,8 @@
       "source_location": "L570",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setbalance",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setbalance()"
     },
     {
@@ -61247,8 +61247,8 @@
       "source_location": "L594",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setloudnessnormalization",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setloudnessnormalization()"
     },
     {
@@ -61258,8 +61258,8 @@
       "source_location": "L644",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_setsurroundmode",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".setsurroundmode()"
     },
     {
@@ -61280,8 +61280,8 @@
       "source_location": "L710",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getcrossfadelowpass",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getcrossfadelowpass()"
     },
     {
@@ -61302,8 +61302,8 @@
       "source_location": "L726",
       "_origin": "ast",
       "id": "src_utils_audio_audiomanager_audiomanager_getenvelopeanalyser",
-      "community": 25,
-      "community_name": "GlobalAudio.vue",
+      "community": 60,
+      "community_name": "LocalUserDetail.ts",
       "norm_label": ".getenvelopeanalyser()"
     },
     {
@@ -61324,8 +61324,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "candidateidentity.ts"
     },
     {
@@ -61335,8 +61335,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_candidateidentitysnapshot",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "candidateidentitysnapshot"
     },
     {
@@ -61346,8 +61346,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_normalizetext",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "normalizetext()"
     },
     {
@@ -61357,8 +61357,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_splitartists",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "splitartists()"
     },
     {
@@ -61368,8 +61368,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_hasartistoverlap",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "hasartistoverlap()"
     },
     {
@@ -61379,8 +61379,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_scorecandidate",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "scorecandidate()"
     },
     {
@@ -61390,8 +61390,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_issamesongcandidate",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "issamesongcandidate()"
     },
     {
@@ -61401,8 +61401,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_snapshotsong",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "snapshotsong()"
     },
     {
@@ -61412,8 +61412,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "src_utils_audio_candidateidentity_getcandidateidentitysnapshot",
-      "community": 205,
-      "community_name": "ref_node_crypto",
+      "community": 188,
+      "community_name": "@renderer/components/Settings/HotkeySettings.vue",
       "norm_label": "getcandidateidentitysnapshot()"
     },
     {
@@ -66601,7 +66601,7 @@
       "label": "welcomeTransitionActive",
       "file_type": "code",
       "source_file": "src/utils/navigation/welcomeTransition.ts",
-      "source_location": "L6",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "src_utils_navigation_welcometransition_welcometransitionactive",
       "community": 117,
@@ -68871,8 +68871,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_plugin_converter_event_driven",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "converter-event-driven.ts"
     },
     {
@@ -68882,8 +68882,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_utils_plugin_converter_event_driven_converteventdrivenplugin",
-      "community": 20,
-      "community_name": "playback-url-benchmark.mjs",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "converteventdrivenplugin()"
     },
     {
@@ -76608,8 +76608,8 @@
       "_origin": "ast",
       "source_location": "L1",
       "id": "src_views_settings_sections_playbacksection",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "playbacksection.vue"
     },
     {
@@ -77130,8 +77130,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_playlistsettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "playlistsettings"
     },
     {
@@ -77141,8 +77141,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_audiooutputsettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "audiooutputsettings"
     },
     {
@@ -77152,8 +77152,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_equalizersettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "equalizersettings"
     },
     {
@@ -77163,8 +77163,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_audioeffectsettings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "audioeffectsettings"
     },
     {
@@ -77174,8 +77174,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_playsettingstore",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "playsettingstore"
     },
     {
@@ -77185,8 +77185,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_isjumplyric_bgplaying_isaudiovisualizer_autoplayonlaunch",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "{ isjumplyric, bgplaying, isaudiovisualizer, autoplayonlaunch }"
     },
     {
@@ -77196,8 +77196,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_settingsstore",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "settingsstore"
     },
     {
@@ -77207,8 +77207,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_views_settings_sections_playbacksection_settings",
-      "community": 132,
-      "community_name": "@renderer/components/Settings/EqualizerSettings.vue",
+      "community": 117,
+      "community_name": "CeruMusicPluginHost \u4f7f\u7528\u6587\u6863",
       "norm_label": "{ settings }"
     },
     {
@@ -85936,8 +85936,8 @@
     {
       "label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename",
       "_origin": "semantic",
-      "community": 70,
-      "community_name": "musicSdk/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "external": true,
       "file_type": "concept",
       "norm_label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename",
@@ -85948,8 +85948,8 @@
     {
       "label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_formatplaytime",
       "_origin": "semantic",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "external": true,
       "file_type": "concept",
       "norm_label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_formatplaytime",
@@ -85960,8 +85960,8 @@
     {
       "label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_sizeformate",
       "_origin": "semantic",
-      "community": 33,
-      "community_name": "src/common/utils/common.ts",
+      "community": 189,
+      "community_name": "crossfade.ts",
       "external": true,
       "file_type": "concept",
       "norm_label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_sizeformate",
@@ -97802,7 +97802,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L136",
+      "source_location": "L106",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179284,7 +179284,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L141",
+      "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179296,7 +179296,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L141",
+      "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179307,7 +179307,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L179",
+      "source_location": "L152",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179318,7 +179318,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L174",
+      "source_location": "L147",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179329,7 +179329,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L151",
+      "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179340,7 +179340,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L286",
+      "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179351,7 +179351,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L333",
+      "source_location": "L306",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179362,7 +179362,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L166",
+      "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179373,7 +179373,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L243",
+      "source_location": "L216",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179384,7 +179384,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L148",
+      "source_location": "L121",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179395,7 +179395,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L149",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179406,7 +179406,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L300",
+      "source_location": "L273",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179417,7 +179417,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L156",
+      "source_location": "L129",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179428,7 +179428,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L150",
+      "source_location": "L123",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179439,7 +179439,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L213",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179450,7 +179450,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L152",
+      "source_location": "L125",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179462,7 +179462,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L140",
+      "source_location": "L110",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179474,7 +179474,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L142",
+      "source_location": "L112",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179486,7 +179486,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L142",
+      "source_location": "L112",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179498,7 +179498,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L142",
+      "source_location": "L112",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179510,7 +179510,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L139",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179522,7 +179522,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L139",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179534,7 +179534,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L144",
+      "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179546,7 +179546,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L144",
+      "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179558,7 +179558,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L144",
+      "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179570,7 +179570,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L144",
+      "source_location": "L114",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179582,7 +179582,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L143",
+      "source_location": "L113",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179594,7 +179594,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L143",
+      "source_location": "L113",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179606,7 +179606,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L143",
+      "source_location": "L113",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179618,7 +179618,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L146",
+      "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179630,7 +179630,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L146",
+      "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179642,7 +179642,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L145",
+      "source_location": "L115",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179654,7 +179654,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L145",
+      "source_location": "L115",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -179678,7 +179678,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/App.vue",
-      "source_location": "L306",
+      "source_location": "L279",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_scheduledelayedmicrophonerequest",
@@ -246062,7 +246062,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L254",
+      "source_location": "L251",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -253906,7 +253906,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/navigation/welcomeTransition.ts",
-      "source_location": "L6",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_navigation_welcometransition",
@@ -282153,5 +282153,5 @@
       "source_file": "TOP_GRAPH.md"
     }
   ],
-  "built_at_commit": "cf16175d7269b201df0293150b17327a357c746b"
+  "built_at_commit": "cf6c0fd2ae8caa9d33366da0ae1c1d90184775b2"
 }

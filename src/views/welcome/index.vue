@@ -10,8 +10,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { initPlayback } from '@renderer/utils/audio/globaPlayList'
 import {
-  WELCOME_DISSOLVE_MS,
-  WELCOME_TRANSITION_START_MS
+  WELCOME_HOME_MOUNT_MS,
+  WELCOME_OVERLAY_LEAVE_MS
 } from '@renderer/utils/navigation/welcomeTransition'
 
 const router = useRouter()
@@ -233,28 +233,25 @@ async function bootThenEnter() {
     console.warn('[welcome] home preload failed', e)
   })
 
-  const waitForTransition = () =>
+  const waitForHomeMount = () =>
     new Promise<void>((resolve) => {
-      const remaining = Math.max(0, WELCOME_TRANSITION_START_MS - (Date.now() - startAt))
+      const remaining = Math.max(0, WELCOME_HOME_MOUNT_MS - (Date.now() - startAt))
       window.setTimeout(resolve, remaining)
     })
 
-  // 正常情况下主页分片先预热完成；即使分片异常变慢，也不能让插件或加载把
-  // 星空停在原地等待，到点后仍由 router 开始同一段交叉溶解。
-  await Promise.race([homeReady, waitForTransition()])
-  await waitForTransition()
+  // 先给 Home/Find 预热留出时间；到 1.2s 无论插件是否完成都挂载主页。
+  await Promise.race([homeReady, waitForHomeMount()])
+  await waitForHomeMount()
   if (entered) return
   entered = true
   await router.replace('/home/find')
-  // router.replace 完成后 GlobalAudio/Provider 已经在正式页面链路中挂载，
-  // 此时才允许恢复 URL 和自动播放，避免欢迎动画阶段先出声再被路由打断。
-  // 星空后段与主页首帧同时交叉溶解，不等星空停住再切换。
-  // 播放恢复仍等溶解结束，避免 home 挂载和本地状态读取抢化开动画的主线程。
+  // Home 在星空遮罩下面完成首帧；遮罩再保持 1s，随后 560ms 线性淡出并多留 90ms。
+  // 这段时间主页已经在下面稳定，星空层的淡出不会再被首帧构图卡住。
   window.setTimeout(() => {
     void initPlayback().catch((e) => {
       console.error('[welcome] initPlayback failed', e)
     })
-  }, WELCOME_DISSOLVE_MS)
+  }, WELCOME_OVERLAY_LEAVE_MS)
 }
 
 onUnmounted(() => {

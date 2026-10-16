@@ -10,8 +10,9 @@
 
     <router-view v-slot="{ Component }">
       <Transition
-        :enter-active-class="dissolvingWelcome ? 'welcome-reveal pagesApp' : `animate__animated animate__fadeIn pagesApp`"
-        :leave-active-class="dissolvingWelcome ? 'welcome-dissolve pagesApp' : `animate__animated animate__fadeOut pagesApp`"
+        :enter-active-class="dissolvingWelcome ? 'pagesApp' : `animate__animated animate__fadeIn pagesApp`"
+        :leave-active-class="dissolvingWelcome ? 'welcome-hold-dissolve pagesApp' : `animate__animated animate__fadeOut pagesApp`"
+        :duration="dissolvingWelcome ? { enter: 1, leave: WELCOME_OVERLAY_LEAVE_MS } : undefined"
       >
         <component :is="Component" />
       </Transition>
@@ -72,61 +73,30 @@ html.desktop-lyric-window #app {
 }
 </style>
 
-<!-- 启动星空化开：主页先挂在下面，启动层放大模糊淡出 -->
+<!-- 启动星空化开：主页先挂在下面，星空遮罩自己保持、线性淡出、再卸载 -->
 <style>
-.welcome-dissolve.pagesApp {
+.welcome-hold-dissolve.pagesApp {
   z-index: 30000;
   pointer-events: none;
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
-  transform-origin: center center;
-  animation: shuxiaWelcomeDissolve 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform, filter;
+  animation: shuxiaWelcomeHoldDissolve 1.65s linear both;
+  will-change: opacity;
 }
-.welcome-reveal.pagesApp {
-  z-index: 1;
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  transform-origin: center center;
-  animation: shuxiaWelcomeReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: opacity, transform, filter;
-}
-@keyframes shuxiaWelcomeDissolve {
-  0% {
+@keyframes shuxiaWelcomeHoldDissolve {
+  0%,
+  60.606% {
     opacity: 1;
-    filter: blur(0) saturate(1) brightness(1);
-    transform: scale(1);
   }
-  55% {
-    opacity: 0.42;
-    filter: blur(10px) saturate(1.06) brightness(1.07);
-    transform: scale(1.035);
-  }
+  94.545%,
   100% {
     opacity: 0;
-    filter: blur(20px) saturate(1.12) brightness(1.12);
-    transform: scale(1.07);
-  }
-}
-@keyframes shuxiaWelcomeReveal {
-  0% {
-    opacity: 0.3;
-    filter: blur(8px);
-    transform: scale(1.025);
-  }
-  100% {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .welcome-dissolve.pagesApp,
-  .welcome-reveal.pagesApp {
+  .welcome-hold-dissolve.pagesApp {
     animation-duration: 0.01ms !important;
   }
 }
@@ -143,7 +113,10 @@ import { startNasSyncPoller, stopNasSyncPoller } from '@renderer/services/nasSyn
 import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'
 import { initAppWindowState, destroyAppWindowState, isAppWindowVisible } from './utils/appWindowState'
 import { startWindowDrag } from './utils/windowDrag'
-import { welcomeTransitionActive } from './utils/navigation/welcomeTransition'
+import {
+  WELCOME_OVERLAY_LEAVE_MS,
+  welcomeTransitionActive
+} from './utils/navigation/welcomeTransition'
 
 const route = useRoute()
 const router = useRouter()

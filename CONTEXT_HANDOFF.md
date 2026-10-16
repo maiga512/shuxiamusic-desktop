@@ -1,8 +1,9 @@
-## 2026-10-16 启动动画提前化开 + macOS 原生麦克风授权（待发布）
+## 2026-10-16 启动遮罩预挂载化开 + macOS 原生麦克风授权（待发布）
 
-- 上一轮只消除二次路由和懒加载，仍错误地等待插件初始化完成才进入主页，因此用户继续看到开场结束
-  后停顿。现在插件初始化只在后台预热；1.4s 开始 0.8s 星空/主页交叉溶解，2.2s 主页完整显露，
-  分片加载失败也不能延后切换。`initPlayback()` 仍在溶解结束后恢复。
+- 对照安卓 `MainActivity.StartupPreloadOverlay` 后确认：问题不是单纯把淡出提前，而是桌面端让主页
+  首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下给主页 1s 首帧准备；2.2s 开始
+  560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空层的透明度只做线性变化，不在主页首帧期间做
+  复杂 transform/filter 动画。`initPlayback()` 等遮罩卸载后恢复。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
   获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
   返回识别搜索结果。
