@@ -1,3 +1,22 @@
+## 2026-10-16 发布桌面版 v1.1.3（公开 Runner + GitHub/Gitee + 插件附件）
+
+- 版本 `1.1.2` → `1.1.3`，提交 `23d0fbb`、标签 `desktop-v1.1.3`。
+- 私有仓库 `maiga512/shuxiamusic-desktop` 的 Actions 因“recent account payments have failed /
+  spending limit”无法启动。**以后直接使用公开 Runner，不再等待私有额度**：公开仓库
+  `maiga512/shuxiamusic-release` 的 `.github/workflows/desktop-release-public.yml` 通过
+  `SOURCE_REPO_TOKEN` 私密读取私有源码标签，公开申请 Mac/Windows Runner，产物直传公开 Release。
+  本次公开构建 run `38855267488`，prepare / macOS arm64 / Windows x64 / publish 全部 success。
+- GitHub `maiga512/shuxiamusic-release`：`desktop-v1.1.3` 与 `desktop-latest` 均含 Mac 三件套、
+  Windows 安装包+签名、`feiniu-service.js`、`shuxia-sync-service.js`、`ceru-nas-sync-service.js`；
+  `desktop-latest/latest.json` 双平台指向 Release。
+- Gitee `songsong2020/shuxiamusic-desktop-release`：总附件配额 1GB，旧版本累计导致 Windows 包
+  上传 400。**按用户指示直接删除旧 Release 整体重建**：删除 `desktop-v1.1.1`、混杂旧附件的
+  `desktop-latest`、`desktop-v1.1.2`，重建 `desktop-latest` + `desktop-v1.1.3`，八件套完整上传。
+- Gitee `desktop-latest/latest.json` 已校验 `version=1.1.3`，Mac/Windows 下载 URL 指向 Gitee；
+  发布中心 GitHub/Gitee 首页已同步桌面版 `v1.1.3`。
+- Mac 包验证：`codesign --verify --deep --strict` 通过，bundle 218MB，内置 MPV 与 Node runtime 齐全；
+  当前为 ad-hoc + hardened runtime，未做 Developer ID 公证。
+
 ## 2026-10-15 板块切换「重影 / 每次都加载」根因修复（KeepAlive + 静默 SWR）
 
 - 用户反馈：点发现/播客/歌单**还是有重影**、不顺畅；希望「缩小化再回来直接就有界面」；板块之间切换不要每次都加载、闪一下；同时尽量省内存。

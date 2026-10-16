@@ -34,6 +34,38 @@ Gitee 没有同等开关，所以桌面放独立仓库，彻底避免干扰安�
 
 令牌只放 Secret，源码/配置里绝不出现明文。
 
+## 公开 Runner 免额度方案（私有 Actions 被账单拦截时）
+
+源码仓库 `maiga512/shuxiamusic-desktop` 是私有仓库。若 GitHub 提示
+`recent account payments have failed or your spending limit needs to be increased`，
+不要等待私有仓库额度恢复，改用公开发布仓库里的构建工作流：
+
+```text
+maiga512/shuxiamusic-release
+  .github/workflows/desktop-release-public.yml
+```
+
+该工作流在**公开仓库**申请 `ubuntu-latest` / `macos-14` / `windows-latest` Runner，
+再通过 `SOURCE_REPO_TOKEN` 私密读取私有源码标签。源码不提交到公开仓库，产物仍直传
+`maiga512/shuxiamusic-release` 的 Release。公开仓库 Runner 不占用被扣款拦截的私有仓库 Actions。
+
+公开仓库 Secrets：
+
+- `SOURCE_REPO_TOKEN`：读取私有源码仓库。
+- `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`：更新包签名。
+- `CERU_MPV_WINDOWS_URL`：Windows 内置便携 MPV 压缩包地址。
+
+发布命令：
+
+```bash
+gh workflow run "Desktop Release Public" \
+  -R maiga512/shuxiamusic-release \
+  --ref main \
+  -f version=1.1.3 \
+  -f source_ref=desktop-v1.1.3 \
+  -f release_notes="树夏Music 桌面版 v1.1.3"
+```
+
 ## 发布流程
 
 1. 改完代码、确定要发版。
@@ -53,10 +85,15 @@ Gitee 没有同等开关，所以桌面放独立仓库，彻底避免干扰安�
 - `scripts/ci/make-latest-json.py` — 生成 GitHub + Gitee 两份清单
 - `scripts/ci/publish-gitee.py` — 创建/更新 Gitee `desktop-latest` Release 并上传产物
 - `.github/workflows/desktop-release.yml` — 发布工作流
+- `maiga512/shuxiamusic-release:.github/workflows/desktop-release-public.yml` — 公开 Runner 免额度构建工作流
 
 ## 注意事项
 
 - Gitee 发布仓库必须保持**公开**，否则更新器匿名下载不到安装包。
-- Gitee 单文件附件有体积上限；若桌面安装包超限会导致 Gitee 上传失败（此时自动回退 GitHub）。
+- Gitee 桌面发布仓库的**总附件配额是 1GB**。旧版本累计会把 `desktop-v1.1.3` 的 Windows 包顶掉；
+  发布前如遇 `文件大小已超出仓库附件配额`，直接 DELETE 旧版本化 Release 和混有旧附件的
+  `desktop-latest`，再运行 `publish-gitee-local.sh` 重建。Gitee 列表接口不返回附件 id，
+  试图只删单个旧附件不可靠，必须整 Release 重建。
+- Gitee 单文件附件也有体积上限；若桌面安装包超限会导致 Gitee 上传失败（此时自动回退 GitHub）。
 - 安卓的 Gitee 仓库 `songsong2020/shuxiamusic-release` 目前是**私有**，若安卓也要从 Gitee
   自动更新，需另行将其设为公开（不属于本次桌面改动范围）。

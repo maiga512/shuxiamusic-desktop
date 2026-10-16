@@ -5,7 +5,15 @@
 - 版本号升级为 `1.1.3`（`package.json` / `src-tauri/Cargo.toml` / `Cargo.lock`），准备发布 Mac Apple Silicon 与 Windows x64 桌面安装包。
 - 桌面 Release 附件补充三份可导入插件：`feiniu-service.js`（飞牛音乐服务 v1.2.1）、`shuxia-sync-service.js`（多端同步 v1.0.6）、`ceru-nas-sync-service.js`（旧文件名兼容副本）。
 - 发布目标：GitHub `maiga512/shuxiamusic-release` 的 `desktop-v1.1.3` / `desktop-latest`，以及 Gitee `songsong2020/shuxiamusic-desktop-release` 的同名 Release；插件文件与桌面安装包一起挂在桌面端 Release 下载区。
-- 索引更新仅记录发布边界、版本与插件附件归属，不改变桌面运行时架构。
+- **免额度构建方案**：私有源码仓库 Actions 因账户扣款/额度被停时，使用公开发布仓库的
+  `maiga512/shuxiamusic-release:.github/workflows/desktop-release-public.yml`。公开 Runner 通过
+  `SOURCE_REPO_TOKEN` 私密读取 `maiga512/shuxiamusic-desktop` 的 `desktop-v1.1.3` 标签，
+  产物直传公开 Release；本次公开构建 run `38855267488` 四个 Job 全部成功。
+- **Gitee 1GB 总附件配额**：旧版本累计会导致 Windows 包上传 400。按用户指示删除旧
+  `desktop-v1.1.1`、混杂 `desktop-latest`、`desktop-v1.1.2` 三个 Release 后重建，完整上传 Mac/Windows/签名/插件。
+- GitHub 与 Gitee 的 `desktop-v1.1.3` / `desktop-latest` 均已发布；Gitee `latest.json` 已校验
+  `version=1.1.3`，`darwin-aarch64` 与 `windows-x86_64` URL 均指向 Gitee。
+- 索引更新记录发布边界、公开 Runner、Gitee 配额清理、版本与插件附件归属，不改变桌面运行时架构。
 
 ## 2026-10-16 存储管理审计 + 封面缓存纳入管理（查看/清除）
 
@@ -113,6 +121,9 @@ search_aliases:
   - 飞牛插件
   - 多端同步插件
   - 桌面版发布
+  - 公开 Runner
+  - Actions 扣款
+  - Gitee 附件配额
   - 桌面歌词
   - 底栏
   - 全屏播放
