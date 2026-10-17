@@ -21,6 +21,7 @@
 """
 import json
 import os
+import re
 import sys
 import time
 import tempfile
@@ -130,12 +131,56 @@ def upload(release_id, filepath: Path, upload_name: str):
         tmp_path.unlink(missing_ok=True)
 
 
-manifest = Path("release-assets-gitee") / "latest.json"
+MANIFEST = Path("release-assets-gitee") / "latest.json"
 VERSION_PLAIN = VERSION.lstrip("v")
 
-installers = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != "latest.json")
-if not installers:
-    sys.exit("release-assets/ 下没有可发布的安装包产物，终止。")
+# 由 main() 填充：release-assets/ 下所有安装包（不含 latest.json）。
+installers: list = []
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """不自动跟随重定向，用于从第一跳 Location 里取出附件 id。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def resolve_attach_id(browser_download_url: str):
+    """取附件的 attach_file_id。
+
+    Gitee 的 releases 列表接口只返回附件名，不返回 id（assets 里没有 id 字段），
+    所以没法直接用列表里的 id 去删；但附件的下载地址第一跳 302 会跳到
+    ``.../attach_files/<id>/download/<name>``，据此可精确拿到 attach_file_id。
+    Gitee 自动生成的源码包（.zip/.tar.gz）不是附件，这条路径会 404，返回 None。
+    """
+    if not browser_download_url:
+        return None
+    location = ""
+    try:
+        with _NO_REDIRECT_OPENER.open(browser_download_url, timeout=60) as resp:
+            location = resp.headers.get("Location", "") or ""
+    except urllib.error.HTTPError as e:
+        location = (e.headers.get("Location", "") or "") if e.headers else ""
+    except (urllib.error.URLError, TimeoutError, OSError):
+        return None
+    m = re.search(r"/attach_files/(\d+)/download/", location)
+    return int(m.group(1)) if m else None
+
+
+def delete_attachment(release_id, att_id: int) -> bool:
+    """按 attach_file_id 删除单个附件；已被删掉（404）时返回 False，不当作失败。"""
+    url = f"{API}/repos/{REPO}/releases/{release_id}/attach_files/{att_id}?access_token={TOKEN}"
+    req = urllib.request.Request(url, method="DELETE")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return 200 <= resp.status < 300
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return False
+        raise SystemExit(f"删除附件 {att_id} 失败: {e.code} {e.read().decode(errors='replace')}")
 
 
 def ensure_release(tag: str, release_name: str) -> int:
@@ -155,17 +200,28 @@ def ensure_release(tag: str, release_name: str) -> int:
                 "target_commitish": BRANCH,
             },
         )
-    else:
-        print(f"复用已存在的 Release {tag} id={release.get('id')}，先清掉旧附件再重传。")
+        return release["id"]
+
+    print(f"复用已存在的 Release {tag} id={release.get('id')}，先清掉旧附件再重传。")
+    # 附件名可能重复堆积（历史遗留的同名 latest.json / 多版本安装包），而下载地址每次
+    # 只解析到其中一个，所以反复扫描，直到某一轮再也解析不出可删附件为止。
+    release_id = release["id"]
+    for _ in range(10):
+        deleted = 0
         for att in release.get("assets", []) or []:
-            att_id = att.get("id") if isinstance(att, dict) else None
-            name = att.get("name") if isinstance(att, dict) else None
-            # Gitee 的 assets 里源码包没有可删除 id，跳过；只删我们上传过的附件。
+            if not isinstance(att, dict):
+                continue
+            name = att.get("name")
+            att_id = att.get("id") or resolve_attach_id(att.get("browser_download_url"))
             if att_id is None:
                 continue
-            api("DELETE", f"/repos/{REPO}/releases/{release['id']}/attach_files/{att_id}?access_token={TOKEN}")
-            print(f"  已删除旧附件: {name}")
-    return release["id"]
+            if delete_attachment(release_id, att_id):
+                deleted += 1
+                print(f"  已删除旧附件: {name} (id={att_id})")
+        if not deleted:
+            break
+        release = find_release(tag) or {"id": release_id, "assets": []}
+    return release_id
 
 
 def publish_tag(tag: str, release_name: str, include_manifest: bool):
@@ -174,18 +230,28 @@ def publish_tag(tag: str, release_name: str, include_manifest: bool):
     for f in installers:
         upload(release_id, f, f.name)
     if include_manifest:
-        if not manifest.exists():
-            sys.exit(f"缺少 {manifest}，请先运行 make-latest-json.py（并设置 GITEE_REPOSITORY）。")
+        if not MANIFEST.exists():
+            sys.exit(f"缺少 {MANIFEST}，请先运行 make-latest-json.py（并设置 GITEE_REPOSITORY）。")
         # Gitee 版清单以 latest.json 之名上传，这样更新器端点地址才对得上。
-        upload(release_id, manifest, "latest.json")
+        upload(release_id, MANIFEST, "latest.json")
     print(f"Gitee {tag} 发布完成: https://gitee.com/{REPO}/releases/tag/{tag}")
 
 
-# 1) 固定标签 desktop-latest：更新器主通道（安装包 + latest.json）
-publish_tag(TAG, f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=True)
+def main():
+    global installers
+    installers = sorted(p for p in OUT.iterdir() if p.is_file() and p.name != "latest.json")
+    if not installers:
+        sys.exit("release-assets/ 下没有可发布的安装包产物，终止。")
 
-# 2) 版本化 Release（desktop-v<版本>）：每个版本一个，不被固定标签覆盖，
-#    发布中心首页「全部历史版本」可据此随时下载旧版本。不附 latest.json（只给 desktop-latest 用）。
-publish_tag(f"desktop-v{VERSION_PLAIN}", f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=False)
+    # 1) 固定标签 desktop-latest：更新器主通道（安装包 + latest.json）
+    publish_tag(TAG, f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=True)
 
-print(f"Gitee 发布完成：https://gitee.com/{REPO}/releases/download/{TAG}/latest.json")
+    # 2) 版本化 Release（desktop-v<版本>）：每个版本一个，不被固定标签覆盖，
+    #    发布中心首页「全部历史版本」可据此随时下载旧版本。不附 latest.json（只给 desktop-latest 用）。
+    publish_tag(f"desktop-v{VERSION_PLAIN}", f"树夏Music 桌面版 v{VERSION_PLAIN}", include_manifest=False)
+
+    print(f"Gitee 发布完成：https://gitee.com/{REPO}/releases/download/{TAG}/latest.json")
+
+
+if __name__ == "__main__":
+    main()

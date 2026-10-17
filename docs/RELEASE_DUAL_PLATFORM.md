@@ -101,10 +101,15 @@ gh workflow run "Desktop Release Public" \
 ## 注意事项
 
 - Gitee 发布仓库必须保持**公开**，否则更新器匿名下载不到安装包。
-- Gitee 桌面发布仓库的**总附件配额是 1GB**。旧版本累计会把 `desktop-v1.1.3` 的 Windows 包顶掉；
-  发布前如遇 `文件大小已超出仓库附件配额`，直接 DELETE 旧版本化 Release 和混有旧附件的
-  `desktop-latest`，再运行 `publish-gitee-local.sh` 重建。Gitee 列表接口不返回附件 id，
-  试图只删单个旧附件不可靠，必须整 Release 重建。
+- Gitee 桌面发布仓库的**总附件配额是 1GB**。旧版本累计会把版本化 Release 的 Windows 包顶掉；
+  如遇 `文件大小已超出仓库附件配额`，DELETE 掉多余的旧版本化 Release 即可释放配额（不必再删
+  `desktop-latest`）。
+- **重复上传不再污染 Release**：Gitee 的 releases 列表接口不返回附件 id，早期 `publish-gitee.py`
+  的「清旧附件」循环因此空转，`desktop-latest` 里越堆越多旧版本安装包，且旧的同名 `latest.json`
+  会遮蔽新清单（更新器一直读到旧版本，用户收不到更新）。现在改为从附件下载地址的第一跳 302
+  （`.../attach_files/<id>/download/<name>`）反查 `attach_file_id` 再精确删除，同名附件反复扫描
+  直到删净，因此重复发布前**不需要**再手工删除整个 Release。Gitee 自动生成的源码包
+  （`.zip`/`.tar.gz`）不是附件、删不掉，会被跳过，不影响更新器。
 - Gitee 单文件附件也有体积上限；若桌面安装包超限会导致 Gitee 上传失败（此时自动回退 GitHub）。
 - 安卓 APK 仍可从公开 Release 附件下载，但安卓源码不再放在发布中心仓库；
   发布中心仓库只保留 README、截图和必要工作流。

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    听歌识曲需要采集麦克风。macOS 在 Hardened Runtime 下**强制要求**这条
+    entitlement，缺了它 TCC 会直接拒绝（不弹授权框），App 侧只能拿到 denied，
+    表现就是「麦克风权限未开启」但系统设置里也点不亮。
+
+    对照事实（2026-10-17 排查）：
+      - 正式版 /Applications/树夏Music.app  flags=0x10002(adhoc,runtime)、无 entitlements → 麦克风不可用
+      - Preview /Applications/树夏Music-Preview.app  flags=0x0(none)（没开 Hardened Runtime）→ 麦克风可用
+
+    entitlements 文件经 bundle.macOS.entitlements 注入；不要删这条。
+  -->
+  <key>com.apple.security.device.audio-input</key>
+  <true/>
+</dict>
+</plist>

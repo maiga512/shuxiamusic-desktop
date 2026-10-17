@@ -22,8 +22,10 @@
 #
 # 令牌从 ~/.config/ceru/gitee_token 读取（兜底 ~/.gitee-token），无需每次再提供。
 # 缺 release-assets-gitee/latest.json 时自动用 make-latest-json.py 生成。
-# 注意：Gitee 列表接口不返回附件 id，脚本无法精确删旧附件；若目标 Release 里混有
-# 旧版本附件，请先 DELETE 整个 release（API /releases/{id}）再跑本脚本重建。
+# 注意：Gitee 的 releases 列表接口不返回附件 id，publish-gitee.py 改用「下载地址第一跳
+# 302 里的 /attach_files/<id>/」反查 attach_file_id 再逐个删除，所以重复上传不会再把旧
+# 版本附件堆在同一个 Release 里（旧的同名 latest.json 也不会再遮蔽新清单）；也不再需要
+# 手工先删掉整个 Release。Gitee 自动生成的源码包删不掉，会被跳过，不影响更新器。
 set -euo pipefail
 
 WORK_DIR="${1:?用法: publish-gitee-local.sh <工作目录> <版本号> [更新说明]}"

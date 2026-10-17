@@ -1,3 +1,33 @@
+## 2026-10-17 正式版「麦克风权限未开启」根因：Hardened Runtime 缺 entitlement（发 v1.1.6）
+
+- **结论：不是代码问题，是打包签名问题。** 正式版开着 Hardened Runtime 却**一个 entitlement 都没注入**，
+  而 macOS 在 Hardened Runtime 下对麦克风强制要求 `com.apple.security.device.audio-input`；
+  缺了它 TCC 直接拒绝、**连授权框都不弹**，App 侧只拿到 `NotAllowedError`，
+  所以界面永远停在「麦克风权限未开启」，去系统设置里手动开也点不亮。
+- **Preview 为什么能用**：它 `flags=0x0`，根本没启用 Hardened Runtime；正式版 `flags=0x10002(adhoc,runtime)`。
+  两边是同一份源码、同一个 `permissions.rs`，所以别再去查权限代码。
+- **修法**：新增 `src-tauri/Entitlements.plist`（只放 `com.apple.security.device.audio-input`），
+  `src-tauri/tauri.conf.json` 的 `bundle.macOS.entitlements` 指向它，并显式写 `hardenedRuntime: true`。
+  **不要**用「把 hardenedRuntime 关掉」的方式对齐 Preview——那是拿安全换功能，且下次打包很容易再踩回去。
+- **不变量**：`hardenedRuntime` 与 entitlements 必须成对；删掉 plist 或改回不注入，麦克风会再次**静默**失效。
+- **验收点**：装好后对**发布出来的** `.app` 跑 `codesign -d --entitlements :- /Applications/树夏Music.app`，
+  必须能看到 `com.apple.security.device.audio-input`；然后点听歌识曲应弹出系统麦克风授权框。
+- **发布**：`package.json` / `src-tauri/Cargo.toml` / `src-tauri/Cargo.lock` 三处版本同步为 `1.1.6`；
+  推 tag `desktop-v1.1.6` → GitHub CI（macOS arm64 + Windows x64）；Gitee 走本机
+  `scripts/ci/publish-gitee-local.sh` 直传。
+
+## 2026-10-17 Gitee 更新通道修复：停用「整 Release 重建」的旧做法
+
+- **Gitee 侧曾停在 1.1.4**：`desktop-latest/latest.json` 返回旧版本。根因是 Gitee 的 releases 接口不返回附件 id，
+  旧的 `desktop-latest` 里一直堆着 1.1.4 期的附件和一个旧的同名 `latest.json`，下载地址解析到旧的那份。
+- **已按新办法修好，不需要再删整个 Release**：这次从附件下载地址的第一跳 302 反查出 `attach_file_id`，
+  精确删掉 7 个旧附件即恢复；`desktop-v1.1.4` 归档原样保留。释放的 ~285MB 配额顺带补上了
+  `desktop-v1.1.5` 缺失的 Windows 安装包。
+- **`scripts/ci/publish-gitee.py` 已内置该逻辑**，以后重复发布不会再污染 `desktop-latest`；
+  `docs/RELEASE_DUAL_PLATFORM.md` 与 `AI_INDEX.md`/`TOP_GRAPH.md` 里「必须先 DELETE 整个 Release」的旧说明已更正。
+- **本机遗留**：`/tmp/ceru-gitee-fix/` 下有本次临时下载的 Windows 安装包与上传脚本；`/tmp/ceru-release/work` 是
+  10-14 的 1.0.9 旧工作目录，可随时清理。
+
 ## 2026-10-16 启动遮罩预挂载化开 + macOS 原生麦克风授权（待发布）
 
 - 对照安卓 `MainActivity.StartupPreloadOverlay` 后确认：问题不是单纯把淡出提前，而是桌面端让主页
