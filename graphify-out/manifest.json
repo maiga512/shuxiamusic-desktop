@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792195811.6236284,
+    "mtime": 1792197043.154875,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792195820.3823402,
+    "mtime": 1792197052.7954488,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1615,8 +1615,8 @@
     "semantic_hash": ""
   },
   "src/views/home/index.vue": {
-    "mtime": 1792195596.0519755,
-    "ast_hash": "cfc097a7fe0bbe83788f3eb9f4d103f1",
+    "mtime": 1792196950.1484537,
+    "ast_hash": "190f76712674c553943f53295921af2a",
     "semantic_hash": ""
   },
   "src/views/music/LocalTagEditorPage.vue": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792196635.5325117,
-    "ast_hash": "535ccbf2c8298dfd7b09411e67969f0a",
+    "mtime": 1792197565.018831,
+    "ast_hash": "af4de9c73e8c69ac31017c5f56b094ff",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792196635.5358238,
-    "ast_hash": "6d0238ad9eefa637f7b27cbb51e84d29",
+    "mtime": 1792197565.0198894,
+    "ast_hash": "9776cba50eda1b7b64afec8dc2fb144c",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792196635.5369546,
-    "ast_hash": "c99cf65502722af8e1817d3e1503ebcd",
+    "mtime": 1792197565.0203755,
+    "ast_hash": "2d291c7d84e854b469ecce62db806ed4",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3135,8 +3135,8 @@
     "semantic_hash": ""
   },
   "src/utils/navigation/welcomeTransition.ts": {
-    "mtime": 1792195596.049985,
-    "ast_hash": "455da165fe84c65fd5b859f750768efe",
+    "mtime": 1792196950.1443245,
+    "ast_hash": "2bec4d4bba3855f9acbc3ac84d84cd95",
     "semantic_hash": ""
   },
   "src-tauri/src/permissions.rs": {

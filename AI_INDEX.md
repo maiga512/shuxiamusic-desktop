@@ -12,6 +12,7 @@
 - **首帧握手**：不再仅凭固定计时器开始淡出。Home 在 `onMounted` 后执行两次 `requestAnimationFrame`，
   通过 `markWelcomeHomeFirstFrameReady()` 通知统一时间线；`scheduleWelcomeFade()` 取
   `max(2.2s 目标时间, 主页首帧时间)` 后才启动 Worker 淡出，淡出结束才释放遮罩并恢复播放。
+  若 WebKit 在锁屏/后台节流 RAF，Home 使用 2s 首帧兜底，避免遮罩永久等待。
 - **权限**：新增 `permissions_request_microphone`，先调用 macOS `AVCaptureDevice` 原生授权，再进入
   WKWebView `getUserMedia`。Preview 实测已获得 MacBook Pro 麦克风、完成录音并返回搜索结果。
 - 本次只改启动遮罩生命周期、共享过渡时间与麦克风权限边界；已编译唯一 Preview 测试包，暂不发布。
@@ -663,6 +664,7 @@ treating raw edge counts as exact.
 | 2026-10-16 | 对齐安卓 StartupPreloadOverlay：1.2s 主页预挂载、1s 首帧准备、560ms 星空线性淡出、90ms 后卸载遮罩。 | 编译唯一 Preview 测试包；更新启动生命周期路由与 Graphify 索引。 |
 | 2026-10-16 | 星空动画迁移到 Web Worker + OffscreenCanvas 独立渲染，主页首帧不再冻结星空；保留主线程回退。 | 编译唯一 Preview 测试包；更新启动渲染路由与 Graphify 索引。 |
 | 2026-10-17 | 启动时间线改为 Home 双 RAF 首帧握手；淡出取 2.2s 目标与真实首帧的较晚者，释放遮罩后再恢复播放。 | 编译唯一 Preview 测试包；更新首帧握手路由与 Graphify 索引。 |
+| 2026-10-17 | Home 首帧握手增加 2s RAF 兜底，锁屏/后台节流时不会永久停留遮罩。 | 编译唯一 Preview 测试包；更新首帧兜底路由与 Graphify 索引。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the
 architecture or ownership map changes.

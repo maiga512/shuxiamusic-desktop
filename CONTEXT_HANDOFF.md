@@ -5,7 +5,7 @@
   560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
   `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
   Home `onMounted` 后双 RAF 发出首帧握手，统一时间线取 2.2s 目标与真实首帧的较晚者才启动淡出；
-  `initPlayback()` 等遮罩真正释放后恢复，Vue Transition 只负责 DOM 最长保留时间。
+  Home 另有 2s RAF 节流兜底；`initPlayback()` 等遮罩真正释放后恢复，Vue Transition 只负责 DOM 最长保留时间。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
   获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
   返回识别搜索结果。

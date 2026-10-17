@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { appWindowState } from '@renderer/utils/appWindowState'
 import { scheduleHomePrefetch } from '@renderer/utils/navigation/homePrefetch'
 import {
+  WELCOME_FIRST_FRAME_TIMEOUT_MS,
   markWelcomeHomeFirstFrameReady,
   welcomeTransitionActive
 } from '@renderer/utils/navigation/welcomeTransition'
@@ -62,7 +63,16 @@ onMounted(() => {
   // 主页稳定后空闲预热「发现/播客」首屏数据（写 sessionCache，各页已有 SWR）
   scheduleHomePrefetch()
   if (welcomeTransitionActive.value) {
-    requestAnimationFrame(() => requestAnimationFrame(() => markWelcomeHomeFirstFrameReady()))
+    const fallback = window.setTimeout(
+      () => markWelcomeHomeFirstFrameReady(),
+      WELCOME_FIRST_FRAME_TIMEOUT_MS
+    )
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        window.clearTimeout(fallback)
+        markWelcomeHomeFirstFrameReady()
+      })
+    )
   }
 })
 
