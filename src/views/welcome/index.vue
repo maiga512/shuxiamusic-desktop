@@ -1,5 +1,8 @@
 <template>
-  <div class="splash-root" :class="{ 'is-worker': starfieldActive }">
+  <div
+    class="splash-root"
+    :class="{ 'is-worker': starfieldActive, 'is-released': welcomeOverlayReleased }"
+  >
     <canvas ref="canvasRef" class="splash-canvas"></canvas>
     <div class="splash-title">树夏Music</div>
   </div>
@@ -10,10 +13,13 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { initPlayback } from '@renderer/utils/audio/globaPlayList'
 import {
-  WELCOME_DISSOLVE_MS,
   WELCOME_HOME_MOUNT_MS,
-  WELCOME_MAIN_PREPARE_MS,
-  WELCOME_OVERLAY_LEAVE_MS
+  beginWelcomeTimeline,
+  getWelcomeTimelineStartedAt,
+  resetWelcomeTimeline,
+  scheduleWelcomeFade,
+  waitForWelcomeHomeFirstFrameReady,
+  welcomeOverlayReleased
 } from '@renderer/utils/navigation/welcomeTransition'
 import {
   mountWelcomeStarfield,
@@ -96,6 +102,7 @@ function makeStars() {
 }
 
 onMounted(() => {
+  beginWelcomeTimeline()
   const canvas = canvasRef.value
   if (!canvas) {
     void bootThenEnter()
@@ -248,7 +255,7 @@ function preloadHomeEntry() {
 
 async function bootThenEnter() {
   if (entered) return
-  const startAt = Date.now()
+  const startAt = getWelcomeTimelineStartedAt()
   // 插件系统在后台预热，不能延后星空到主页的连续溶解。
   void window.electron?.ipcRenderer
     ?.invoke?.('service-plugin-initialize-system')
@@ -261,7 +268,7 @@ async function bootThenEnter() {
 
   const waitForHomeMount = () =>
     new Promise<void>((resolve) => {
-      const remaining = Math.max(0, WELCOME_HOME_MOUNT_MS - (Date.now() - startAt))
+      const remaining = Math.max(0, WELCOME_HOME_MOUNT_MS - (performance.now() - startAt))
       window.setTimeout(resolve, remaining)
     })
 
@@ -271,16 +278,15 @@ async function bootThenEnter() {
   if (entered) return
   entered = true
   await router.replace('/home/find')
-  // Home 在星空遮罩下面完成首帧；遮罩再保持 1s，随后 560ms 线性淡出并多留 90ms。
-  // 这段时间主页已经在下面稳定，星空层的淡出不会再被首帧构图卡住。
-  window.setTimeout(() => {
-    starfieldHandle?.startFade(WELCOME_DISSOLVE_MS)
-  }, WELCOME_MAIN_PREPARE_MS)
-  window.setTimeout(() => {
-    void initPlayback().catch((e) => {
-      console.error('[welcome] initPlayback failed', e)
-    })
-  }, WELCOME_OVERLAY_LEAVE_MS)
+  await waitForWelcomeHomeFirstFrameReady()
+  scheduleWelcomeFade(
+    (durationMs) => starfieldHandle?.startFade(durationMs),
+    () => {
+      void initPlayback().catch((e) => {
+        console.error('[welcome] initPlayback failed', e)
+      })
+    }
+  )
 }
 
 onUnmounted(() => {
@@ -295,6 +301,7 @@ onUnmounted(() => {
     window.removeEventListener('resize', canvas.__shuxiaResize)
     canvas.__shuxiaResize = null
   }
+  resetWelcomeTimeline()
 })
 </script>
 
@@ -312,6 +319,10 @@ onUnmounted(() => {
 
 .splash-root.is-worker {
   background: transparent;
+}
+
+.splash-root.is-released {
+  visibility: hidden;
 }
 
 .splash-canvas {

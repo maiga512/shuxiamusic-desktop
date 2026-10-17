@@ -12,7 +12,7 @@
       <Transition
         :enter-active-class="dissolvingWelcome ? 'pagesApp' : `animate__animated animate__fadeIn pagesApp`"
         :leave-active-class="dissolvingWelcome ? 'welcome-hold-dissolve pagesApp' : `animate__animated animate__fadeOut pagesApp`"
-        :duration="dissolvingWelcome ? { enter: 1, leave: WELCOME_OVERLAY_LEAVE_MS } : undefined"
+        :duration="dissolvingWelcome ? { enter: 1, leave: WELCOME_TRANSITION_MAX_LEAVE_MS } : undefined"
       >
         <component :is="Component" />
       </Transition>
@@ -118,7 +118,7 @@ import { initIdleSleep, destroyIdleSleep } from './utils/idleSleep'
 import { initAppWindowState, destroyAppWindowState, isAppWindowVisible } from './utils/appWindowState'
 import { startWindowDrag } from './utils/windowDrag'
 import {
-  WELCOME_OVERLAY_LEAVE_MS,
+  WELCOME_TRANSITION_MAX_LEAVE_MS,
   welcomeTransitionActive
 } from './utils/navigation/welcomeTransition'
 

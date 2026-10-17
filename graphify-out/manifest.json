@@ -660,8 +660,8 @@
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1792161314.3601518,
-    "ast_hash": "befe88b8025a3b8444a66395bc853333",
+    "mtime": 1792195596.052331,
+    "ast_hash": "068a546c76708c3517eb12e951a2ef18",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792161471.5000095,
+    "mtime": 1792195811.6236284,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792161485.2588775,
+    "mtime": 1792195820.3823402,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1615,8 +1615,8 @@
     "semantic_hash": ""
   },
   "src/views/home/index.vue": {
-    "mtime": 1792148384.1442301,
-    "ast_hash": "e0f2d797662ea1ee730bf62fabac7fcc",
+    "mtime": 1792195596.0519755,
+    "ast_hash": "cfc097a7fe0bbe83788f3eb9f4d103f1",
     "semantic_hash": ""
   },
   "src/views/music/LocalTagEditorPage.vue": {
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792161314.3594906,
-    "ast_hash": "e2c7796546d667ececf446dc091af491",
+    "mtime": 1792195692.750147,
+    "ast_hash": "5b107db38e5e9d6f25fbbbde08299bed",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792162098.8359146,
-    "ast_hash": "ead5f9cd6f0a65c2ffbb24807e8557d4",
+    "mtime": 1792196635.5325117,
+    "ast_hash": "535ccbf2c8298dfd7b09411e67969f0a",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792162098.8388758,
-    "ast_hash": "5fb892d7775fb09f5fceb3049fb76a26",
+    "mtime": 1792196635.5358238,
+    "ast_hash": "6d0238ad9eefa637f7b27cbb51e84d29",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792162098.8395932,
-    "ast_hash": "d175efefd26350324a837987cca7ed99",
+    "mtime": 1792196635.5369546,
+    "ast_hash": "c99cf65502722af8e1817d3e1503ebcd",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3135,8 +3135,8 @@
     "semantic_hash": ""
   },
   "src/utils/navigation/welcomeTransition.ts": {
-    "mtime": 1792160016.8162751,
-    "ast_hash": "9b320f3e630fdc71ce24b7d46aa2fe30",
+    "mtime": 1792195596.049985,
+    "ast_hash": "455da165fe84c65fd5b859f750768efe",
     "semantic_hash": ""
   },
   "src-tauri/src/permissions.rs": {
