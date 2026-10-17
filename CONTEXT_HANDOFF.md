@@ -4,8 +4,8 @@
   首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下给主页 1s 首帧准备；2.2s 开始
   560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
   `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
-  Home `onMounted` 后双 RAF 发出首帧握手，统一时间线取 2.2s 目标与真实首帧的较晚者才启动淡出；
-  Home 另有 2s RAF 节流兜底；`initPlayback()` 等遮罩真正释放后恢复，Vue Transition 只负责 DOM 最长保留时间。
+  桌面端恢复安卓固定时间线，不再等待 Home 首帧回调，避免动画结束后二次停顿。淡出开始后禁止颗粒重生，
+  已有颗粒继续向外离开，不再从中心补充，消除末尾反抽；`initPlayback()` 等遮罩释放后恢复。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
   获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
   返回识别搜索结果。

@@ -18,7 +18,6 @@ import {
   getWelcomeTimelineStartedAt,
   resetWelcomeTimeline,
   scheduleWelcomeFade,
-  waitForWelcomeHomeFirstFrameReady,
   welcomeOverlayReleased
 } from '@renderer/utils/navigation/welcomeTransition'
 import {
@@ -163,11 +162,17 @@ onMounted(() => {
     const projScale = Math.max(w, h) * 0.9
     const focalDepth = focalDepthScaled
     const cullMargin = Math.max(40, starScale * 6)
+    const canRespawn = fadeStartMs === null
 
     for (const s of stars) {
       s.z -= stepZ * s.vmul * dt
       if (s.z <= focalDepth) {
-        resetStar(s, false)
+        if (canRespawn) {
+          resetStar(s, false)
+        } else {
+          s.px = NaN
+          s.py = NaN
+        }
         continue
       }
       let tx = s.x
@@ -182,7 +187,12 @@ onMounted(() => {
       const sx = cx + tx * persp * projScale
       const sy = cy + ty * persp * projScale
       if (sx < -cullMargin || sx > w + cullMargin || sy < -cullMargin || sy > h + cullMargin) {
-        resetStar(s, false)
+        if (canRespawn) {
+          resetStar(s, false)
+        } else {
+          s.px = NaN
+          s.py = NaN
+        }
         continue
       }
       let flashMult = 1
@@ -278,7 +288,6 @@ async function bootThenEnter() {
   if (entered) return
   entered = true
   await router.replace('/home/find')
-  await waitForWelcomeHomeFirstFrameReady()
   scheduleWelcomeFade(
     (durationMs) => starfieldHandle?.startFade(durationMs),
     () => {

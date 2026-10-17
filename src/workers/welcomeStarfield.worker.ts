@@ -125,11 +125,17 @@ function drawStarfield(deltaSec: number) {
   const cy = height / 2
   const projScale = Math.max(width, height) * 0.9
   const cullMargin = Math.max(40, starScale * 6)
+  const canRespawn = fadeStartMs === null
 
   for (const star of stars) {
     star.z -= stepZ * star.vmul * dt
     if (star.z <= focalDepthScaled) {
-      resetStar(star, false)
+      if (canRespawn) {
+        resetStar(star, false)
+      } else {
+        star.px = NaN
+        star.py = NaN
+      }
       continue
     }
 
@@ -146,7 +152,12 @@ function drawStarfield(deltaSec: number) {
     const sx = cx + tx * persp * projScale
     const sy = cy + ty * persp * projScale
     if (sx < -cullMargin || sx > width + cullMargin || sy < -cullMargin || sy > height + cullMargin) {
-      resetStar(star, false)
+      if (canRespawn) {
+        resetStar(star, false)
+      } else {
+        star.px = NaN
+        star.py = NaN
+      }
       continue
     }
 

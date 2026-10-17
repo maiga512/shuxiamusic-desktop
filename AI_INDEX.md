@@ -9,10 +9,10 @@
 - **修复**：桌面端改为同段时间轴：1.2s 路由到 `/home/find` 并在遮罩下挂载，遮罩先保持 1s；
   随后 560ms 线性透明度淡出，90ms 后卸载。星空改由 `welcomeStarfield.worker.ts` + `OffscreenCanvas`
   独立线程渲染，主页首帧不再冻结星空；不支持 Worker 时回退主线程 Canvas。
-- **首帧握手**：不再仅凭固定计时器开始淡出。Home 在 `onMounted` 后执行两次 `requestAnimationFrame`，
-  通过 `markWelcomeHomeFirstFrameReady()` 通知统一时间线；`scheduleWelcomeFade()` 取
-  `max(2.2s 目标时间, 主页首帧时间)` 后才启动 Worker 淡出，淡出结束才释放遮罩并恢复播放。
-  若 WebKit 在锁屏/后台节流 RAF，Home 使用 2s 首帧兜底，避免遮罩永久等待。
+- **最终节奏**：完全按安卓固定时间线执行。1.2s 挂载主页并在遮罩下预热，2.2s 开始 560ms 淡出，
+  2.76s 透明后再留 90ms 释放；不等待 Home 首帧回调，避免动画结束后二次停顿。
+- **去反抽**：淡出开始后禁止颗粒重生。已有颗粒继续向外运动，离开画面即消失，不再从中心生成新颗粒，
+  消除末尾向内回弹的视觉抽动。
 - **权限**：新增 `permissions_request_microphone`，先调用 macOS `AVCaptureDevice` 原生授权，再进入
   WKWebView `getUserMedia`。Preview 实测已获得 MacBook Pro 麦克风、完成录音并返回搜索结果。
 - 本次只改启动遮罩生命周期、共享过渡时间与麦克风权限边界；已编译唯一 Preview 测试包，暂不发布。
@@ -442,7 +442,7 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | 桌面歌词、歌词锁定、双排歌词 | lyric window lifecycle, logical pixels, drag, resize, reveal | `src-tauri/src/commands/lyric_window.rs`, `src/views/DeskTopLyric/DeskTopLyric.vue` |
 | Dock、底栏、全屏播放、卡顿 | dock layout, full player transition, visualizer, background | `src/components/Play/PlayMusic.vue`, `src/components/Play/FullPlay.vue` |
 | 全屏手势、双指滑、捏合全屏、封面模式、黑胶、手势闪退 | two-finger cover/vinyl swipe, pinch window fullscreen, frontend-only | `src/components/Play/FullPlay.vue`, `src/store/playSetting.ts` |
-| 启动动画、欢迎页化开、星空衔接、进主页动画、主页首帧预挂载 | welcome overlay lifecycle, home prepare-ahead, worker starfield rendering | `src/views/welcome/index.vue`, `src/App.vue`, `src/utils/navigation/welcomeTransition.ts`, `src/workers/welcomeStarfield.worker.ts` |
+| 启动动画、欢迎页化开、星空衔接、进主页动画、颗粒反抽 | fixed welcome timeline, home prepare-ahead, no respawn during fade | `src/views/welcome/index.vue`, `src/App.vue`, `src/utils/navigation/welcomeTransition.ts`, `src/workers/welcomeStarfield.worker.ts` |
 | 听歌识曲权限、麦克风授权、macOS microphone permission | native AVCaptureDevice permission before WKWebView getUserMedia | `src-tauri/src/permissions.rs`, `src/tauri-bridge.ts` |
 | 底栏进度一格一格、进度条跳、匀速进度 | dock bar compositor remaining-duration animation; Pinia/mpv clock stays 1s | `src/components/Play/PlayMusic.vue`, `src/utils/audio/nativePlayback.ts` |
 | 全屏内存不回落、退出全屏内存、最小化内存、回主页内存、板块切换不重载 | hide/minimize release FullPlay heavy tree; list covers keep hot layer decoded, drop cold decoded bitmaps; KeepAlive group stays cached while the window is only occluded/backgrounded (shrinks to current page only after 1h off-screen) | `src/components/Play/FullPlay.vue`, `src/components/sImage.vue`, `src/views/home/index.vue` |
@@ -663,8 +663,7 @@ treating raw edge counts as exact.
 | 2026-10-16 | 开场动画改为 1.4s 起与主页交叉溶解，插件初始化不再阻塞进主页；新增 macOS 原生麦克风授权命令并实测识曲链路。 | 编译唯一 Preview 测试包；更新启动/权限路由与 Graphify 索引。 |
 | 2026-10-16 | 对齐安卓 StartupPreloadOverlay：1.2s 主页预挂载、1s 首帧准备、560ms 星空线性淡出、90ms 后卸载遮罩。 | 编译唯一 Preview 测试包；更新启动生命周期路由与 Graphify 索引。 |
 | 2026-10-16 | 星空动画迁移到 Web Worker + OffscreenCanvas 独立渲染，主页首帧不再冻结星空；保留主线程回退。 | 编译唯一 Preview 测试包；更新启动渲染路由与 Graphify 索引。 |
-| 2026-10-17 | 启动时间线改为 Home 双 RAF 首帧握手；淡出取 2.2s 目标与真实首帧的较晚者，释放遮罩后再恢复播放。 | 编译唯一 Preview 测试包；更新首帧握手路由与 Graphify 索引。 |
-| 2026-10-17 | Home 首帧握手增加 2s RAF 兜底，锁屏/后台节流时不会永久停留遮罩。 | 编译唯一 Preview 测试包；更新首帧兜底路由与 Graphify 索引。 |
+| 2026-10-17 | 恢复安卓固定启动时间线并移除首帧等待；淡出时禁止颗粒重生，消除末尾反抽。 | 编译唯一 Preview 测试包；更新启动节奏路由与 Graphify 索引。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the
 architecture or ownership map changes.
