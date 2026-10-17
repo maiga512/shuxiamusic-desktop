@@ -1,7 +1,7 @@
 <template>
   <div class="splash-root" :class="{ 'is-worker': starfieldActive }">
     <canvas ref="canvasRef" class="splash-canvas"></canvas>
-    <div class="splash-title">树夏Music</div>
+    <div class="splash-title">树夏music</div>
   </div>
 </template>
 
@@ -132,8 +132,7 @@ onMounted(() => {
     canvas.width = Math.max(1, Math.round(w * dpr))
     canvas.height = Math.max(1, Math.round(h * dpr))
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, w, h)
+    ctx.clearRect(0, 0, w, h)
   }
   resize()
   makeStars()
@@ -147,7 +146,7 @@ onMounted(() => {
     const keep = Math.pow(Math.min(0.98, Math.max(0, trail)), dt)
     const trailAlpha = Math.max(0.02, 1 - keep)
     // 拖尾：用半透明黑覆盖上一帧（等价于安卓 DST_OUT 淡出）
-    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalCompositeOperation = 'destination-out'
     ctx.fillStyle = `rgba(0,0,0,${trailAlpha})`
     ctx.fillRect(0, 0, w, h)
     // 星点叠加（等价于安卓 PorterDuff.ADD）
@@ -158,17 +157,11 @@ onMounted(() => {
     const projScale = Math.max(w, h) * 0.9
     const focalDepth = focalDepthScaled
     const cullMargin = Math.max(40, starScale * 6)
-    const canRespawn = fadeStartMs === null
 
     for (const s of stars) {
       s.z -= stepZ * s.vmul * dt
       if (s.z <= focalDepth) {
-        if (canRespawn) {
-          resetStar(s, false)
-        } else {
-          s.px = NaN
-          s.py = NaN
-        }
+        resetStar(s, false)
         continue
       }
       let tx = s.x
@@ -183,12 +176,7 @@ onMounted(() => {
       const sx = cx + tx * persp * projScale
       const sy = cy + ty * persp * projScale
       if (sx < -cullMargin || sx > w + cullMargin || sy < -cullMargin || sy > h + cullMargin) {
-        if (canRespawn) {
-          resetStar(s, false)
-        } else {
-          s.px = NaN
-          s.py = NaN
-        }
+        resetStar(s, false)
         continue
       }
       let flashMult = 1

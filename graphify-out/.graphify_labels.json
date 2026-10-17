@@ -460,5 +460,7 @@
   "458": "@applemusic-like-lyrics/vue",
   "459": "addToPlaylistAndPlay",
   "460": "onExtraMenuClick",
-  "461": "permissions_request_microphone"
+  "461": "permissions_request_microphone",
+  "462": "PermissionEntry",
+  "463": "iconv-lite"
 }

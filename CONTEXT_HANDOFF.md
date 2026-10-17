@@ -4,8 +4,8 @@
   首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下给主页 1s 首帧准备；2.2s 开始
   560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
   `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
-  桌面端恢复安卓固定时间线，不再等待 Home 首帧回调，避免动画结束后二次停顿。淡出开始后禁止颗粒重生，
-  已有颗粒继续向外离开，不再从中心补充，消除末尾反抽；`initPlayback()` 等遮罩释放后恢复。
+  桌面端恢复安卓固定时间线，不再等待 Home 首帧回调。星场改为透明画布 + `destination-out`
+  拖尾衰减，淡出期间持续生成颗粒并保持向外播放，动画贯穿整个化开过程。
   Tauri 主窗口和 HTML 初始背景均已设黑，打开 App 不再先闪白；歌曲/底栏状态改在遮罩不透明阶段预热，
   末帧不再额外切换 `visibility` 或补写布局。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，

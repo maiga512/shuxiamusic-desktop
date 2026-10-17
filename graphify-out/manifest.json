@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792202591.1632812,
+    "mtime": 1792203427.1151485,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792202604.6626837,
+    "mtime": 1792203439.5828912,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792202526.0138795,
-    "ast_hash": "cf68ca87c8198807583b33755493e755",
+    "mtime": 1792203363.6954758,
+    "ast_hash": "f11cd02bd948cfe711ad4b00d59d740e",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792203086.4287574,
-    "ast_hash": "4ee7c05e70c28232e6b096a6c7383aa8",
+    "mtime": 1792203890.9800193,
+    "ast_hash": "e027e5ebe19764285853d552bf4fce41",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792203086.4357357,
-    "ast_hash": "509facac34f4b208a6c747855e541209",
+    "mtime": 1792203890.9893134,
+    "ast_hash": "534a5a65654438785f9da8b5e7e74987",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792203086.437143,
-    "ast_hash": "ac2612e3059ff8e0b43d959df2930f8b",
+    "mtime": 1792203890.9934142,
+    "ast_hash": "c189aafdca940f51b9d653e7f7eebca7",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3150,8 +3150,8 @@
     "semantic_hash": ""
   },
   "src/workers/welcomeStarfield.worker.ts": {
-    "mtime": 1792200702.9614654,
-    "ast_hash": "c3ec452fe727116658ffcbef2de4bd5c",
+    "mtime": 1792203363.6949763,
+    "ast_hash": "0f789cfd17ba5e7a93f906b9c0f9a9af",
     "semantic_hash": ""
   }
 }

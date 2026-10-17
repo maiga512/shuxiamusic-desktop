@@ -4199,8 +4199,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "package_dependencies_animate_css",
-      "community": 291,
-      "community_name": "@applemusic-like-lyrics/lyric",
+      "community": 54,
+      "community_name": "dependencies",
       "norm_label": "animate.css"
     },
     {
@@ -4210,8 +4210,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "animate_css",
-      "community": 291,
-      "community_name": "@applemusic-like-lyrics/lyric",
+      "community": 54,
+      "community_name": "dependencies",
       "norm_label": "animate.css"
     },
     {
@@ -4309,8 +4309,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "package_dependencies_iconv_lite",
-      "community": 54,
-      "community_name": "dependencies",
+      "community": 463,
+      "community_name": "iconv-lite",
       "norm_label": "iconv-lite"
     },
     {
@@ -4320,8 +4320,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "iconv_lite",
-      "community": 54,
-      "community_name": "dependencies",
+      "community": 463,
+      "community_name": "iconv-lite",
       "norm_label": "iconv-lite"
     },
     {
@@ -11867,8 +11867,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 72,
+      "community_name": "SyncDatabase",
       "norm_label": "kg/hotsearch.js"
     },
     {
@@ -11878,8 +11878,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch_getlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 72,
+      "community_name": "SyncDatabase",
       "norm_label": "getlist()"
     },
     {
@@ -11889,8 +11889,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_hotsearch_filterlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 72,
+      "community_name": "SyncDatabase",
       "norm_label": "filterlist()"
     },
     {
@@ -11900,8 +11900,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_index",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "kg/index.js"
     },
     {
@@ -11911,8 +11911,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kg_index_kg",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 70,
+      "community_name": "musicSdk/index.js",
       "norm_label": "kg"
     },
     {
@@ -13363,8 +13363,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "kw/songlist.js"
     },
     {
@@ -13374,8 +13374,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlisturl",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlisturl()"
     },
     {
@@ -13385,8 +13385,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetailurl",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetailurl()"
     },
     {
@@ -13396,8 +13396,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_gettag",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "gettag()"
     },
     {
@@ -13407,8 +13407,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_gethottag",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "gethottag()"
     },
     {
@@ -13418,8 +13418,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filterinfohottag",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filterinfohottag()"
     },
     {
@@ -13429,8 +13429,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filtertaginfo",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filtertaginfo()"
     },
     {
@@ -13440,8 +13440,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlist",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlist()"
     },
     {
@@ -13451,8 +13451,8 @@
       "source_location": "L134",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_formatplaycount",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "formatplaycount()"
     },
     {
@@ -13462,8 +13462,8 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filterlist",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filterlist()"
     },
     {
@@ -13473,8 +13473,8 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filterlist2",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filterlist2()"
     },
     {
@@ -13484,8 +13484,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetaildigest8",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetaildigest8()"
     },
     {
@@ -13495,8 +13495,8 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetaildigest5info",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetaildigest5info()"
     },
     {
@@ -13506,8 +13506,8 @@
       "source_location": "L212",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetaildigest5music",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetaildigest5music()"
     },
     {
@@ -13517,8 +13517,8 @@
       "source_location": "L238",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetaildigest5",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetaildigest5()"
     },
     {
@@ -13528,8 +13528,8 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filterbdlistdetail",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filterbdlistdetail()"
     },
     {
@@ -13539,8 +13539,8 @@
       "source_location": "L296",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getreqid",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getreqid()"
     },
     {
@@ -13550,8 +13550,8 @@
       "source_location": "L302",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetailmusiclistbybdlistinfo",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetailmusiclistbybdlistinfo()"
     },
     {
@@ -13561,8 +13561,8 @@
       "source_location": "L324",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetailmusiclistbybduserpub",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetailmusiclistbybduserpub()"
     },
     {
@@ -13572,8 +13572,8 @@
       "source_location": "L347",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetailmusiclistbybdlist",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetailmusiclistbybdlist()"
     },
     {
@@ -13583,8 +13583,8 @@
       "source_location": "L374",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetailmusiclistbybd",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetailmusiclistbybd()"
     },
     {
@@ -13594,8 +13594,8 @@
       "source_location": "L402",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getlistdetail",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getlistdetail()"
     },
     {
@@ -13605,8 +13605,8 @@
       "source_location": "L424",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_filterlistdetail",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "filterlistdetail()"
     },
     {
@@ -13616,8 +13616,8 @@
       "source_location": "L498",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_gettags",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "gettags()"
     },
     {
@@ -13627,8 +13627,8 @@
       "source_location": "L505",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_getdetailpageurl",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -13638,8 +13638,8 @@
       "source_location": "L514",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_songlist_search",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 291,
+      "community_name": "@applemusic-like-lyrics/lyric",
       "norm_label": "search()"
     },
     {
@@ -13649,8 +13649,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_tipsearch",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "kw/tipsearch.js"
     },
     {
@@ -13660,8 +13660,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_tipsearch_tipsearchbysong",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "tipsearchbysong()"
     },
     {
@@ -13671,8 +13671,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_tipsearch_handleresult",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "handleresult()"
     },
     {
@@ -13682,8 +13682,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_tipsearch_canceltipsearch",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "canceltipsearch()"
     },
     {
@@ -13693,8 +13693,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_kw_tipsearch_search",
-      "community": 72,
-      "community_name": "SyncDatabase",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "search()"
     },
     {
@@ -13803,8 +13803,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "mg/album.js"
     },
     {
@@ -13814,8 +13814,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album_getalbumdetail",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getalbumdetail()"
     },
     {
@@ -13825,8 +13825,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_album_getalbuminfo",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getalbuminfo()"
     },
     {
@@ -13858,8 +13858,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg/comment.js"
     },
     {
@@ -13869,8 +13869,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_getcomment",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getcomment()"
     },
     {
@@ -13880,8 +13880,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_gethotcomment",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "gethotcomment()"
     },
     {
@@ -13891,8 +13891,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_getreplycomment",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getreplycomment()"
     },
     {
@@ -13902,8 +13902,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_comment_filtercomment",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filtercomment()"
     },
     {
@@ -13913,8 +13913,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg/hotsearch.js"
     },
     {
@@ -13924,8 +13924,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch_getlist",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlist()"
     },
     {
@@ -13935,8 +13935,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_hotsearch_filterlist",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "filterlist()"
     },
     {
@@ -13946,8 +13946,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_index",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg/index.js"
     },
     {
@@ -13957,8 +13957,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_index_mg",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg"
     },
     {
@@ -13968,8 +13968,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "mg/leaderboard.js"
     },
     {
@@ -13979,8 +13979,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_boardlist",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "boardlist"
     },
     {
@@ -13990,8 +13990,8 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_geturl",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "geturl()"
     },
     {
@@ -14001,8 +14001,8 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getboardsdata",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getboardsdata()"
     },
     {
@@ -14012,8 +14012,8 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getdata",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getdata()"
     },
     {
@@ -14023,8 +14023,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getboards",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getboards()"
     },
     {
@@ -14034,8 +14034,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getlist",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getlist()"
     },
     {
@@ -14045,8 +14045,8 @@
       "source_location": "L236",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_leaderboard_getdetailpageurl",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -14056,8 +14056,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg/lyric.js"
     },
     {
@@ -14067,8 +14067,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_mrctools",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mrctools"
     },
     {
@@ -14078,8 +14078,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_getlyricweb",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlyricweb()"
     },
     {
@@ -14089,8 +14089,8 @@
       "source_location": "L142",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_lyric_getlyric",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getlyric()"
     },
     {
@@ -14100,8 +14100,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "mg/musicinfo.js"
     },
     {
@@ -14111,8 +14111,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_creategetmusicinfostask",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "creategetmusicinfostask()"
     },
     {
@@ -14122,8 +14122,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_filtermusicinfolist",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "filtermusicinfolist()"
     },
     {
@@ -14144,8 +14144,8 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_getmusicinfo",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getmusicinfo()"
     },
     {
@@ -14155,8 +14155,8 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_musicinfo_getmusicinfos",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "getmusicinfos()"
     },
     {
@@ -14221,8 +14221,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "mg/pic.js"
     },
     {
@@ -14232,8 +14232,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic_getpicurl",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getpicurl()"
     },
     {
@@ -14243,8 +14243,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_pic_getpic",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getpic()"
     },
     {
@@ -14254,8 +14254,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_songid",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "songid.js"
     },
     {
@@ -14265,8 +14265,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_songid_getsongid",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 32,
+      "community_name": "useSmtc.ts",
       "norm_label": "getsongid()"
     },
     {
@@ -14452,8 +14452,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "mg/tipsearch.js"
     },
     {
@@ -14463,8 +14463,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_canceltipsearch",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "canceltipsearch()"
     },
     {
@@ -14474,8 +14474,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_tipsearchbysong",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "tipsearchbysong()"
     },
     {
@@ -14485,8 +14485,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_handleresult",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "handleresult()"
     },
     {
@@ -14496,8 +14496,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_tipsearch_search",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "search()"
     },
     {
@@ -14507,8 +14507,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_utils_index",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "mg/utils/index.js"
     },
     {
@@ -14518,8 +14518,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_mg_utils_index_createhttpfetch",
-      "community": 206,
-      "community_name": "electron-reference/index.js",
+      "community": 23,
+      "community_name": "HeroLogo.vue",
       "norm_label": "createhttpfetch()"
     },
     {
@@ -15398,8 +15398,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_quality_detail",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "tx/quality_detail.js"
     },
     {
@@ -15409,8 +15409,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_quality_detail_getbatchmusicqualityinfo",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getbatchmusicqualityinfo()"
     },
     {
@@ -15508,8 +15508,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "tx/songlist.js"
     },
     {
@@ -15519,8 +15519,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlisturl",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getlisturl()"
     },
     {
@@ -15530,8 +15530,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistdetailurl",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getlistdetailurl()"
     },
     {
@@ -15541,8 +15541,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gettag",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "gettag()"
     },
     {
@@ -15552,8 +15552,8 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gethottag",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "gethottag()"
     },
     {
@@ -15563,8 +15563,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterinfohottag",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "filterinfohottag()"
     },
     {
@@ -15574,8 +15574,8 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filtertaginfo",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "filtertaginfo()"
     },
     {
@@ -15585,8 +15585,8 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getlist()"
     },
     {
@@ -15596,8 +15596,8 @@
       "source_location": "L143",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlist",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "filterlist()"
     },
     {
@@ -15607,8 +15607,8 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlist2",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "filterlist2()"
     },
     {
@@ -15618,8 +15618,8 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_handleparseid",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "handleparseid()"
     },
     {
@@ -15629,8 +15629,8 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistid",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getlistid()"
     },
     {
@@ -15640,8 +15640,8 @@
       "source_location": "L212",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getlistdetail",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getlistdetail()"
     },
     {
@@ -15651,8 +15651,8 @@
       "source_location": "L246",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_filterlistdetail",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "filterlistdetail()"
     },
     {
@@ -15662,8 +15662,8 @@
       "source_location": "L284",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_gettags",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "gettags()"
     },
     {
@@ -15673,8 +15673,8 @@
       "source_location": "L292",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_getdetailpageurl",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -15684,8 +15684,8 @@
       "source_location": "L298",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_tx_songlist_search",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 457,
+      "community_name": "Value",
       "norm_label": "search()"
     },
     {
@@ -17301,8 +17301,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "wy/songlist.js"
     },
     {
@@ -17312,8 +17312,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_handleparseid",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "handleparseid()"
     },
     {
@@ -17323,8 +17323,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlistid",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "getlistid()"
     },
     {
@@ -17334,8 +17334,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlistdetail",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "getlistdetail()"
     },
     {
@@ -17345,8 +17345,8 @@
       "source_location": "L126",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterlistdetail",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "filterlistdetail()"
     },
     {
@@ -17356,8 +17356,8 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getlist",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "getlist()"
     },
     {
@@ -17367,8 +17367,8 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterlist",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "filterlist()"
     },
     {
@@ -17378,8 +17378,8 @@
       "source_location": "L248",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gettag",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "gettag()"
     },
     {
@@ -17389,8 +17389,8 @@
       "source_location": "L261",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filtertaginfo",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "filtertaginfo()"
     },
     {
@@ -17400,8 +17400,8 @@
       "source_location": "L286",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gethottag",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "gethottag()"
     },
     {
@@ -17411,8 +17411,8 @@
       "source_location": "L299",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_filterhottaginfo",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "filterhottaginfo()"
     },
     {
@@ -17422,8 +17422,8 @@
       "source_location": "L307",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_gettags",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "gettags()"
     },
     {
@@ -17433,8 +17433,8 @@
       "source_location": "L315",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_getdetailpageurl",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "getdetailpageurl()"
     },
     {
@@ -17444,8 +17444,8 @@
       "source_location": "L320",
       "_origin": "ast",
       "id": "sidecar_vendor_electron_src_main_utils_musicsdk_wy_songlist_search",
-      "community": 73,
-      "community_name": "wy/songList.js",
+      "community": 36,
+      "community_name": "tx/lyric.js",
       "norm_label": "search()"
     },
     {
@@ -18533,8 +18533,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_definitions_permissionentry",
-      "community": 176,
-      "community_name": "definitions",
+      "community": 462,
+      "community_name": "PermissionEntry",
       "norm_label": "permissionentry"
     },
     {
@@ -18544,8 +18544,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_permissionentry_description",
-      "community": 176,
-      "community_name": "definitions",
+      "community": 462,
+      "community_name": "PermissionEntry",
       "norm_label": "description"
     },
     {
@@ -18555,8 +18555,8 @@
       "source_location": "L124",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_permissionentry_anyof",
-      "community": 176,
-      "community_name": "definitions",
+      "community": 462,
+      "community_name": "PermissionEntry",
       "norm_label": "anyof"
     },
     {
@@ -18588,8 +18588,8 @@
       "source_location": "L6553",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_definitions_value",
-      "community": 457,
-      "community_name": "Value",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "value"
     },
     {
@@ -18599,8 +18599,8 @@
       "source_location": "L6554",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_value_description",
-      "community": 457,
-      "community_name": "Value",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "description"
     },
     {
@@ -18610,8 +18610,8 @@
       "source_location": "L6555",
       "_origin": "ast",
       "id": "users_songsong_movies_ceru_tauri_src_tauri_gen_schemas_desktop_schema_value_anyof",
-      "community": 457,
-      "community_name": "Value",
+      "community": 176,
+      "community_name": "definitions",
       "norm_label": "anyof"
     },
     {
@@ -58123,8 +58123,8 @@
       "source_location": "L613",
       "_origin": "ast",
       "id": "src_tauri_bridge_registerpluginsources",
-      "community": 105,
-      "community_name": "normalizeSourceKey",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "registerpluginsources()"
     },
     {
@@ -58486,8 +58486,8 @@
       "source_location": "L1112",
       "_origin": "ast",
       "id": "src_tauri_bridge_readpersistedplugincode",
-      "community": 105,
-      "community_name": "normalizeSourceKey",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "readpersistedplugincode()"
     },
     {
@@ -58893,8 +58893,8 @@
       "source_location": "L1943",
       "_origin": "ast",
       "id": "src_tauri_bridge_encodeutf8base64",
-      "community": 219,
-      "community_name": "radio.js",
+      "community": 93,
+      "community_name": "firstText",
       "norm_label": "encodeutf8base64()"
     },
     {
@@ -58904,8 +58904,8 @@
       "source_location": "L1952",
       "_origin": "ast",
       "id": "src_tauri_bridge_encodeurlsafebase64",
-      "community": 219,
-      "community_name": "radio.js",
+      "community": 93,
+      "community_name": "firstText",
       "norm_label": "encodeurlsafebase64()"
     },
     {
@@ -59201,8 +59201,8 @@
       "source_location": "L2328",
       "_origin": "ast",
       "id": "src_tauri_bridge_loadpersistedpluginruntime",
-      "community": 105,
-      "community_name": "normalizeSourceKey",
+      "community": 134,
+      "community_name": "preparePluginCode",
       "norm_label": "loadpersistedpluginruntime()"
     },
     {
@@ -59509,8 +59509,8 @@
       "source_location": "L3075",
       "_origin": "ast",
       "id": "src_tauri_bridge_savepluginregistry",
-      "community": 105,
-      "community_name": "normalizeSourceKey",
+      "community": 17,
+      "community_name": "HomeLayout.vue",
       "norm_label": "savepluginregistry()"
     },
     {
@@ -59663,8 +59663,8 @@
       "source_location": "L3286",
       "_origin": "ast",
       "id": "src_tauri_bridge_invokenodemusicurlcache",
-      "community": 17,
-      "community_name": "HomeLayout.vue",
+      "community": 93,
+      "community_name": "firstText",
       "norm_label": "invokenodemusicurlcache()"
     },
     {
@@ -77864,7 +77864,7 @@
       "label": "preloadHomeEntry()",
       "file_type": "code",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L255",
+      "source_location": "L243",
       "_origin": "ast",
       "id": "src_views_welcome_index_preloadhomeentry",
       "community": 232,
@@ -77875,7 +77875,7 @@
       "label": "bootThenEnter()",
       "file_type": "code",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L262",
+      "source_location": "L250",
       "_origin": "ast",
       "id": "src_views_welcome_index_bootthenenter",
       "community": 232,
@@ -78018,7 +78018,7 @@
       "label": "drawStarfield()",
       "file_type": "code",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L113",
+      "source_location": "L112",
       "_origin": "ast",
       "id": "src_workers_welcomestarfield_worker_drawstarfield",
       "community": 156,
@@ -78029,7 +78029,7 @@
       "label": "composite()",
       "file_type": "code",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L203",
+      "source_location": "L191",
       "_origin": "ast",
       "id": "src_workers_welcomestarfield_worker_composite",
       "community": 156,
@@ -78040,7 +78040,7 @@
       "label": "renderLoop()",
       "file_type": "code",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L229",
+      "source_location": "L217",
       "_origin": "ast",
       "id": "src_workers_welcomestarfield_worker_renderloop",
       "community": 156,
@@ -86167,8 +86167,8 @@
     {
       "label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename",
       "_origin": "semantic",
-      "community": 32,
-      "community_name": "useSmtc.ts",
+      "community": 72,
+      "community_name": "SyncDatabase",
       "external": true,
       "file_type": "concept",
       "norm_label": "sidecar_vendor_electron_src_main_utils_musicsdk_index_decodename",
@@ -104810,7 +104810,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L278",
+      "source_location": "L266",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -118215,7 +118215,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L269",
+      "source_location": "L257",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -246293,7 +246293,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L288",
+      "source_location": "L276",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -254265,7 +254265,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L264",
+      "source_location": "L252",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -254289,7 +254289,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L291",
+      "source_location": "L279",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -263783,7 +263783,7 @@
       "deferred": true,
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L257",
+      "source_location": "L245",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_preloadhomeentry",
@@ -264626,7 +264626,7 @@
       "deferred": true,
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L258",
+      "source_location": "L246",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_preloadhomeentry",
@@ -273287,7 +273287,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L262",
+      "source_location": "L250",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index",
@@ -273342,7 +273342,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L255",
+      "source_location": "L243",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index",
@@ -273444,7 +273444,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/views/welcome/index.vue",
-      "source_location": "L271",
+      "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_views_welcome_index_bootthenenter",
@@ -273488,7 +273488,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L203",
+      "source_location": "L191",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker",
@@ -273499,7 +273499,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L113",
+      "source_location": "L112",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker",
@@ -273532,7 +273532,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L229",
+      "source_location": "L217",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker",
@@ -273599,7 +273599,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L166",
+      "source_location": "L154",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker_drawstarfield",
@@ -273623,7 +273623,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L134",
+      "source_location": "L131",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker_drawstarfield",
@@ -273647,7 +273647,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L234",
+      "source_location": "L222",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker_renderloop",
@@ -273659,7 +273659,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/workers/welcomeStarfield.worker.ts",
-      "source_location": "L235",
+      "source_location": "L223",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_workers_welcomestarfield_worker_renderloop",
@@ -282785,5 +282785,5 @@
       "source_file": "TOP_GRAPH.md"
     }
   ],
-  "built_at_commit": "7c3e48a43f999c398c566cbac0eda51e6993be0c"
+  "built_at_commit": "c299cacbd72de5f2d4d323e20a8fc9a82c8eb2ca"
 }

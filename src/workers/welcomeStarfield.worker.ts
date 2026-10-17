@@ -102,8 +102,7 @@ function resize(nextWidth: number, nextHeight: number, nextDpr: number) {
   scene.height = pixelHeight
   sceneCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
   sceneCtx.globalCompositeOperation = 'source-over'
-  sceneCtx.fillStyle = '#000000'
-  sceneCtx.fillRect(0, 0, width, height)
+  sceneCtx.clearRect(0, 0, width, height)
   for (const star of stars) {
     star.px = NaN
     star.py = NaN
@@ -116,7 +115,7 @@ function drawStarfield(deltaSec: number) {
   const keep = Math.pow(Math.min(0.98, Math.max(0, trail)), dt)
   const trailAlpha = Math.max(0.02, 1 - keep)
 
-  sceneCtx.globalCompositeOperation = 'source-over'
+  sceneCtx.globalCompositeOperation = 'destination-out'
   sceneCtx.fillStyle = `rgba(0,0,0,${trailAlpha})`
   sceneCtx.fillRect(0, 0, width, height)
   sceneCtx.globalCompositeOperation = 'lighter'
@@ -125,17 +124,11 @@ function drawStarfield(deltaSec: number) {
   const cy = height / 2
   const projScale = Math.max(width, height) * 0.9
   const cullMargin = Math.max(40, starScale * 6)
-  const canRespawn = fadeStartMs === null
 
   for (const star of stars) {
     star.z -= stepZ * star.vmul * dt
     if (star.z <= focalDepthScaled) {
-      if (canRespawn) {
-        resetStar(star, false)
-      } else {
-        star.px = NaN
-        star.py = NaN
-      }
+      resetStar(star, false)
       continue
     }
 
@@ -152,12 +145,7 @@ function drawStarfield(deltaSec: number) {
     const sx = cx + tx * persp * projScale
     const sy = cy + ty * persp * projScale
     if (sx < -cullMargin || sx > width + cullMargin || sy < -cullMargin || sy > height + cullMargin) {
-      if (canRespawn) {
-        resetStar(star, false)
-      } else {
-        star.px = NaN
-        star.py = NaN
-      }
+      resetStar(star, false)
       continue
     }
 
@@ -219,7 +207,7 @@ function composite(nowMs: number) {
   outputCtx.shadowColor = 'rgba(0,0,0,0.6)'
   outputCtx.shadowBlur = 24
   outputCtx.shadowOffsetY = 2
-  outputCtx.fillText('树夏Music', width / 2, height / 2)
+  outputCtx.fillText('树夏music', width / 2, height / 2)
   outputCtx.shadowColor = 'transparent'
   outputCtx.shadowBlur = 0
   outputCtx.shadowOffsetY = 0
