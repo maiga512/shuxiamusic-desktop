@@ -75,6 +75,11 @@ html.desktop-lyric-window #app {
 
 <!-- 启动星空化开：主页先挂在下面，星空遮罩自己保持、线性淡出、再卸载 -->
 <style>
+/* 时长与 welcomeTransition.ts 的 WELCOME_OVERLAY_LEAVE_MS 对齐（= 1000+700+90 = 1.79s）。
+   关键帧把"淡出窗口"压在化开区间：0→55.87% 保持不透明，55.87%→94.97% 线性淡出，
+   94.97%→100% 透明（对应化开结束到遮罩卸载的 90ms 余量）。
+   注意：Worker 路径下此动画被 :root.shuxia-welcome-worker-active 关掉，星空改由 Worker 淡出；
+   这里的 CSS 只是无 Worker 支持时的回退。 */
 .welcome-hold-dissolve.pagesApp {
   z-index: 30000;
   pointer-events: none;
@@ -82,7 +87,7 @@ html.desktop-lyric-window #app {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  animation: shuxiaWelcomeHoldDissolve 1.65s linear both;
+  animation: shuxiaWelcomeHoldDissolve 1.79s linear both;
   will-change: opacity;
 }
 :root.shuxia-welcome-worker-active .welcome-hold-dissolve.pagesApp {
@@ -91,10 +96,10 @@ html.desktop-lyric-window #app {
 }
 @keyframes shuxiaWelcomeHoldDissolve {
   0%,
-  60.606% {
+  55.87% {
     opacity: 1;
   }
-  94.545%,
+  94.97%,
   100% {
     opacity: 0;
   }

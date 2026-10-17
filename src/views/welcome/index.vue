@@ -14,6 +14,7 @@ import {
   beginWelcomeTimeline,
   getWelcomeTimelineStartedAt,
   resetWelcomeTimeline,
+  scheduleInitPlayback,
   scheduleWelcomeFade
 } from '@renderer/utils/navigation/welcomeTransition'
 import {
@@ -98,6 +99,7 @@ function makeStars() {
 
 onMounted(() => {
   beginWelcomeTimeline()
+  ;(window as any).__perfMark?.('welcome-mounted')
   const canvas = canvasRef.value
   if (!canvas) {
     void bootThenEnter()
@@ -107,6 +109,7 @@ onMounted(() => {
   starfieldHandle = mountWelcomeStarfield(canvas)
   if (starfieldHandle) {
     starfieldActive.value = true
+    console.log('[welcome] starfield: Worker/OffscreenCanvas active (independent of main thread)')
     const resize = () => {
       starfieldHandle?.resize(window.innerWidth, window.innerHeight, window.devicePixelRatio || 1)
     }
@@ -122,6 +125,8 @@ onMounted(() => {
     void bootThenEnter()
     return
   }
+
+  console.warn('[welcome] starfield: Worker NOT available, falling back to main-thread Canvas (may freeze during heavy main-thread work)')
 
   const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1))
   let w = 0
@@ -271,12 +276,21 @@ async function bootThenEnter() {
   await waitForHomeMount()
   if (entered) return
   entered = true
+  ;(window as any).__perfMark?.('home-replace-start')
   await router.replace('/home/find')
-  // 在星空遮罩仍完全不透明时恢复歌曲和底栏状态，避免主页显露同帧发生布局补写。
-  void initPlayback().catch((e) => {
-    console.error('[welcome] initPlayback failed', e)
+  ;(window as any).__perfMark?.('home-replace-done')
+  scheduleWelcomeFade((durationMs) => {
+    ;(window as any).__perfMark?.('fade-start')
+    starfieldHandle?.startFade(durationMs)
   })
-  scheduleWelcomeFade((durationMs) => starfieldHandle?.startFade(durationMs))
+  // 恢复歌曲 + 起 mpv + 拉封面是启动期最重的一波主线程负载。
+  // 延后到化开结束、主页已经露出之后再跑，避免和"星空满屏播放"抢主线程，
+  // 否则星空这层会在 1.2s→化开前被拖住/掉帧（用户看到的"结尾停顿"）。
+  scheduleInitPlayback(() => {
+    void initPlayback().catch((e) => {
+      console.error('[welcome] initPlayback failed', e)
+    })
+  })
 }
 
 onUnmounted(() => {

@@ -109,11 +109,18 @@ function resize(nextWidth: number, nextHeight: number, nextDpr: number) {
   }
 }
 
-function drawStarfield(deltaSec: number) {
+function drawStarfield(deltaSec: number, nowMs: number) {
   if (!sceneCtx || width <= 1 || height <= 1) return
   const dt = Math.max(0.001, Math.min(0.1, deltaSec)) * 60
   const keep = Math.pow(Math.min(0.98, Math.max(0, trail)), dt)
   const trailAlpha = Math.max(0.02, 1 - keep)
+  // 化开进度 0→1。化开时让星点加速向外冲、散开（配合变透明），
+  // 画面"融开、冲出去露出主页"，比单纯线性变透明的衔接更顺。
+  const fp =
+    fadeStartMs === null
+      ? 0
+      : Math.max(0, Math.min(1, (nowMs - fadeStartMs) / fadeDurationMs))
+  const speedRamp = 1 + fp * 1.5
 
   sceneCtx.globalCompositeOperation = 'destination-out'
   sceneCtx.fillStyle = `rgba(0,0,0,${trailAlpha})`
@@ -126,7 +133,7 @@ function drawStarfield(deltaSec: number) {
   const cullMargin = Math.max(40, starScale * 6)
 
   for (const star of stars) {
-    star.z -= stepZ * star.vmul * dt
+    star.z -= stepZ * speedRamp * star.vmul * dt
     if (star.z <= focalDepthScaled) {
       resetStar(star, false)
       continue
@@ -190,24 +197,43 @@ function drawStarfield(deltaSec: number) {
 
 function composite(nowMs: number) {
   if (!output || !outputCtx || !scene) return
-  const fade =
+  // 化开进度 0→1。未开始化开时 p=0（黑幕完全不透明，盖住主页）。
+  const p =
     fadeStartMs === null
-      ? 1
-      : Math.max(0, Math.min(1, 1 - (nowMs - fadeStartMs) / fadeDurationMs))
+      ? 0
+      : Math.max(0, Math.min(1, (nowMs - fadeStartMs) / fadeDurationMs))
+  // 遮罩不透明度用 ease-in 揭示曲线 1 - p^2：
+  // 开头缓（星空在黑色上慢慢"化开"，主页还几乎看不见）→
+  // 结尾快（黑幕一次性掀开、主页一次到位），
+  // 去掉线性淡出在结尾那段"几乎看不清变化"的拖尾停顿。
+  const overlayAlpha = fadeStartMs === null ? 1 : 1 - p * p
 
   outputCtx.setTransform(1, 0, 0, 1, 0, 0)
   outputCtx.clearRect(0, 0, output.width, output.height)
-  outputCtx.globalAlpha = fade
+  // 黑幕：与星空/标题共用同一条 alpha 曲线淡出。
+  // 不透明时完全盖住主页，主页在"星空还没化开"前不可见
+  // → 不再出现"主页已出来、字还飘着"的观感。
+  outputCtx.globalAlpha = overlayAlpha
+  outputCtx.fillStyle = '#000000'
+  outputCtx.fillRect(0, 0, output.width, output.height)
+  outputCtx.globalAlpha = overlayAlpha
   outputCtx.drawImage(scene, 0, 0)
   outputCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  // 标题：比黑幕更快化没（更陡幂次），化开时上移 + 放大"融化散开"，
+  // 保证字先于主页完全露出之前化没。
+  const melt = 1 - overlayAlpha
+  const titleFade = Math.pow(overlayAlpha, 1.6)
+  const titleDrift = melt * height * 0.05
+  const titleSize = Math.min(width, height) * 0.062 * (1 + melt * 0.18)
+  outputCtx.globalAlpha = titleFade
   outputCtx.fillStyle = 'rgba(255,255,255,0.92)'
-  outputCtx.font = `600 ${Math.min(width, height) * 0.062}px -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif`
+  outputCtx.font = `600 ${titleSize}px -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif`
   outputCtx.textAlign = 'center'
   outputCtx.textBaseline = 'middle'
   outputCtx.shadowColor = 'rgba(0,0,0,0.6)'
   outputCtx.shadowBlur = 24
   outputCtx.shadowOffsetY = 2
-  outputCtx.fillText('树夏music', width / 2, height / 2)
+  outputCtx.fillText('树夏music', width / 2, height / 2 - titleDrift)
   outputCtx.shadowColor = 'transparent'
   outputCtx.shadowBlur = 0
   outputCtx.shadowOffsetY = 0
@@ -219,7 +245,7 @@ function renderLoop() {
   const nowMs = performance.now()
   const deltaSec = lastFrameMs === 0 ? 1 / 60 : (nowMs - lastFrameMs) / 1000
   lastFrameMs = nowMs
-  drawStarfield(deltaSec)
+  drawStarfield(deltaSec, nowMs)
   composite(nowMs)
   timer = self.setTimeout(renderLoop, 16)
 }
