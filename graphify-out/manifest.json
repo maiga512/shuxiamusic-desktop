@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792203427.1151485,
+    "mtime": 1792204464.2371583,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792203439.5828912,
+    "mtime": 1792204478.0249884,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792203890.9800193,
-    "ast_hash": "e027e5ebe19764285853d552bf4fce41",
+    "mtime": 1792204987.2112796,
+    "ast_hash": "9ce27aa54ec59d823d6b5f476d91b675",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792203890.9893134,
-    "ast_hash": "534a5a65654438785f9da8b5e7e74987",
+    "mtime": 1792204987.2130218,
+    "ast_hash": "09b702ac6fb5661711564101f2f71455",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792203890.9934142,
-    "ast_hash": "c189aafdca940f51b9d653e7f7eebca7",
+    "mtime": 1792204987.2134845,
+    "ast_hash": "61199ad478a877c60494115bdc006525",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3135,8 +3135,8 @@
     "semantic_hash": ""
   },
   "src/utils/navigation/welcomeTransition.ts": {
-    "mtime": 1792202423.1035287,
-    "ast_hash": "ae9c2120d3296c2863888a93b9f8ac28",
+    "mtime": 1792204397.6115305,
+    "ast_hash": "4ff85b84b76e6f22ae640a33ccd5b50f",
     "semantic_hash": ""
   },
   "src-tauri/src/permissions.rs": {

@@ -9,8 +9,8 @@
 - **修复**：桌面端改为同段时间轴：1.2s 路由到 `/home/find` 并在遮罩下挂载，遮罩先保持 1s；
   随后 560ms 线性透明度淡出，90ms 后卸载。星空改由 `welcomeStarfield.worker.ts` + `OffscreenCanvas`
   独立线程渲染，主页首帧不再冻结星空；不支持 Worker 时回退主线程 Canvas。
-- **最终节奏**：完全按安卓固定时间线执行。1.2s 挂载主页并在遮罩下预热，2.2s 开始 560ms 淡出，
-  2.76s 透明后再留 90ms 释放；不等待 Home 首帧回调，避免动画结束后二次停顿。
+- **最终节奏**：1.2s 挂载主页并在遮罩下预热 0.5s，1.7s 开始 560ms 淡出，
+  2.26s 透明后再留 90ms 释放；化开提前落在开场停顿之前，不等待 Home 首帧回调。
 - **安卓原渲染**：透明画布使用 `destination-out` 衰减拖尾，淡出期间持续生成颗粒并保持向外播放；
   不用黑底覆盖近似，也不停止粒子循环，动画一直运行到主页显露后才结束。
 - **启动黑底**：Tauri 主窗口与 `html/body/#app` 初始背景均设为黑色，WebView 尚未完成首帧时也不再闪白。
@@ -668,6 +668,7 @@ treating raw edge counts as exact.
 | 2026-10-16 | 对齐安卓 StartupPreloadOverlay：1.2s 主页预挂载、1s 首帧准备、560ms 星空线性淡出、90ms 后卸载遮罩。 | 编译唯一 Preview 测试包；更新启动生命周期路由与 Graphify 索引。 |
 | 2026-10-16 | 星空动画迁移到 Web Worker + OffscreenCanvas 独立渲染，主页首帧不再冻结星空；保留主线程回退。 | 编译唯一 Preview 测试包；更新启动渲染路由与 Graphify 索引。 |
 | 2026-10-17 | 星空改为安卓透明画布/DST_OUT/持续重生语义，播放贯穿化开直到主页显露后结束。 | 编译唯一 Preview 测试包；更新启动渲染路由与 Graphify 索引。 |
+| 2026-10-17 | 主页可见化开由 2.2s 提前到 1.7s，2.26s 完成显露，避免动画停顿后再进主页。 | 编译唯一 Preview 测试包；更新启动时间线与 Graphify 索引。 |
 | 2026-10-17 | 原生窗口/HTML 初始黑底消除打开闪白；播放状态提前预热并移除末帧 visibility 切换。 | 编译唯一 Preview 测试包；更新启动链路与 Graphify 索引。 |
 
 For every later change, append a row here and update `TOP_GRAPH.md` when the

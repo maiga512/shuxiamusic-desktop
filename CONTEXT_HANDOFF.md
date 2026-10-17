@@ -1,8 +1,8 @@
 ## 2026-10-16 启动遮罩预挂载化开 + macOS 原生麦克风授权（待发布）
 
 - 对照安卓 `MainActivity.StartupPreloadOverlay` 后确认：问题不是单纯把淡出提前，而是桌面端让主页
-  首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下给主页 1s 首帧准备；2.2s 开始
-  560ms 线性淡出，2.76s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
+  首帧和淡出抢同一段时间。现在 1.2s 挂载 `/home/find`，遮罩下预热 0.5s；1.7s 开始
+  560ms 线性淡出，2.26s 后再留 90ms 卸载遮罩。星空改由 `welcomeStarfield.worker.ts` +
   `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
   桌面端恢复安卓固定时间线，不再等待 Home 首帧回调。星场改为透明画布 + `destination-out`
   拖尾衰减，淡出期间持续生成颗粒并保持向外播放，动画贯穿整个化开过程。
