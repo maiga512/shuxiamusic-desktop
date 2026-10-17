@@ -9,33 +9,24 @@ export const WELCOME_OVERLAY_LEAVE_MS =
   WELCOME_MAIN_PREPARE_MS + WELCOME_DISSOLVE_MS + WELCOME_OVERLAY_LINGER_MS
 
 export const welcomeTransitionActive = ref(false)
-export const welcomeOverlayReleased = ref(false)
 
 let timelineStartAt: number | null = null
 
 export function beginWelcomeTimeline(now = performance.now()) {
   timelineStartAt = now
-  welcomeOverlayReleased.value = false
 }
 
 export function getWelcomeTimelineStartedAt() {
   return timelineStartAt ?? performance.now()
 }
 
-export function scheduleWelcomeFade(
-  startFade: (durationMs: number) => void,
-  onFadeReleased: () => void
-) {
+export function scheduleWelcomeFade(startFade: (durationMs: number) => void) {
   const startedAt = getWelcomeTimelineStartedAt()
   const fadeAt = startedAt + WELCOME_HOME_MOUNT_MS + WELCOME_MAIN_PREPARE_MS
   const delay = Math.max(0, fadeAt - performance.now())
 
   window.setTimeout(() => {
     startFade(WELCOME_DISSOLVE_MS)
-    window.setTimeout(() => {
-      welcomeOverlayReleased.value = true
-      onFadeReleased()
-    }, WELCOME_DISSOLVE_MS + WELCOME_OVERLAY_LINGER_MS)
   }, delay)
 }
 

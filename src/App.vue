@@ -49,7 +49,7 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--td-bg-color-container, #ffffff);
+  background: #000000;
 }
 
 html.desktop-lyric-window,

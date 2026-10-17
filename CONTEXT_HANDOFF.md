@@ -6,6 +6,8 @@
   `OffscreenCanvas` 独立线程推进，主页首帧不会冻结星空；不支持 Worker 时回退主线程 Canvas。
   桌面端恢复安卓固定时间线，不再等待 Home 首帧回调，避免动画结束后二次停顿。淡出开始后禁止颗粒重生，
   已有颗粒继续向外离开，不再从中心补充，消除末尾反抽；`initPlayback()` 等遮罩释放后恢复。
+  Tauri 主窗口和 HTML 初始背景均已设黑，打开 App 不再先闪白；歌曲/底栏状态改在遮罩不透明阶段预热，
+  末帧不再额外切换 `visibility` 或补写布局。
 - 听歌识曲增加 `permissions_request_microphone`：macOS 先通过 `AVCaptureDevice` 申请麦克风，
   获准后才进入 WKWebView `getUserMedia`。Preview 已实测取得 MacBook Pro 麦克风、完整录音并
   返回识别搜索结果。

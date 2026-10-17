@@ -324,6 +324,7 @@
   "322": "@tauri-apps/cli",
   "323": "@types/dompurify",
   "324": "@applemusic-like-lyrics/lyric",
+  "325": "iconfont.js",
   "326": "analyze-webview-memory.sh",
   "327": "monitor-live-app.sh",
   "328": "sidecar-runtime/README.md",
@@ -455,5 +456,9 @@
   "454": "Child",
   "455": "Command",
   "456": "Result",
+  "457": "Value",
+  "458": "@applemusic-like-lyrics/vue",
+  "459": "addToPlaylistAndPlay",
+  "460": "onExtraMenuClick",
   "461": "permissions_request_microphone"
 }

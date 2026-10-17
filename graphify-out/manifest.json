@@ -655,13 +655,13 @@
     "semantic_hash": ""
   },
   "src-tauri/tauri.conf.json": {
-    "mtime": 1792052098.875472,
-    "ast_hash": "918b304ec390191be96d9a200ab7edf4",
+    "mtime": 1792202259.4198303,
+    "ast_hash": "a229eb8614f33449aeb8d84483bfb75e",
     "semantic_hash": ""
   },
   "src/App.vue": {
-    "mtime": 1792200430.2552235,
-    "ast_hash": "befe88b8025a3b8444a66395bc853333",
+    "mtime": 1792202321.3585992,
+    "ast_hash": "1805b6c44fff9cfb250c2b084c7defd4",
     "semantic_hash": ""
   },
   "src/api/cloudSongList.ts": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792200897.5955162,
+    "mtime": 1792202591.1632812,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792200914.2580333,
+    "mtime": 1792202604.6626837,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -1730,8 +1730,8 @@
     "semantic_hash": ""
   },
   "src/views/welcome/index.vue": {
-    "mtime": 1792200803.6096313,
-    "ast_hash": "088ec750b7ea8b4a433f8b6830af5bcb",
+    "mtime": 1792202526.0138795,
+    "ast_hash": "cf68ca87c8198807583b33755493e755",
     "semantic_hash": ""
   },
   "src/vite-env.d.ts": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792201482.1383717,
-    "ast_hash": "9e3eb20e605e811fb553dc3a6082310c",
+    "mtime": 1792203086.4287574,
+    "ast_hash": "4ee7c05e70c28232e6b096a6c7383aa8",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792201482.140502,
-    "ast_hash": "ad7b1fa7a1d2d32f6f3bd852cab1d2d8",
+    "mtime": 1792203086.4357357,
+    "ast_hash": "509facac34f4b208a6c747855e541209",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792201482.1411717,
-    "ast_hash": "544a3565185cb440179194650d77873c",
+    "mtime": 1792203086.437143,
+    "ast_hash": "ac2612e3059ff8e0b43d959df2930f8b",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -3135,8 +3135,8 @@
     "semantic_hash": ""
   },
   "src/utils/navigation/welcomeTransition.ts": {
-    "mtime": 1792200430.250123,
-    "ast_hash": "f344e3e8a22b1bcf8207412e3a742107",
+    "mtime": 1792202423.1035287,
+    "ast_hash": "ae9c2120d3296c2863888a93b9f8ac28",
     "semantic_hash": ""
   },
   "src-tauri/src/permissions.rs": {

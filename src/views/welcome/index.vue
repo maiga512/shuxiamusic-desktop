@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="splash-root"
-    :class="{ 'is-worker': starfieldActive, 'is-released': welcomeOverlayReleased }"
-  >
+  <div class="splash-root" :class="{ 'is-worker': starfieldActive }">
     <canvas ref="canvasRef" class="splash-canvas"></canvas>
     <div class="splash-title">树夏Music</div>
   </div>
@@ -17,8 +14,7 @@ import {
   beginWelcomeTimeline,
   getWelcomeTimelineStartedAt,
   resetWelcomeTimeline,
-  scheduleWelcomeFade,
-  welcomeOverlayReleased
+  scheduleWelcomeFade
 } from '@renderer/utils/navigation/welcomeTransition'
 import {
   mountWelcomeStarfield,
@@ -288,14 +284,11 @@ async function bootThenEnter() {
   if (entered) return
   entered = true
   await router.replace('/home/find')
-  scheduleWelcomeFade(
-    (durationMs) => starfieldHandle?.startFade(durationMs),
-    () => {
-      void initPlayback().catch((e) => {
-        console.error('[welcome] initPlayback failed', e)
-      })
-    }
-  )
+  // 在星空遮罩仍完全不透明时恢复歌曲和底栏状态，避免主页显露同帧发生布局补写。
+  void initPlayback().catch((e) => {
+    console.error('[welcome] initPlayback failed', e)
+  })
+  scheduleWelcomeFade((durationMs) => starfieldHandle?.startFade(durationMs))
 }
 
 onUnmounted(() => {
@@ -328,10 +321,6 @@ onUnmounted(() => {
 
 .splash-root.is-worker {
   background: transparent;
-}
-
-.splash-root.is-released {
-  visibility: hidden;
 }
 
 .splash-canvas {
