@@ -80,22 +80,32 @@ gh workflow run "Desktop Release Public" \
 ## 发布流程
 
 1. 改完代码、确定要发版。
-2. 升版本号：改 `package.json` 的 `version`（`tauri.conf.json` 的 `version` 继承自它）。
-3. 触发 GitHub Actions `Desktop Release` 工作流：
-   - 手动：Actions → Desktop Release → Run workflow，可填版本号与更新说明；或
-   - 打标签：`git tag desktop-vX.Y.Z && git push origin desktop-vX.Y.Z`。
-4. 工作流会：编包 → `scripts/ci/make-latest-json.py` 生成两份 `latest.json`（GitHub 版 +
-   Gitee 版，URL 前缀不同）→ 发到 GitHub `desktop-latest` → 再发到 Gitee `desktop-latest`
-   （`scripts/ci/publish-gitee.py`）。
-5. Gitee 步骤带 `continue-on-error`：即使 Gitee 上传失败也不影响已完成的 GitHub 发布，
-   更新器会自动回退 GitHub。
+2. 升版本号：三处保持一致 —— `package.json` 的 `version`、`src-tauri/Cargo.toml` 的 `version`、
+   `src-tauri/Cargo.lock` 里 `shuxia-tauri` 的 `version`（`tauri.conf.json` 的 `version` 继承自
+   `package.json`）。
+3. 触发构建：打标签 `git tag desktop-vX.Y.Z && git push origin desktop-vX.Y.Z`（或手动
+   Run workflow `Desktop Release`）。
+4. **等两个工作流都绿**（总计约 40+ 分钟）：
+   - 源码仓库 `Desktop Release`（约 21 分钟）——它的 publish 作业会在发布仓库创建同名
+     `desktop-vX.Y.Z` 标签与 Release；
+   - 发布仓库 `Desktop Release Public`（约 21 分钟）——被上一步创建的标签触发，用发布仓库的
+     公开 Runner 重新构建一次，**总是最后写入**，GitHub 上最终生效的是它的产物。
+   只等第一个就下载会把源码仓库那版传到 Gitee，导致同一提交在两端是两套不同字节的安装包。
+5. 本机下载产物并平铺进工作目录的 `release-assets/`（安装包 + `.sig`，不含 `latest.json`），
+   然后发布 Gitee：
+   `scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work X.Y.Z "<更新说明>"`。
+   脚本会重建 `desktop-latest` 与版本化 `desktop-vX.Y.Z`，并调用 `update-hub-readme.py`
+   把发布中心首页的版本号与安装包文件名改成新版本（GitHub + Gitee 两份 README）。
+6. GitHub 侧的 `desktop-latest`、版本化 Release 与首页由 CI 完成，无需本机操作。
 
 ## 相关文件
 
 - `src-tauri/tauri.conf.json` — 更新端点顺序 `[Gitee, GitHub]`
 - `scripts/ci/make-latest-json.py` — 生成 GitHub + Gitee 两份清单
-- `scripts/ci/publish-gitee.py` — 创建/更新 Gitee `desktop-latest` Release 并上传产物
-- `.github/workflows/desktop-release.yml` — 发布工作流
+- `scripts/ci/publish-gitee.py` — 创建/更新 Gitee `desktop-latest` + 版本化 Release 并上传产物
+- `scripts/ci/publish-gitee-local.sh` — 本机发布 Gitee 的入口（含首页版本同步）
+- `scripts/ci/update-hub-readme.py` — 同步发布中心首页 README 的版本与安装包文件名
+- `.github/workflows/desktop-release.yml` — 源码仓库发布工作流（负责触发 + GitHub 侧）
 - `maiga512/shuxiamusic-release:.github/workflows/desktop-release-public.yml` — 公开 Runner 免额度构建工作流
 
 ## 注意事项
@@ -104,6 +114,10 @@ gh workflow run "Desktop Release Public" \
 - Gitee 桌面发布仓库的**总附件配额是 1GB**。旧版本累计会把版本化 Release 的 Windows 包顶掉；
   如遇 `文件大小已超出仓库附件配额`，DELETE 掉多余的旧版本化 Release 即可释放配额（不必再删
   `desktop-latest`）。
+- **清理只删版本化附件**：`desktop-latest` 的清理逻辑（CI 侧与 `publish-gitee.py`）只删
+  `shuxiamusic_*` 与 `latest.json`。桌面端插件 `feiniu-service.js` / `shuxia-sync-service.js`
+  常驻在 `desktop-latest`、发布中心首页直接链过去下载，**不能删**；早期「一刀切清空」的实现
+  把它们删了，首页那两条链接自 1.1.5 起 404（原件仍可在 `desktop-v1.1.4` 归档里找到）。
 - **重复上传不再污染 Release**：Gitee 的 releases 列表接口不返回附件 id，早期 `publish-gitee.py`
   的「清旧附件」循环因此空转，`desktop-latest` 里越堆越多旧版本安装包，且旧的同名 `latest.json`
   会遮蔽新清单（更新器一直读到旧版本，用户收不到更新）。现在改为从附件下载地址的第一跳 302
@@ -111,5 +125,7 @@ gh workflow run "Desktop Release Public" \
   直到删净，因此重复发布前**不需要**再手工删除整个 Release。Gitee 自动生成的源码包
   （`.zip`/`.tar.gz`）不是附件、删不掉，会被跳过，不影响更新器。
 - Gitee 单文件附件也有体积上限；若桌面安装包超限会导致 Gitee 上传失败（此时自动回退 GitHub）。
+- 改发布仓库的 `.github/workflows/*` 需要令牌带 `workflow` scope；`gh` CLI 的令牌通常没有，
+  用 SSH 克隆 + 推送即可（SSH 不受该限制）。
 - 安卓 APK 仍可从公开 Release 附件下载，但安卓源码不再放在发布中心仓库；
   发布中心仓库只保留 README、截图和必要工作流。

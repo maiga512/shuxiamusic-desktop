@@ -35,12 +35,17 @@ GITEE_BRANCH = os.environ.get("HUB_GITEE_BRANCH", "master")
 
 
 def transform(content: str, row: str, version: str) -> str:
-    """只替换 row 对应行的版本单元格（| v1.0.6 | 这种），找不到就报错。"""
+    """只替换 row 对应行的版本单元格（| v1.0.6 | 这种），找不到就报错。
+
+    行首列是加粗的端名，可能带括号后缀（如 ``**树夏Music 桌面端（Windows / macOS）**``），
+    所以按「加粗内以 row 开头」匹配，而不是要求整段完全等于 ``**row**``。
+    """
     ver = version if version.startswith("v") else f"v{version}"
+    row_pattern = re.compile(r"\*\*" + re.escape(row) + r"[^*]*\*\*")
     lines = content.splitlines(keepends=True)
     hit = False
     for i, line in enumerate(lines):
-        if f"**{row}**" in line:
+        if row_pattern.search(line):
             lines[i], n = re.subn(r"\| v\d+(?:\.\d+)+ \|", f"| {ver} |", line)
             if n == 0:
                 raise SystemExit(f"在行 {row!r} 里没找到版本单元格，无法安全替换:\n{line}")
@@ -48,7 +53,17 @@ def transform(content: str, row: str, version: str) -> str:
             break
     if not hit:
         raise SystemExit(f"README 里找不到行 {row!r}")
-    return "".join(lines)
+    # 桌面段的安装包文件名也带版本号（如 shuxiamusic_1.1.4_aarch64.dmg）。
+    # 只改「当前版本」单元格会让页面一直指引用户去下旧版本的文件名。
+    plain = ver.lstrip("v")
+    body, n_files = re.subn(
+        r"`shuxiamusic_\d+(?:\.\d+)+_(windows-x64-setup\.exe|aarch64\.dmg)`",
+        lambda m: f"`shuxiamusic_{plain}_{m.group(1)}`",
+        "".join(lines),
+    )
+    if n_files == 0:
+        raise SystemExit("README 里没找到带版本号的桌面安装包文件名（shuxiamusic_<版本>_*.exe/.dmg），无法安全替换。")
+    return body
 
 
 def gh_request(method: str, path: str, token: str, payload=None):

@@ -183,6 +183,17 @@ def delete_attachment(release_id, att_id: int) -> bool:
         raise SystemExit(f"删除附件 {att_id} 失败: {e.code} {e.read().decode(errors='replace')}")
 
 
+def is_replaceable_asset(name: str) -> bool:
+    """只有「安装包/签名」与「更新器清单」在重传时会被替换，其余附件必须保留。
+
+    桌面端插件（``feiniu-service.js`` / ``shuxia-sync-service.js``）常驻在 desktop-latest，
+    发布中心首页直接链过来下载；这里若一刀切清空，那两条链接就会 404。
+    """
+    if not name:
+        return False
+    return name == "latest.json" or name.startswith("shuxiamusic_")
+
+
 def ensure_release(tag: str, release_name: str) -> int:
     """找到或创建指定标签的 Release；复用已有 Release 时先删旧附件。返回 release id。"""
     release = find_release(tag)
@@ -203,6 +214,10 @@ def ensure_release(tag: str, release_name: str) -> int:
         return release["id"]
 
     print(f"复用已存在的 Release {tag} id={release.get('id')}，先清掉旧附件再重传。")
+    kept = [a.get("name") for a in (release.get("assets") or [])
+            if isinstance(a, dict) and not is_replaceable_asset(a.get("name"))]
+    if kept:
+        print("  保留常驻附件（非版本化，首页会直接链接）: " + ", ".join(str(k) for k in kept))
     # 附件名可能重复堆积（历史遗留的同名 latest.json / 多版本安装包），而下载地址每次
     # 只解析到其中一个，所以反复扫描，直到某一轮再也解析不出可删附件为止。
     release_id = release["id"]
@@ -212,6 +227,8 @@ def ensure_release(tag: str, release_name: str) -> int:
             if not isinstance(att, dict):
                 continue
             name = att.get("name")
+            if not is_replaceable_asset(name):
+                continue
             att_id = att.get("id") or resolve_attach_id(att.get("browser_download_url"))
             if att_id is None:
                 continue

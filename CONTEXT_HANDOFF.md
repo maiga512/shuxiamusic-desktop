@@ -1,3 +1,27 @@
+## 2026-10-18 v1.1.6 发布执行记录：双构建竞态 / Gitee 配额 / 发布中心首页与插件链接
+
+- **发版必须等两个工作流**：源码仓库 `Desktop Release` 跑完后，它的 publish 作业会在发布仓库
+  创建 `desktop-v<版本>` 标签；发布仓库里同名的 `Desktop Release Public` 监听该标签、再构建一次
+  （用发布仓库的公开 runner 编私有源码仓库），总耗时约 21 分钟，**总是最后写入 GitHub 产物**。
+  所以 `publish-gitee-local.sh` 要在**两个**都绿了之后（约 40+ 分钟）再下载产物，否则 Gitee 上传的是
+  源码仓库那版、GitHub 最后是 Public 那版，同一提交两套字节不同的包（各自签名自洽，但哈希不一致）。
+  本次先按旧时序发了 Gitee，发现后按 GitHub 最终产物重传，现已逐字节一致。
+- **Gitee 1GB 附件配额**：三处 Release 合计 1058MB 后，Windows 包上传报「文件大小已超出仓库附件配额」。
+  按既有约定删掉最旧的 `desktop-v1.1.4` 归档（释放 287MB）后成功；GitHub 侧 1.1.4 保留。
+- **发布中心首页停在 v1.1.4 的原因**：`update-hub-readme.py` 依赖 `**树夏Music 桌面端**` 精确匹配，
+  而 README 那行早已是 `**树夏Music 桌面端（Windows / macOS）**`，脚本每次都 `SystemExit`，
+  又因为在发布末尾、失败被 `|| echo 警告` 吞掉，所以静默失效了好几版。它也只改版本单元格、
+  不改「下载 `shuxiamusic_<版本>_*.exe`」的文件名。两处都已修（含文件名版本号改写）。
+- **桌面端插件附件被清理逻辑误删**：`feiniu-service.js` / `shuxia-sync-service.js` 常驻
+  `desktop-latest` 供首页直接链接下载，但源码仓库与 Public 工作流的「清理历史附件」会删掉所有不匹配
+  `shuxiamusic_<版本>_*` 的附件，Gitee 侧 `publish-gitee.py` 也是全清再传，于是两边都把它们删了，
+  首页链接自 1.1.5 起 404。已从 `desktop-v1.1.4` 归档取回并回挂两边 `desktop-latest`（sha256 与原件一致），
+  同时把三处清理逻辑改成**只删 `shuxiamusic_*` 与 `latest.json`**，插件文件不再被误删。
+- **权限注意**：`gh` CLI 的令牌只有 `repo` 等 scope、没有 `workflow`，改发布仓库里的
+  `.github/workflows/*` 会得到 404；本次用 SSH 克隆 + 推送完成（SSH 不受该 scope 限制）。
+- **本机约定**：发布仓库克隆用完即删（本次 `rm -rf .tmp-release-repo`）；Gitee 令牌仍在
+  `~/.config/ceru/gitee_token`。
+
 ## 2026-10-17 正式版「麦克风权限未开启」根因：Hardened Runtime 缺 entitlement（发 v1.1.6）
 
 - **结论：不是代码问题，是打包签名问题。** 正式版开着 Hardened Runtime 却**一个 entitlement 都没注入**，
