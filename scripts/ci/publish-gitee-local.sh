@@ -11,9 +11,12 @@
 #     shuxiamusic_<版本>_aarch64.app.tar.gz      (+ .sig)
 #     shuxiamusic_<版本>_aarch64.dmg
 #     shuxiamusic_<版本>_windows-x64-setup.exe   (+ .sig)
-#   可从 CI 下载后平铺得到：
-#     gh run download <RUN_ID> -D /tmp/ceru-release/work
-#     把 desktop-macos-arm64/ 与 desktop-windows-x64/ 里的文件平铺进 release-assets/
+#   可从 CI 取回后平铺得到（等源码仓库 Desktop Release 与发布仓库 Desktop Release Public
+#   **两个**都绿再下载，约 40+ 分钟）：
+#     gh release download desktop-latest -R maiga512/shuxiamusic-release \
+#       -p "shuxiamusic_<版本>_*" -D /tmp/ceru-release/work/release-assets --clobber
+#   安装包由构建作业直接传 Release，不走 Actions artifact，所以是 gh release download
+#   而不是 gh run download。
 #
 # 用法:
 #   scripts/ci/publish-gitee-local.sh <工作目录> <版本号> [更新说明]

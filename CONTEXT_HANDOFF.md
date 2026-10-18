@@ -1,4 +1,41 @@
-## 2026-10-18 v1.1.7 本机发布：设置页对话框卡死 / 全局背景 / 设置页透明（仅本机，未推 CI）
+## 2026-10-18 v1.1.7 发布执行记录（GitHub + Gitee + 发布中心首页）
+
+- **流程**：提交 `9e46838` → 推 `main` → 打并推 `desktop-v1.1.7`。
+  - 源码仓库 `Desktop Release` run `39094060895`：21m32s，`prepare` / `build-macos-arm64` /
+    `build-windows-x64` / `publish` 四作业全绿。publish 作业在发布仓库创建 `desktop-v1.1.7`
+    标签与 Release。
+  - 发布仓库（公开 Runner）`Desktop Release Public` run `39095397096`：21m，四作业全绿，
+    **总是最后写入** GitHub `desktop-latest` 的产物。
+  - **必须等这两个都绿再下载**（本次 11:33 起、11:57 起，约 12:20 才动手），否则传到 Gitee 的
+    是源码仓库那版、GitHub 最后是 Public 那版。
+- **取产物**：`gh release download desktop-latest -R maiga512/shuxiamusic-release \
+  -p "shuxiamusic_1.1.7_*" -D /tmp/ceru-release/work/release-assets --clobber`
+  （注意：工作流里那段「先 `gh run download <RUN_ID>` 再平铺」的指引**已过时**——安装包现在由
+  构建作业直接传 Release，Actions artifact 那条路在 1.1.6 前后就废弃了。）
+- **Gitee 直传**：`scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work 1.1.7 "<更新说明>"`。
+  - 第一次跑因**沙箱网络**失败（Python `socket.gaierror` 解析不到 gitee.com，curl 却能通），
+    放开网络后正常；这是本机执行环境的限制，不是脚本问题。
+  - **Gitee 1GB 配额再次顶满**：`desktop-latest` 196MB + `desktop-v1.1.5` 288MB +
+    `desktop-v1.1.6` 288MB + 本次部分产物 ≈ 968MB，Windows 包报
+    `文件大小已超出仓库附件配额：1 GB`。按既定处置 **DELETE 掉最旧的 `desktop-v1.1.5`**
+    （id 1213467，释放约 288MB；GitHub 侧保留），重跑脚本即成功。
+  - 结果：Gitee `desktop-latest` 与新建 `desktop-v1.1.7` 均为 1.1.7 五件套，
+    常驻插件附件 `feiniu-service.js` / `shuxia-sync-service.js` 未被清理逻辑删掉。
+- **发布中心首页**：脚本自带 `update-hub-readme.py`，GitHub `maiga512/shuxiamusic-release` 与
+  Gitee 镜像 `songsong2020/shuxiamusic-release` 两份 README 均改为 `v1.1.7`，并把
+  `shuxiamusic_<版本>_windows-x64-setup.exe` / `_aarch64.dmg` 的文件名改成 1.1.7；来源署名段未动。
+- **两个 API 踩坑（下次直接用）**：
+  - GitHub 改 Release 说明必须走 `PATCH /repos/{owner}/{repo}/releases/{id}`；
+    `/releases/tags/{tag}` **只支持 GET**，拿 tag 路径去 PATCH 恒 404。
+  - Gitee 的 `PATCH /repos/{owner}/{repo}/releases/{id}` **必须同时带 `tag_name` 与 `name`**，
+    只发 `body` 会 400 `tag_name is missing` / `name is missing`。
+- **校验（已核对）**：GitHub 与 Gitee 三个安装包字节数逐一相同（`99296284` / `97263452` /
+  `91150100`），且与从 GitHub 取回的本地副本一致；两边 `desktop-latest/latest.json` 均
+  `version=1.1.7`、URL 各指自家域名、签名一致；插件链接 GitHub 侧 HTTP 200。
+- **文档维护提示**：本次发布未改动应用代码，`TOP_GRAPH.md` 无需变更；`graphify-out/*` 与
+  `AI_INDEX.md` 生成物已在同一次提交 `9e46838` 内同步。
+
+## 2026-10-18 v1.1.7 本机发布：设置页对话框卡死 / 全局背景 / 设置页透明
 
 - **本次修的三件事**（都属「设置项没实现/点了没反应」这一类）：
   1. 设置里点「选择文件」「选择目录」弹原生对话框后**整个应用卡死**。根因是
@@ -39,8 +76,8 @@
   （副本 `/tmp/shuxia-perf-probe-2026-10-18.patch`），继续测性能时 `git apply` 回去即可。
 - **顺带清理**：硬杀留下的孤儿 mpv 会抢同一个 `ceru-mpv-ipc.sock` 并占住 LaunchServices 注册，
   本次清掉 4 个历史残留，只留正式版自己那个。
-- **尚未做**：没推 tag、没跑 CI、没发 GitHub/Gitee。要对外发版仍需按
-  `docs/RELEASE_DUAL_PLATFORM.md` 走「推 tag → 等**两个**工作流都绿（约 40+ 分钟）→ 本机传 Gitee」。
+- **发布状态**：本机替换完成后，当天已推 tag `desktop-v1.1.7` 并完成 GitHub + Gitee 双平台发布，
+  发布中心首页同步到 v1.1.7。执行记录见上方「v1.1.7 发布执行记录」一节。
 
 ## 2026-10-18 v1.1.6 发布执行记录：双构建竞态 / Gitee 配额 / 发布中心首页与插件链接
 

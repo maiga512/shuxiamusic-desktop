@@ -91,11 +91,22 @@ gh workflow run "Desktop Release Public" \
    - 发布仓库 `Desktop Release Public`（约 21 分钟）——被上一步创建的标签触发，用发布仓库的
      公开 Runner 重新构建一次，**总是最后写入**，GitHub 上最终生效的是它的产物。
    只等第一个就下载会把源码仓库那版传到 Gitee，导致同一提交在两端是两套不同字节的安装包。
-5. 本机下载产物并平铺进工作目录的 `release-assets/`（安装包 + `.sig`，不含 `latest.json`），
-   然后发布 Gitee：
-   `scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work X.Y.Z "<更新说明>"`。
+5. **等两个工作流都绿之后**再从 GitHub 取回产物并发布 Gitee（安装包由构建作业直传 Release，
+   不走 Actions artifact，所以用 `gh release download` 而不是 `gh run download`）：
+
+   ```bash
+   mkdir -p /tmp/ceru-release/work/release-assets
+   gh release download desktop-latest -R maiga512/shuxiamusic-release \
+     -p "shuxiamusic_X.Y.Z_*" -D /tmp/ceru-release/work/release-assets --clobber
+   scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work X.Y.Z "<更新说明>"
+   ```
+
    脚本会重建 `desktop-latest` 与版本化 `desktop-vX.Y.Z`，并调用 `update-hub-readme.py`
    把发布中心首页的版本号与安装包文件名改成新版本（GitHub + Gitee 两份 README）。
+
+   若报 `文件大小已超出仓库附件配额：1 GB`，按既有处置删掉**最旧的版本化 Release**
+   （`DELETE /repos/{owner}/{repo}/releases/{id}`）释放配额后重跑；GitHub 侧保留该版本。
+   脚本需要真实网络（沙箱里 Python 可能解析不到 `gitee.com`，但 curl 能通，属执行环境限制）。
 6. GitHub 侧的 `desktop-latest`、版本化 Release 与首页由 CI 完成，无需本机操作。
 
 ## 相关文件

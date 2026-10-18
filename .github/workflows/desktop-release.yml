@@ -378,16 +378,19 @@ jobs:
       # 本工作流只发 GitHub 侧。Gitee 侧请在 CI 构建完成后于本机执行（国内直连，几分钟传完，
       # 发布 desktop-latest + 版本化 Release，并同步发布中心首页版本）：
       #
-      #   gh run download <RUN_ID> -D /tmp/ceru-release/work
-      #   把 desktop-macos-arm64/、desktop-windows-x64/ 里的安装包+签名平铺进
-      #   /tmp/ceru-release/work/release-assets/
+      #   gh release download desktop-latest -R maiga512/shuxiamusic-release \
+      #     -p "shuxiamusic_<版本>_*" -D /tmp/ceru-release/work/release-assets --clobber
       #   scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work <版本号> [更新说明]
+      #
+      # 安装包由各构建作业直接传 Release（不再走 Actions artifact），所以用 gh release download
+      # 取，不是 gh run download。并且要等源码仓库 Desktop Release 与发布仓库
+      # Desktop Release Public **两个**都绿（约 40+ 分钟）再下载。
       #
       # 令牌在本机 ~/.config/ceru/gitee_token（chmod 600），无需人工提供。
       - name: Gitee 发布指引（本机直传，不走 CI 跨境上传）
         run: |
           echo "::notice::Gitee 发布走本机直传（CI 跨境上传限速，已不再执行）。"
           echo "::notice::CI 构建完成后在本机执行："
-          echo "::notice::  1) gh run download ${{ github.run_id }} -D /tmp/ceru-release/work"
-          echo "::notice::  2) 把 desktop-macos-arm64/、desktop-windows-x64/ 产物平铺进 /tmp/ceru-release/work/release-assets/"
+          echo "::notice::  1) gh release download desktop-latest -R maiga512/shuxiamusic-release -p \"shuxiamusic_${{ needs.prepare.outputs.version }}_*\" -D /tmp/ceru-release/work/release-assets --clobber"
+          echo "::notice::  2) 等两个工作流都绿再下载（安装包直传 Release，不再走 Actions artifact）"
           echo "::notice::  3) scripts/ci/publish-gitee-local.sh /tmp/ceru-release/work ${{ needs.prepare.outputs.version }} \"${{ needs.prepare.outputs.notes }}\""
