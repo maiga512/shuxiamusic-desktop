@@ -4699,8 +4699,14 @@ pub async fn directory_settings_select_download_dir(
 /// Open a file selection dialog. Accepts Electron-compatible options:
 /// `{ properties: ["openFile"], filters: [{ name, extensions: ["jpg",...] }] }`.
 /// Returns list of selected file paths (empty if cancelled).
+///
+/// 必须保持 `async`：非 async 的命令跑在主线程上，而
+/// `blocking_pick_files()` 内部是 `sync_channel(0)` + `recv()`——它把对话框
+/// sheet 交给主线程后，又在主线程上等回调，主线程被占住后 sheet 永远收不到
+/// 事件，整个应用表现为「弹窗出来一点就卡死」。改成 async 后命令跑在 tokio
+/// 工作线程，主线程照常转事件循环，与 `directory_settings_select_*` 一致。
 #[tauri::command]
-pub fn dialog_open_file(
+pub async fn dialog_open_file(
     app: tauri::AppHandle,
     args: Option<Vec<serde_json::Value>>,
 ) -> Result<Vec<String>, String> {
@@ -4726,12 +4732,15 @@ pub fn dialog_open_file(
         }
     }
 
-    let paths = dialog.blocking_pick_files();
-    Ok(paths
-        .unwrap_or_default()
-        .into_iter()
-        .map(|p| p.to_string())
-        .collect())
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    dialog.pick_files(move |paths| {
+        let _ = tx.send(paths);
+    });
+    let paths = rx
+        .await
+        .map_err(|_| "选择文件失败".to_string())?
+        .unwrap_or_default();
+    Ok(paths.into_iter().map(|p| p.to_string()).collect())
 }
 
 #[tauri::command]

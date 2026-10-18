@@ -1,0 +1,126 @@
+diff --git a/index.html b/index.html
+index b396b48..08fd3e6 100644
+--- a/index.html
++++ b/index.html
+@@ -10,6 +10,43 @@
+         document.documentElement.classList.add('desktop-lyric-window')
+       }
+     </script>
++    <script>
++      // [TEMP perf probe] 主线程长任务 + rAF 帧间隔记录，3.5s 后 POST 到 /__perf
++      ;(function () {
++        if (window.__perfProbe) return
++        var P = (window.__perfProbe = { longtasks: [], raf: [], marks: [], t0: performance.now() })
++        try {
++          new PerformanceObserver(function (l) {
++            l.getEntries().forEach(function (e) {
++              P.longtasks.push([Math.round(e.startTime), Math.round(e.duration)])
++            })
++          }).observe({ type: 'longtask', buffered: true })
++        } catch (e) {
++          P.noLongtask = true
++        }
++        var last = performance.now()
++        function tick() {
++          var now = performance.now()
++          var d = now - last
++          last = now
++          P.raf.push([Math.round(now - P.t0), Math.round(d * 10) / 10])
++          if (now - P.t0 < 3600) requestAnimationFrame(tick)
++        }
++        requestAnimationFrame(tick)
++        window.__perfMark = function (name, ts) {
++          P.marks.push([name, Math.round((ts || performance.now()) - P.t0)])
++        }
++        setTimeout(function () {
++          try {
++            fetch('/__perf', {
++              method: 'POST',
++              headers: { 'Content-Type': 'application/json' },
++              body: JSON.stringify({ longtasks: P.longtasks, raf: P.raf, marks: P.marks, noLongtask: P.noLongtask })
++            }).catch(function () {})
++          } catch (e) {}
++        }, 3600)
++      })()
++    </script>
+     <style>
+       html.desktop-lyric-window,
+       html.desktop-lyric-window body,
+diff --git a/src/components/Play/PlayMusic.vue b/src/components/Play/PlayMusic.vue
+index f419e5c..2a284da 100755
+--- a/src/components/Play/PlayMusic.vue
++++ b/src/components/Play/PlayMusic.vue
+@@ -16,6 +16,7 @@ import { LocalUserDetailStore } from '@renderer/store/LocalUserDetail'
+ import { useGlobalPlayStatusStore } from '@renderer/store/GlobalPlayStatus'
+ import icons from '../../assets/icon_font/icons'
+ const { liebiao, shengyin } = icons
++;(window as any).__perfMark?.('playmusic-setup')
+ import { storeToRefs } from 'pinia'
+ import FullPlay from './FullPlay.vue'
+ import PlaylistDrawer from './PlaylistDrawer.vue'
+diff --git a/src/views/home/index.vue b/src/views/home/index.vue
+index c24ee35..95ca139 100755
+--- a/src/views/home/index.vue
++++ b/src/views/home/index.vue
+@@ -10,6 +10,7 @@ import {
+ // 主导航浏览页：常驻缓存，来回切换不重建、不重复走 onMounted 拉数据。
+ // 这几页都用了 release-on-hide，切走时解码图会释放，常驻成本只是组件实例和已取到的列表数据。
+ // 歌单详情(list)、本地(local)、电台详情(radio-detail 随 id 变化)等详情页不在此列，进入即拉最新。
++;(window as any).__perfMark?.('home-setup')
+ const KEEP_ALIVE_PAGES = ['find', 'songlist', 'recent', 'search', 'podcast']
+ 
+ // 窗口在后台持续超过这个时长，才把「非当前页」卸载掉回收内存。
+diff --git a/src/views/music/find.vue b/src/views/music/find.vue
+index 968c22b..d2e3ea2 100755
+--- a/src/views/music/find.vue
++++ b/src/views/music/find.vue
+@@ -39,6 +39,7 @@ type CacheEntry = {
+ }
+ 
+ const settingsStore = useSettingsStore()
++;(window as any).__perfMark?.('find-setup')
+ const router = useRouter()
+ const LocalUserDetail = LocalUserDetailStore()
+ const { userSource } = storeToRefs(LocalUserDetail)
+diff --git a/vite.config.ts b/vite.config.ts
+index 65c116c..4113d43 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -4,6 +4,7 @@ import AutoImport from "unplugin-auto-import/vite";
+ import Components from "unplugin-vue-components/vite";
+ import { NaiveUiResolver, TDesignResolver } from "unplugin-vue-components/resolvers";
+ import { resolve } from "path";
++import fs from "fs";
+ 
+ // https://vitejs.dev/config/
+ export default defineConfig({
+@@ -22,6 +23,29 @@ export default defineConfig({
+     },
+   },
+   plugins: [
++    {
++      name: "perf-capture",
++      configureServer(server) {
++        server.middlewares.use("/__perf", (req, res) => {
++          if (req.method !== "POST") {
++            res.statusCode = 405
++            res.end()
++            return
++          }
++          let body = ""
++          req.on("data", (c) => (body += c))
++          req.on("end", () => {
++            try {
++              fs.appendFileSync("/tmp/perf-capture.log", body + "\n===END===\n")
++            } catch (e) {
++              console.error("[perf-capture] write failed", e)
++            }
++            res.setHeader("Content-Type", "application/json")
++            res.end(JSON.stringify({ ok: true }))
++          })
++        })
++      },
++    },
+     vue(),
+     AutoImport({
+       imports: [

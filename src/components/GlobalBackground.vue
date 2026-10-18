@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { useSettingsStore } from '@renderer/store/Settings'
 import { storeToRefs } from 'pinia'
 import { isAppWindowVisible } from '@renderer/utils/appWindowState'
@@ -11,7 +12,26 @@ const bgSettings = computed(() => settings.value.globalBackground)
 
 const isEnabled = computed(() => bgSettings.value?.enable && bgSettings.value?.url)
 const bgType = computed(() => bgSettings.value?.type || 'none')
-const bgUrl = computed(() => bgSettings.value?.url || '')
+
+/**
+ * 设置里存的是用户选的本地文件路径（`file:///…`）。
+ * webview 不能直接加载 `file://`（生产环境是 `tauri://localhost`，跨 scheme 被
+ * WebKit 拦掉），必须换成 asset 协议地址——Cargo.toml 开了 `protocol-asset`，
+ * tauri.conf.json 配了 `assetProtocol.scope`。http(s)/data/blob 原样放行。
+ */
+function toRenderableSrc(input: string | undefined): string {
+  const url = (input || '').trim()
+  if (!url) return ''
+  if (/^(https?|data|blob):/i.test(url)) return url
+  const localPath = url.startsWith('file://') ? decodeURI(url.slice('file://'.length)) : url
+  try {
+    return convertFileSrc(localPath)
+  } catch {
+    return url
+  }
+}
+
+const bgUrl = computed(() => toRenderableSrc(bgSettings.value?.url))
 const bgOpacity = computed(() => bgSettings.value?.opacity ?? 0.5)
 const bgBlur = computed(() => bgSettings.value?.blur ?? 10)
 const bgBrightness = computed(() => bgSettings.value?.brightness ?? 0.8)
@@ -106,6 +126,36 @@ watch(
         .scrollable-content {
           background: rgba(${containerColor}, 0.3) !important;
           backdrop-filter: blur(8px);
+        }
+        /*
+         * 设置页有自己的不透明底色变量（--settings-main-bg 等，定义在 main.css 的
+         * :root 上），首页那套 --td-bg-color-* 覆盖管不到它，所以整个设置页会把全局
+         * 背景整页盖住。这里只覆盖"底色变量"、不改 background 属性，既不用跟 scoped
+         * 样式比优先级，也不会影响其它主题变量（边框/文字色保持原样）。
+         */
+        .main-container {
+          --settings-main-bg: transparent !important;
+          --settings-header-bg: transparent !important;
+          --settings-sidebar-bg: transparent !important;
+          --settings-content-bg: transparent !important;
+          --settings-group-bg: rgba(${containerColor}, 0.3) !important;
+          --settings-source-card-bg: rgba(${containerColor}, 0.3) !important;
+          --settings-feature-bg: rgba(${pageColor}, 0.22) !important;
+          --settings-preview-bg: rgba(${pageColor}, 0.22) !important;
+          --settings-mock-titlebar-bg: rgba(${pageColor}, 0.22) !important;
+          --settings-api-tips-bg: rgba(${pageColor}, 0.22) !important;
+          --settings-quality-container-bg: rgba(${pageColor}, 0.22) !important;
+          --settings-source-icon-bg: rgba(${pageColor}, 0.3) !important;
+          --settings-footer-bg: rgba(${pageColor}, 0.2) !important;
+          --settings-version-bg: rgba(${pageColor}, 0.26) !important;
+          --settings-nav-hover-bg: rgba(${hoverColor}, 0.06) !important;
+        }
+        .main-container .sidebar,
+        .main-container .header {
+          backdrop-filter: blur(10px);
+        }
+        .main-container .sidebar {
+          background-image: none !important;
         }
       `
     } else {

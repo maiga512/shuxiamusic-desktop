@@ -1,7 +1,7 @@
 {
   "package.json": {
-    "mtime": 1792250752.7958698,
-    "ast_hash": "d09b9b93e1929f8656d488dda8f2d5d4",
+    "mtime": 1792292409.4093025,
+    "ast_hash": "662a6c1f456c0e78deb70d7b6f646105",
     "semantic_hash": ""
   },
   "packages/shared-contract/package.json": {
@@ -580,9 +580,9 @@
     "semantic_hash": ""
   },
   "src-tauri/src/commands/local_music.rs": {
-    "mtime": 1780240422.3379376,
-    "ast_hash": "496ddba0ea238b48d1746357aa370d7b",
-    "semantic_hash": "496ddba0ea238b48d1746357aa370d7b"
+    "mtime": 1792290903.256944,
+    "ast_hash": "e17da605603c18559280d1fdeb93c0cc",
+    "semantic_hash": ""
   },
   "src-tauri/src/commands/lyric_window.rs": {
     "mtime": 1789878982.2449746,
@@ -595,8 +595,8 @@
     "semantic_hash": "e0976ceb60165c707a60135643f350e1"
   },
   "src-tauri/src/commands/misc.rs": {
-    "mtime": 1792028003.3617792,
-    "ast_hash": "c6ffe84dfbb54eaa1f92c4bcb4129626",
+    "mtime": 1792290894.2632954,
+    "ast_hash": "e4e385f8fec6b393514b9060742b2428",
     "semantic_hash": ""
   },
   "src-tauri/src/commands/mod.rs": {
@@ -655,8 +655,8 @@
     "semantic_hash": ""
   },
   "src-tauri/tauri.conf.json": {
-    "mtime": 1792249396.0912552,
-    "ast_hash": "9ce1be9f881e188a5b4371d2e974f568",
+    "mtime": 1792290915.046505,
+    "ast_hash": "114c9450d87104e31db5841b48842fa6",
     "semantic_hash": ""
   },
   "src/App.vue": {
@@ -710,7 +710,7 @@
     "semantic_hash": "16159058ef0f1a309fad238b39f50561"
   },
   "src/auto-imports.d.ts": {
-    "mtime": 1792238984.0254796,
+    "mtime": 1792292548.7317894,
     "ast_hash": "6070b87b981a5dc13a984d83dc47ecc5",
     "semantic_hash": ""
   },
@@ -790,7 +790,7 @@
     "semantic_hash": ""
   },
   "src/components.d.ts": {
-    "mtime": 1792204478.0249884,
+    "mtime": 1792292560.9175773,
     "ast_hash": "17e2ee16e1170210ad1af078e16abaac",
     "semantic_hash": ""
   },
@@ -860,8 +860,8 @@
     "semantic_hash": ""
   },
   "src/components/GlobalBackground.vue": {
-    "mtime": 1792023409.5218174,
-    "ast_hash": "33cf7523afc5671321d4d3f09fb224a9",
+    "mtime": 1792291746.0377917,
+    "ast_hash": "f9bbafd29d16869b9d0809b146c74d2c",
     "semantic_hash": ""
   },
   "src/components/ListenTogether/ListenTogetherEntryDialog.vue": {
@@ -990,8 +990,8 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "src/components/Play/PlayMusic.vue": {
-    "mtime": 1792214509.8806713,
-    "ast_hash": "0ebb8ee8efc4413e680d083046982201",
+    "mtime": 1792292393.4257288,
+    "ast_hash": "c3f9763a55a76c0458f8cdd37615cc2c",
     "semantic_hash": ""
   },
   "src/components/Play/PlaySettings.vue": {
@@ -1615,8 +1615,8 @@
     "semantic_hash": ""
   },
   "src/views/home/index.vue": {
-    "mtime": 1792214560.0512776,
-    "ast_hash": "3ed51e853f9fe68916b20e64ba3ed257",
+    "mtime": 1792292393.426115,
+    "ast_hash": "eb1ec46caa4f9000e1cd4c07c102a8c6",
     "semantic_hash": ""
   },
   "src/views/music/LocalTagEditorPage.vue": {
@@ -1630,8 +1630,8 @@
     "semantic_hash": "a68086aad5e34253f417e13a5370bc6b"
   },
   "src/views/music/find.vue": {
-    "mtime": 1792214647.6793592,
-    "ast_hash": "7fd0297496662b2ba50a4338a1ab925e",
+    "mtime": 1792292393.4264421,
+    "ast_hash": "06081dd5eac0866b47b0db60b8b89cc9",
     "semantic_hash": ""
   },
   "src/views/music/list.vue": {
@@ -1750,8 +1750,8 @@
     "semantic_hash": "c877b390ec6bc9819845afaa91ace2c4"
   },
   "vite.config.ts": {
-    "mtime": 1792214240.2825978,
-    "ast_hash": "21173c39875253a8323c395e66b39469",
+    "mtime": 1792292393.4266894,
+    "ast_hash": "e58d29988bed74a8add7d5c4d4e88167",
     "semantic_hash": ""
   },
   "AGENTS.md": {
@@ -1760,18 +1760,18 @@
     "semantic_hash": ""
   },
   "AI_INDEX.md": {
-    "mtime": 1792247810.4127674,
-    "ast_hash": "46e6a847e0763603c8d694f9dfc808d3",
+    "mtime": 1792293654.79279,
+    "ast_hash": "40d1cbea8b8087d8fe256dafbe8d520d",
     "semantic_hash": ""
   },
   "CONTEXT_HANDOFF.md": {
-    "mtime": 1792247824.5488415,
-    "ast_hash": "bda75d9b77468c76d44ef6ac5c3608df",
+    "mtime": 1792293643.2206762,
+    "ast_hash": "a7c0d301b0a5bc69abc3e42aa922bb0a",
     "semantic_hash": ""
   },
   "TOP_GRAPH.md": {
-    "mtime": 1792247496.415732,
-    "ast_hash": "6a22f5d474dfc1c85b9f338631676bdf",
+    "mtime": 1792293613.951587,
+    "ast_hash": "8813dddd1fb4991ea6ba97570e26334a",
     "semantic_hash": ""
   },
   "docs/AI_GRAPH_MAINTENANCE.md": {
@@ -1780,8 +1780,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1792213608.3155694,
-    "ast_hash": "6afabd20a8bafb24521eeec93b990ca4",
+    "mtime": 1792292393.4250503,
+    "ast_hash": "a46bcc47a6a45242be5e4b3e7b20666d",
     "semantic_hash": ""
   },
   "sidecar/vendor/electron/src/main/utils/musicSdk/AGENTS.md": {
@@ -2895,8 +2895,8 @@
     "semantic_hash": ""
   },
   "install-new-build.sh": {
-    "mtime": 1791975109.3319752,
-    "ast_hash": "e82c94b6c97cd70472923dae5057d838",
+    "mtime": 1792293629.4272828,
+    "ast_hash": "3e68b35bc1cc45df4b6b6ace806f71dd",
     "semantic_hash": ""
   },
   "monitor-live-app.sh": {
@@ -2960,8 +2960,8 @@
     "semantic_hash": ""
   },
   ".github/workflows/desktop-release.yml": {
-    "mtime": 1791984770.9933863,
-    "ast_hash": "0887a1ff952c18efb231e813d1e7effa",
+    "mtime": 1792284342.7637284,
+    "ast_hash": "0b6b62a73f6e92100e03bf398aed83c3",
     "semantic_hash": ""
   },
   "COMPLETE_PERFORMANCE_FIX.md": {
@@ -3065,13 +3065,13 @@
     "semantic_hash": ""
   },
   "scripts/ci/publish-gitee.py": {
-    "mtime": 1792247387.699361,
-    "ast_hash": "4563a66bd9e341bd6ddcafb0bcfb10bf",
+    "mtime": 1792284373.1156101,
+    "ast_hash": "c8ce4c44424cf042474f89ce5447cd08",
     "semantic_hash": ""
   },
   "docs/RELEASE_DUAL_PLATFORM.md": {
-    "mtime": 1792247477.3803349,
-    "ast_hash": "2d62fa3299bd1cd2826696db04b70d22",
+    "mtime": 1792286063.9498932,
+    "ast_hash": "44c2fa2507e640155c615d0a8528075f",
     "semantic_hash": ""
   },
   "scripts/ci/publish-gitee-local.sh": {
@@ -3080,8 +3080,8 @@
     "semantic_hash": ""
   },
   "scripts/ci/update-hub-readme.py": {
-    "mtime": 1791878307.2001877,
-    "ast_hash": "99d74937ff3764f9d53c4510087c60da",
+    "mtime": 1792280726.2769558,
+    "ast_hash": "cd8830b9442c7fdbc6ef7f4868890201",
     "semantic_hash": ""
   },
   "src-tauri/src/system_power.rs": {

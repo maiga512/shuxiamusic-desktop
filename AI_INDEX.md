@@ -1,5 +1,77 @@
 ---
 
+## 2026-10-18 发布桌面版 v1.1.7：原生对话框卡死 + 全局背景（含设置页）
+
+- **发版内容**（相对 1.1.6 的两个用户可见修复）：① 设置里「选择文件/选择目录」弹原生对话框后
+  整个应用卡死——`dialog_open_file` / `local_music_select_dirs` 从阻塞式 `blocking_pick_*` 改为
+  `async` + `pick_*` 回调；② 全局背景选了图不显示——`convertFileSrc()` 走 asset 协议，
+  并补 `protocol-asset` 特性与 `assetProtocol.scope`；③ 设置页看不到背景——在注入的透明化样式表里
+  补 `.main-container` 作用域的 `--settings-*bg` 变量覆盖。
+- **版本三处同步**：`package.json` / `src-tauri/Cargo.toml` / `src-tauri/Cargo.lock` → `1.1.7`。
+  （注意 `Cargo.lock` 会被 rust-analyzer 的 `cargo metadata` 自动改写，编辑 `Cargo.toml` 后顺手核对一次即可。）
+  另外 `protocol-asset` 特性给 `Cargo.lock` 新增了 `http-range 0.1.5`，属于预期。
+- **本机构建与替换**：`npm run tauri:build:macos` → `.app` 214.32 MiB + `.dmg` 92.31 MiB + updater
+  `.tar.gz`。**构建末尾退出码为 1 是本机预期现象**：updater 签名要 `TAURI_SIGNING_PRIVATE_KEY`，
+  只有 CI 有；两个 bundle 在此之前已经产出并签名完毕，不影响安装。安装走 `./install-new-build.sh`
+  （它只 `cp -R` + `xattr -cr`，**绝不用 ad-hoc 重签**，否则辅助功能权限会丢）。
+  ⚠️ 该脚本要写 `/Applications` 和 `$HOME`，在沙箱里会报 `Operation not permitted`，需放开沙箱执行。
+- **验收点（已核对）**：`CFBundleShortVersionString=1.1.7`、`CFBundleIdentifier=com.shuxiamusic.tauri`、
+  `codesign --verify --verbose=2` 通过、`flags=0x10000(runtime)`（Hardened Runtime 仍在）、
+  entitlements 含 `com.apple.security.device.audio-input`、指定要求为
+  `certificate root = H"5ad54e67..."`（跨版本稳定）。旧 1.1.6 已备份到 `~/旧版树夏Music-10181111.app`。
+- **验证坑**：不要用 `strings` 去 release 二进制里找前端字符串——Tauri 把前端资源压缩后内嵌，
+  且 macOS 的 `strings` 对 Mach-O 连中文 Rust 字面量（如 `桌面歌词`）都取不到，会得到假阴性的 0。
+  可靠做法是看二进制里的 asset 清单是否指向本次 `dist/` 的 chunk 名（本次 `main-C3zTuERG`，
+  设置页覆盖就在这个 chunk 里）。
+- **临时性能探针未进本版**：工作区里那批 `[TEMP perf probe]` 代码（`index.html` 的长任务/rAF 上报、
+  `vite.config.ts` 的 `/__perf` 中间件、三个组件里的 `__perfMark`）会印进正式包，已整批撤出并
+  存档为 `perf-probe-instrumentation.patch`（副本 `/tmp/shuxia-perf-probe-2026-10-18.patch`），
+  继续做性能测量时 `git apply` 回去即可。
+- **顺带清理**：硬杀留下的孤儿 mpv 进程会抢同一个 `ceru-mpv-ipc.sock` 并占住 LaunchServices 注册，
+  本次清掉了 4 个历史残留，只保留正式版自己那个。
+- **尚未做**：没有推 tag、没有跑 CI、没有发 GitHub/Gitee——本次只替换了本机 `/Applications`。
+  要正式对外发版，仍需按 `docs/RELEASE_DUAL_PLATFORM.md` 走「推 tag → 等**两个**工作流都绿 → 本机传 Gitee」。
+- 索引：`AI_INDEX.md` 搜索别名表新增「原生对话框卡死」「全局背景不显示」「设置项真假核对」三条；
+  `TOP_GRAPH.md` 任务排查表补「全局背景只在首页生效」一行；`CONTEXT_HANDOFF.md` 记本次发布。
+- Graphify：`graphify update .` → 8001 nodes / 16905 edges / 452 communities；`graph.html` 因超过 5000 节点
+  默认被跳过，已用 `GRAPHIFY_VIZ_NODE_LIMIT=20000 graphify export html` 以聚合社群视图补齐（457 社群节点）。
+
+## 2026-10-18 设置页审计：原生文件对话框卡死 + 全局背景不显示（含 1.1.6 未发布说明）
+
+- **卡死根因（用户报的「选背景图弹窗后就死机」）**：`dialog_open_file` 与 `local_music_select_dirs`
+  原本是**非 async** 的 Tauri 命令，跑在主线程上；而 `blocking_pick_files()` / `blocking_pick_folders()`
+  内部是 `sync_channel(0)` + `recv()`——它把 macOS sheet 交给主线程后，又在主线程上等自己的回调，
+  主线程被占死，sheet 收不到事件 → 表现为「对话框弹出来一动就整个应用卡死」。改成 `async` 命令 +
+  `pick_files/pick_folders` 回调 + `tokio::sync::oneshot` 后，命令跑在 tokio 工作线程，主线程继续转
+  事件循环，与早已正确的 `directory_settings_select_*` 一致。**全仓已无 `blocking_pick*` 残留**。
+  ⚠️ 这是 **Rust 侧**改动：装好的 `/Applications/树夏Music.app`（1.1.5 或更早）**仍然会卡**，
+  必须重新构建，或跑 `npm run tauri dev`。
+- **全局背景选了图不显示**：设置里存的是 `file:///…`，而生产环境 webview 跑在 `tauri://localhost`，
+  跨 scheme 的 `file://` 被子资源加载策略拦掉 → 黑屏/无背景。改为渲染前统一过 `convertFileSrc()`
+  换成 asset 协议地址（`http(s)/data/blob` 原样放行）。配套需要 `tauri` crate 的 `protocol-asset`
+  特性 + `tauri.conf.json` 的 `security.assetProtocol`（enable + `$HOME/**`、`$PICTURE/**`、
+  `/Volumes/**` 等 scope），两者缺一都会静默失败。
+- **设置项真假核对结论（本轮逐项验证）**：外观里的不透明度/模糊度/亮度确实生效（绑定
+  `settings.globalBackground` → `GlobalBackground.vue` 内联 `opacity` + `filter: blur() brightness()`）；
+  歌词字体设置（`lyricFontFamily`/`FullPlayLyricFontRate`/`lyricFontWeight`）被 `FullPlay.vue` 消费；
+  桌面歌词样式的 13 个字段（fontSize/mainColor/shadowColor/fontWeight/position/animation/showYrc/
+  showTran/isDoubleLine/textBackgroundMask/backgroundMaskColor/fontFamily/alwaysShowPlayInfo）
+  在 `DeskTopLyric.vue` 里全部有消费；性能优化四项也都有落点——跳动歌词→`FullPlay` 弹簧引擎、
+  背景动画→`ShaderBackground.vue`、音频可视化→`FullPlay` + `AudioVisualizer.vue`、路由预加载→
+  `src/router/index.ts`。均衡器/高级音效/音频输出分别由 `GlobalAudio.vue` + `nativePlayback.ts` 消费，
+  不是假按钮。
+- **设置页看不到背景（用户复测反馈）**：主界面背景修好后，设置页整页仍是实心底色。原因是设置页有**自己的**一套不透明底色变量
+  （`--settings-main-bg` / `--settings-header-bg` / `--settings-sidebar-bg` / `--settings-content-bg` /
+  `--settings-group-bg` / `--settings-feature-bg` / `--settings-preview-bg` 等，定义在 `src/assets/main.css`
+  的 `:root` 上，特异性 (0,2,0)），而 `GlobalBackground.vue` 注入的透明化样式只覆盖了首页的
+  `--td-bg-color-*` 和 `.home-container`，管不到设置页。已在注入表里补 `.main-container` 作用域的变量覆盖
+  （`!important`，只改底色变量不改 `background` 属性，避免和 scoped 样式比优先级），并给设置页侧栏/顶栏加
+  `backdrop-filter: blur(10px)`。**以后再新增设置分类或新的 `--settings-*bg` 变量，要同步这张注入表。**
+- 索引：`AI_INDEX.md` 搜索别名表新增「原生对话框卡死」「全局背景不显示」「设置项真假核对」三条；
+  `TOP_GRAPH.md` 任务排查表补「全局背景只在首页生效」一行；本条维护日志。
+- Graphify：`graphify update .` → 8001 nodes / 16905 edges / 452 communities；`graph.html` 因超过 5000 节点
+  默认被跳过，已用 `GRAPHIFY_VIZ_NODE_LIMIT=20000 graphify export html` 以聚合社群视图补齐（457 社群节点）。
+
 ## 2026-10-18 桌面版 v1.1.6 发布执行：双构建竞态、Gitee 配额、发布中心首页两个静默 bug
 
 - **双构建竞态（本次最大的坑）**：源码仓库的 `Desktop Release` 与发布仓库 `maiga512/shuxiamusic-release`
@@ -527,13 +599,14 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | 音效点一下等一下、环绕房间卡、响度标准延迟 | mpv 带标签滤镜增量替换，换档只换 `@loud`/`@sur` | `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 麦克风权限、启动弹窗、均衡器、高级音效、MPV lavfi | startup microphone permission, mpv audio filters, bass/surround/loudness | `src/App.vue`, `src-tauri/src/commands/mpv_player.rs`, `src/utils/audio/nativePlayback.ts` |
 | 响度均衡标反、轻度/标准/强力、dynaudnorm 参数、低音增强不对劲、低音假、低音闷、低音轰、bass boost | loudness strength preset mapping (`dynaudnorm g/m/r/s`), 80Hz lowshelf with real dB gain plus 170Hz mud cut, no saturation | `src/components/Settings/AudioEffectSettings.vue`, `src/utils/audio/audioManager.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs` |
+| 本机编译正式版、替换 /Applications 里的树夏Music、发本地版、install-new-build | `npm run tauri:build:macos` 产出 app+dmg（**末尾退出码 1 是本机预期**：updater 签名缺 `TAURI_SIGNING_PRIVATE_KEY`，bundle 已生成完毕）→ `./install-new-build.sh`（只 `cp -R` + `xattr -cr`，**绝不重签**；写 `/Applications` 和 `$HOME` 需放开沙箱）→ 核对 `CFBundleShortVersionString`、`codesign --verify`、entitlements 里的 `com.apple.security.device.audio-input`、`spctl -a`。验证前端改动**不要**用 `strings` 找二进制里的 JS（Tauri 压缩内嵌 + macOS `strings` 取不到中文，会假阴性），改看二进制 asset 清单里的 `dist/` chunk 名 | `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, `install-new-build.sh`, `docs/RELEASE_DUAL_PLATFORM.md` |
 | 项目来源、澜音 Music、Ceru Music、Electron 改成 Tauri、架构迁移署名 | Release-center README project attribution and architecture migration disclosure | `docs/RELEASE_DUAL_PLATFORM.md`, `scripts/ci/update-hub-readme.py` |
 | 音量百分比不真实、滑条不灵敏、80%就很小、50%不像一半响度、拖到 0% 弹回去、0% 点不了 | 等比例（线性增益）音量：mpv 的 `volume` 实测是三次曲线 `gain=(volume/100)^3`（50→-18dB、80→-5.8dB），故 `sliderToMpvVolume(p)=100*cbrt(p/100)` 反解它，使最终增益=滑条百分比（100%=设备满刻度即系统音量的完整音量，50%→-6dB，0%=静音；与 Electron `audio.volume=v/100` 一致）。**0% 是合法值**：`nativeLoad`/`nativeSetVolume`/`LocalUserDetail.init`/`PlayMusic.vue` watcher 里所有 `volume<=0 → 80` 的强制改写已移除（只有非数字/越界才回退 80），否则拖到底部会立刻弹回 80%。前端保持百分比域展示/持久化，仅下发 mpv 时换算；Rust `mpv_set_volume` 与前端 IPC 合并去抖阈值 0.25（mpv 音量域）；DLNA 同步仍发原始百分比 | `src/utils/audio/nativePlayback.ts`, `src/store/LocalUserDetail.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue` |
 | 下载完点文件夹图标没反应、打不开下载目录、找不到文件位置 | 下载列表的文件夹图标走 `download.openFileLocation` → Node sidecar `open -R`/`explorer /select`/`xdg-open`；此前 `sidecar/index.mjs` 漏注册该路由（服务实现存在但调用抛 `Unsupported sidecar method`，被 bridge 静默吞掉），已补注册；bridge 改 strict 调用 + store 对空响应/无路径弹提示 | `sidecar/index.mjs`, `sidecar/services/download/index.mjs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/views/download/index.vue` |
 | 下载进缓存目录、下载目录不生效、本地歌曲缓存把下载的歌算缓存、封面/歌词/逐字歌词选了没效果（假菜单）、自动缓存音乐、缓存容量上限 LRU、com.cerumusic 旧路径 | **下载 vs 缓存分目录不变量**：主下载走 Node sidecar（`isCache=false`）→ 配置目录在 `node_sidecar.rs::spawn_sidecar` 以 env `CERU_DOWNLOAD_DIR`/`CERU_CACHE_DIR` 注入、`download/index.mjs::initializeSystem` 优先用（不再依赖打开设置页才同步）；`normalizeTask` 保留 `isCache`、`addTask` 守卫非缓存任务不落入 cacheDir；在线听歌自动缓存受 `autoCacheMusic` 控制走 `musicCachePlaybackCache`（cacheDir/playback，LRU 淘汰见 `evictCacheIfNeeded`）；标签写入由渲染层 `finalizeDownloadedTask`（`utils/audio/download.ts`）在 `onTaskCompleted` 调 Rust `download_finalize_metadata`（复用 `finalize_download_metadata` + exiftool Homebrew PATH 兜底）补写封面/基础信息/标准·逐字歌词；遗留 `com.cerumusic.tauri` 存储路径由 `lib.rs::remap_legacy_storage_dirs` 启动纠正 | `sidecar/services/download/index.mjs`, `src-tauri/src/commands/node_sidecar.rs`, `src-tauri/src/commands/download_engine.rs`, `src-tauri/src/lib.rs`, `src/tauri-bridge.ts`, `src/store/download.ts`, `src/utils/audio/download.ts`, `src/components/Settings/DirectorySettings.vue`, `src/components/Settings/MusicCache.vue` |
 | 封面缓存、封面不进缓存目录、封面缓存清除/占多少、缓存机制没搞懂、封面/在线听歌算不算缓存 | **封面缓存 = 独立有界 LRU**：`cover_proxy` 常驻服务的磁盘缓存（`app_data_dir/cover-cache`，200MB 上限 + 30 天淘汰），独立于"歌曲缓存"、不塞进用户缓存目录（迁移运行期缓存位置风险高，改为可见可清）。`cover_cache_info`/`cover_cache_clear`（Rust）+ `window.api.coverCache`（bridge）+ `StorageSection.vue`"封面缓存"块（张数/占用 + 清空 + 独立上限说明）。下载目录 / 本地歌曲缓存 / 封面缓存三者互不混占 | `src-tauri/src/commands/cover_proxy.rs`, `src-tauri/src/lib.rs`, `src/tauri-bridge.ts`, `src/views/settings/sections/StorageSection.vue` |
 | 发布桌面版、GitHub/Gitee 双平台、Windows 包、artifact 配额、更新器 latest.json、发布中心首页版本 | 推送 tag `desktop-v<版本>` 触发源码仓库 `Desktop Release`；构建作业把安装包**直传** `maiga512/shuxiamusic-release` 的 `desktop-latest`（不走 actions/upload-artifact，免费额度 500MB 容易被顶满），`publish` 作业等两平台结束后 `gh release download` 取回产物生成 `latest.json` 并清理历史附件（**只删 `shuxiamusic_*` 与 `latest.json`**，插件等常驻附件保留）。**注意发布仓库里还有一个 `Desktop Release Public` 会在 publish 作业创建的同名 tag 上再构建一次、总是最后写入**，所以本机务必等**两个**工作流都绿（约 40+ 分钟）再跑 `scripts/ci/publish-gitee-local.sh <工作目录> <版本> "<说明>"`，否则 Gitee 与 GitHub 会拿到同一提交的两套不同字节包。Gitee 重传前会先清旧附件：列表接口不返回附件 id，改用下载地址第一跳 302 里的 `/attach_files/<id>/` 反查 `attach_file_id` 后精确删除（同名附件反复扫描直到删净），且同样**只删 `shuxiamusic_*` 与 `latest.json`**；1GB 附件配额打满时报 `文件大小已超出仓库附件配额`，删掉最旧的 `desktop-v<版本>` 归档即可。首页版本由 `update-hub-readme.py` 收尾，同时改版本单元格与安装包文件名 | `.github/workflows/desktop-release.yml`, `scripts/ci/publish-gitee-local.sh`, `scripts/ci/publish-gitee.py`, `scripts/ci/make-latest-json.py`, `scripts/ci/update-hub-readme.py`, `docs/RELEASE_DUAL_PLATFORM.md` |
-| 重打包后辅助功能权限又没了、签名每次都变、能不能固定签名 | 用固定自签证书签名：`tauri.conf.json` 的 `bundle.macOS.signingIdentity = "Ceru Music Self-Signed"`（keychain 里已有该证书，含 Code Signing EKU）。ad-hoc(`-`) 的 designated requirement 是 cdhash（二进制哈希），每次重编译都变 → TCC 辅助功能权限失效；证书签名后 DR 变成 `identifier "com.cerumusic.tauri" and certificate root = H"..."`，只跟证书有关，跨版本稳定。安装时**不要**再 `codesign --sign -` 重签（`install-new-build.sh` 已改）。CI 无该证书，用 `APPLE_SIGNING_IDENTITY: "-"` 覆盖回 ad-hoc | `src-tauri/tauri.conf.json`, `install-new-build.sh`, `.github/workflows/desktop-release.yml` |
+| 重打包后辅助功能权限又没了、签名每次都变、能不能固定签名 | 用固定自签证书签名：`tauri.conf.json` 的 `bundle.macOS.signingIdentity = "Shuxia Music Self-Signed"`（keychain 里该证书指纹 `5AD54E67D7A5089A183329495CA81F322B25D7C5`，含 Code Signing EKU）。ad-hoc(`-`) 的 designated requirement 是 cdhash（二进制哈希），每次重编译都变 → TCC 辅助功能权限失效；证书签名后 DR 变成 `identifier "com.shuxiamusic.tauri" and certificate root = H"5ad54e67..."`，只跟证书有关，跨版本稳定。安装时**不要**再 `codesign --sign -` 重签（`install-new-build.sh` 已改）。CI 无该证书，用 `APPLE_SIGNING_IDENTITY: "-"` 覆盖回 ad-hoc。⚠️ keychain 里还留着改名前的旧证书 `Ceru Music Self-Signed`（`3FCB5660...`），**不要**切回去——换证书等于换 DR，辅助功能权限会全部重授 | `src-tauri/tauri.conf.json`, `install-new-build.sh`, `.github/workflows/desktop-release.yml` |
 | 强杀 App 后双击打不开、LaunchServices 认为还在运行 | `kill -9` 会留下孤儿 mpv 进程（`Contents/Resources/mpv/bin/mpv`）占着 LaunchServices 注册，普通 `open` 只去激活那个已死的实例；`pkill -f "mpv/bin/mpv"` 后即可正常启动 | `src-tauri/src/commands/mpv_player.rs`（正常退出走 `mpv_shutdown`，只有硬杀才会漏） |
 | 摘下耳机暂停、戴上又自动播、耳机自动恢复、耳机插拔后自己播放 | 抑制 macOS 在输出设备变化时替 App 发的系统媒体指令：`app-audio-device-changed`（Rust `audio_device.rs` 监听 CoreAudio `kAudioHardwarePropertyDefaultOutputDevice`，WebView `devicechange` 仅兜底）后 6s 内、或系统 `pause` 真的暂停后 4s 内，系统来源（`source=media`）的 `play` 忽略、`pause` 只当暂停（不再 toggle 成播放）；窗口外保留 toggle 语义兜底系统状态感知滞后；App 内播放按钮不受影响 | `src/utils/audio/globaPlayList.ts`, `src/utils/audio/nativePlayback.ts`, `src-tauri/src/audio_device.rs`, `src/tauri-bridge.ts` |
 | 换输出设备没声、蓝牙连/断没声、睡眠唤醒没声、音频不跟随系统、最小化恢复窗口声音卡一下 | macOS CoreAudio AO 静默死亡恢复:`app-audio-device-changed`(Rust `audio_device.rs` 监听 CoreAudio 默认输出设备)+`devicechange`(800ms 防抖,兜底)+`app-system-wake`(Rust `system_power.rs` 监听 NSWorkspace didWake) 触发 `mpv_reload_audio_output`，`aid` 循环重建 AO（单飞+1.5s 冷却+失败软处理）；窗口级唤醒 `ceru-wake`（最小化/恢复/15s 闲置）只对齐进度时钟、绝不重建 AO | `src/utils/audio/nativePlayback.ts`, `src-tauri/src/audio_device.rs`, `src-tauri/src/system_power.rs`, `src-tauri/src/commands/mpv_player.rs`, `src/tauri-bridge.ts` |
@@ -542,6 +615,9 @@ Use these aliases when searching issues, handoffs, or graph nodes:
 | CPU 160%、localhost 70%、倍速死循环、canplay 刷屏 | mpv playback rate loop, custom-protocol IPC storm, hot log `set_rate` | `src/utils/audio/nativePlayback.ts`, `src-tauri/src/commands/mpv_player.rs`, `src/components/Play/PlayMusic.vue` |
 | localhost 400MB、内存、封面解码、hover 模糊底 | list covers decode 96, dock 128, cards 384; cold decoded bitmaps release on hide; HTTP cache remains | `src/utils/coverThumb.ts`, `src/components/sImage.vue`, `src/views/home/index.vue` |
 | 设置 CPU、设置页切模块、插件管理占用 | 设置分类按需挂载，切走即卸载，设备扫描有列表就跳 | `src/views/settings/index.vue`, `src/views/settings/sections/PluginSection.vue`, `src/views/settings/sections/PlaybackSection.vue` |
+| 点选择文件卡死、选背景图后整个 App 卡住、本地音乐选目录卡死、原生对话框弹出来一点就死 | `blocking_pick_files/folders` 在主线程 `recv()` 自锁；命令必须保持 `async`，改用 `pick_files/pick_folders` + `oneshot` | `src-tauri/src/commands/misc.rs` (`dialog_open_file`), `src-tauri/src/commands/local_music.rs` (`local_music_select_dirs`) |
+| 全局背景不显示、自定义背景黑屏、选了图没反应、设置页看不到背景 | 两件事：① `file://` 在 webview 跨 scheme 加载不到，必须 `convertFileSrc()` 走 asset 协议（需 `protocol-asset` 特性 + `security.assetProtocol.scope`）；② 设置页有自己的不透明底色变量 `--settings-*bg`，首页那套 `--td-bg-color-*` 覆盖管不到，必须在注入表里补 `.main-container` 的变量覆盖 | `src/components/GlobalBackground.vue`, `src/components/Settings/GlobalBackgroundSettings.vue`, `src/assets/main.css`, `src/views/settings/index.vue`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json` |
+| 设置项是不是真的接上了、开关按了没反应、假菜单 | 逐项核对 store → 消费端 → Rust 命令；`searchIndex.ts` 只是搜索索引不是接线 | `src/views/settings/searchIndex.ts`, `src/views/settings/sections/*.vue`, `src/store/Settings.ts`, `src/store/playSetting.ts` |
 | 插件、插件配置、插件安装 | plugin registry, sandbox, worker, source mapping | `sidecar/services/plugins/index.mjs`, `src/utils/plugin/pluginSandbox.ts` |
 | 插件在线升级、更新失败、浏览器打不开 | plugin update download validation, system browser fallback | `src/components/PluginNoticeDialog.vue`, `src/tauri-bridge.ts` |
 | 洛雪插件、洛雪歌单、导入失败、设置页空白 | lx includes check, `.lxmc` gzip playlist parsing, convertEventDrivenPlugin, pluginInfo fallback | `src/utils/playlist/playlistExportImport.ts`, `src/tauri-bridge.ts`, `src/components/Settings/plugins.vue` |

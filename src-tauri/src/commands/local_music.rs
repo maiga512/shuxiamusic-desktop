@@ -206,12 +206,18 @@ fn extract_cover_base64(file_path: &str) -> Option<String> {
 // ==================== Commands ====================
 
 /// Select music directories via native dialog.
+///
+/// 必须保持 `async`：非 async 命令跑在主线程，`blocking_pick_folders()` 会在
+/// 主线程上等自己的对话框回调，主线程被占住后 sheet 收不到事件 → 应用卡死。
 #[tauri::command]
-pub fn local_music_select_dirs(app: tauri::AppHandle) -> Result<Vec<String>, String> {
-    let paths = app
-        .dialog()
-        .file()
-        .blocking_pick_folders()
+pub async fn local_music_select_dirs(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    app.dialog().file().pick_folders(move |paths| {
+        let _ = tx.send(paths);
+    });
+    let paths = rx
+        .await
+        .map_err(|_| "选择目录失败".to_string())?
         .unwrap_or_default();
     let result: Vec<String> = paths
         .into_iter()

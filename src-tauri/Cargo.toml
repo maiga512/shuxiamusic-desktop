@@ -3,7 +3,7 @@ name = "shuxia-tauri"
 # 应用对外版本号以根目录 package.json 为唯一来源（tauri.conf.json version 指向
 # ../package.json）。此处仅为 Cargo 必填项，不参与关于页/安装包版本展示，保持与
 # package.json 一致即可，无需每次手动维护。
-version = "1.1.6"
+version = "1.1.7"
 description = "树夏Music - Tauri Edition"
 authors = ["树夏Music Team"]
 edition = "2021"
@@ -16,7 +16,7 @@ crate-type = ["lib", "cdylib", "staticlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri = { version = "2", features = ["tray-icon", "macos-private-api", "protocol-asset"] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-deep-link = "2"

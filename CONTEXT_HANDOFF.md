@@ -1,3 +1,47 @@
+## 2026-10-18 v1.1.7 本机发布：设置页对话框卡死 / 全局背景 / 设置页透明（仅本机，未推 CI）
+
+- **本次修的三件事**（都属「设置项没实现/点了没反应」这一类）：
+  1. 设置里点「选择文件」「选择目录」弹原生对话框后**整个应用卡死**。根因是
+     `dialog_open_file` / `local_music_select_dirs` 是**非 async** 的 Tauri 命令，跑在主线程，
+     而 `blocking_pick_files()` / `blocking_pick_folders()` 内部把 macOS sheet 交给主线程后
+     又在主线程 `recv()` 等回调 → 主线程占死、sheet 收不到事件。改为 `async` + `pick_*` 回调
+     + `tokio::sync::oneshot`。**全仓已无 `blocking_pick*` 残留**。
+  2. 全局背景选了图不显示：设置里存的是 `file:///…`，webview 跨 scheme 加载不到，改为
+     `convertFileSrc()` 走 asset 协议；配套 `tauri` crate 的 `protocol-asset` 特性 +
+     `security.assetProtocol.scope`（`$HOME/**`、`$PICTURE/**`、`/Volumes/**` 等）。
+  3. 设置页看不到背景：设置页有**自己的**不透明底色变量（`--settings-main-bg` 等，定义在
+     `src/assets/main.css` 的 `:root`，特异性 (0,2,0)），首页那套 `--td-bg-color-*` 覆盖管不到。
+     在 `GlobalBackground.vue` 注入的样式表里补 `.main-container` 作用域的变量覆盖
+     （`!important`，**只改底色变量不改 `background` 属性**，避免和 scoped 样式比优先级）。
+     **以后再新增设置分类或新的 `--settings-*bg` 变量，要同步这张注入表。**
+- **版本**：`package.json` / `src-tauri/Cargo.toml` / `src-tauri/Cargo.lock` 三处 → `1.1.7`。
+- **本机构建**：`npm run tauri:build:macos`。**退出码 1 是本机预期**——updater 签名缺
+  `TAURI_SIGNING_PRIVATE_KEY`（只有 CI 有），两个 bundle 在此之前已产出并签名完成。
+- **本机替换**：`./install-new-build.sh`（只 `cp -R` + `xattr -cr`，**不重签**）。该脚本要写
+  `/Applications` 与 `$HOME`，沙箱里会 `Operation not permitted`，需放开沙箱跑。旧版备份在
+  `~/旧版树夏Music-10181111.app`。
+- **验收（已核对）**：`CFBundleShortVersionString=1.1.7`、`com.shuxiamusic.tauri`、
+  `codesign --verify --verbose=2` 通过、`flags=0x10000(runtime)`、
+  entitlements 含 `com.apple.security.device.audio-input`、DR =
+  `certificate root = H"5ad54e67..."`（稳定）、`spctl -a -vvv` = accepted，且能正常启动。
+- **签名身份已改名，文档同步修正**：现行身份是 **`Shuxia Music Self-Signed`**
+  （指纹 `5AD54E67...`），不再是 `Ceru Music Self-Signed`（`3FCB5660...`，仍在 keychain 里）。
+  **不要切回旧证书**——换证书等于换 DR，已授的辅助功能/麦克风权限全部作废。
+  `AI_INDEX` 的路由表行、`TOP_GRAPH` 排查表行、`install-new-build.sh` 注释与结尾提示都已改准。
+- **验证坑（重要）**：**不要**用 `strings` 去 release 二进制里找前端字符串。Tauri 把前端资源
+  压缩内嵌，且 macOS 的 `strings` 对 Mach-O 连中文 Rust 字面量（如 `桌面歌词`）都取不到，
+  会给假阴性的 0。可靠做法：看二进制里的 asset 清单是否指向本次 `dist/` 的 chunk 名
+  （本次 `main-C3zTuERG`，设置页覆盖就在这个 chunk）。
+- **临时性能探针已撤出，未进本版**：`index.html` 的 `[TEMP perf probe]`（长任务 + rAF 上报
+  `/__perf`）、`vite.config.ts` 的 `perf-capture` 中间件、`PlayMusic.vue` / `views/home/index.vue` /
+  `views/music/find.vue` 里的 `__perfMark` 调用。这些会印进正式包，会白烧启动后 3.6s 的 rAF 记账
+  和一个必然失败的 fetch。已整批撤出并存档为 `perf-probe-instrumentation.patch`
+  （副本 `/tmp/shuxia-perf-probe-2026-10-18.patch`），继续测性能时 `git apply` 回去即可。
+- **顺带清理**：硬杀留下的孤儿 mpv 会抢同一个 `ceru-mpv-ipc.sock` 并占住 LaunchServices 注册，
+  本次清掉 4 个历史残留，只留正式版自己那个。
+- **尚未做**：没推 tag、没跑 CI、没发 GitHub/Gitee。要对外发版仍需按
+  `docs/RELEASE_DUAL_PLATFORM.md` 走「推 tag → 等**两个**工作流都绿（约 40+ 分钟）→ 本机传 Gitee」。
+
 ## 2026-10-18 v1.1.6 发布执行记录：双构建竞态 / Gitee 配额 / 发布中心首页与插件链接
 
 - **发版必须等两个工作流**：源码仓库 `Desktop Release` 跑完后，它的 publish 作业会在发布仓库
